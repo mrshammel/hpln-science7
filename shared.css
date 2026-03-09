@@ -476,3 +476,56 @@ a{color:var(--accent);text-decoration:none}
 /* --- ANIMATIONS --- */
 @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+/* ============================================================
+   INTERACTIVE TOOLS — Drawing Canvas, Photo Capture
+   ============================================================ */
+
+/* --- SHARED TOOL STYLES --- */
+.tool-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin:24px 0;box-shadow:var(--shadow)}
+.tool-header{font-family:'Outfit','Inter',sans-serif;font-size:1.3rem;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.tool-icon{font-size:1.5rem}
+.tool-instructions{color:var(--text2);font-size:.9rem;margin-bottom:16px;line-height:1.6;padding:10px 14px;background:var(--accent-glow);border-radius:var(--radius-sm);border-left:3px solid var(--accent)}
+.tool-actions{display:flex;align-items:center;gap:12px;margin-top:16px;flex-wrap:wrap}
+.tool-action-btn{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border-radius:var(--radius-sm);font-weight:600;font-size:.9rem;cursor:pointer;transition:var(--transition);border:1px solid var(--border);font-family:'Inter',sans-serif}
+.tool-action-btn.primary{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.tool-action-btn.primary:hover{background:var(--accent2);transform:translateY(-1px);box-shadow:0 4px 12px var(--accent-glow)}
+.tool-action-btn.secondary{background:var(--card2);color:var(--text)}
+.tool-action-btn.secondary:hover{border-color:var(--accent);color:var(--accent)}
+.tool-status{font-size:.85rem;color:var(--accent);font-weight:500}
+.tool-or{color:var(--text3);font-size:.85rem;font-weight:500}
+
+/* --- DRAWING CANVAS --- */
+.drawing-toolbar{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap;padding:8px 12px;background:var(--card2);border-radius:var(--radius-sm)}
+.drawing-colors{display:flex;gap:6px;align-items:center}
+.color-btn{width:28px;height:28px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:var(--transition);padding:0}
+.color-btn:hover{transform:scale(1.15)}
+.color-btn.active{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-glow);transform:scale(1.15)}
+.drawing-tools{display:flex;gap:6px;align-items:center;margin-left:auto}
+.tool-btn{background:var(--card);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:var(--radius-sm);cursor:pointer;font-size:.8rem;font-weight:500;transition:var(--transition)}
+.tool-btn:hover{border-color:var(--accent);color:var(--accent)}
+.tool-btn.active{background:var(--accent-glow);color:var(--accent);border-color:var(--accent)}
+.drawing-thickness{background:var(--card);border:1px solid var(--border);color:var(--text);padding:6px 8px;border-radius:var(--radius-sm);font-size:.8rem;cursor:pointer}
+.drawing-canvas{display:block;width:100%;height:auto;border-radius:var(--radius-sm);border:2px solid var(--border);cursor:crosshair;background:#fff;touch-action:none}
+
+/* --- PHOTO CAPTURE --- */
+.photo-options{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.photo-camera-area{margin-bottom:16px;border-radius:var(--radius-sm);overflow:hidden;background:#000}
+.photo-preview{width:100%;max-height:400px;object-fit:contain;display:block}
+.photo-camera-controls{display:flex;gap:8px;padding:12px;background:var(--card2);justify-content:center}
+.photo-gallery{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.photo-thumb-wrap{position:relative;width:120px;height:120px;border-radius:var(--radius-sm);overflow:hidden;border:2px solid var(--border);flex-shrink:0}
+.photo-thumb{width:100%;height:100%;object-fit:cover}
+.photo-remove{position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;background:var(--danger);color:#fff;border:none;cursor:pointer;font-size:.7rem;display:flex;align-items:center;justify-content:center;opacity:.8;transition:var(--transition)}
+.photo-remove:hover{opacity:1;transform:scale(1.1)}
+.photo-empty{color:var(--text3);font-size:.85rem;font-style:italic;padding:20px;text-align:center;background:var(--card2);border-radius:var(--radius-sm);width:100%}
+.tool-caption{width:100%;background:var(--card2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:var(--radius-sm);font-family:'Inter',sans-serif;font-size:.9rem;resize:vertical;transition:var(--transition)}
+.tool-caption:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+
+/* --- MOBILE --- */
+@media(max-width:600px){
+  .drawing-toolbar{flex-direction:column;gap:8px}
+  .drawing-tools{margin-left:0;flex-wrap:wrap}
+  .photo-thumb-wrap{width:80px;height:80px}
+  .tool-action-btn{padding:8px 14px;font-size:.82rem}
+}

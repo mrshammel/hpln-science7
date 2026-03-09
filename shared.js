@@ -521,6 +521,343 @@ function ttsChangeRate(val) {
   }
 }
 
+// ===== DRAWING CANVAS TOOL =====
+function initDrawingCanvas(containerId, opts = {}) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const storageKey = opts.storageKey || containerId + '-drawing';
+  const bgImage = opts.backgroundImage || null;
+  const width = opts.width || 800;
+  const height = opts.height || 500;
+  const title = opts.title || 'Drawing Canvas';
+
+  container.innerHTML = `
+    <div class="tool-card drawing-canvas-wrap">
+      <div class="tool-header"><span class="tool-icon">🎨</span> ${title}</div>
+      ${opts.instructions ? `<p class="tool-instructions">${opts.instructions}</p>` : ''}
+      <div class="drawing-toolbar">
+        <div class="drawing-colors">
+          ${['#1a1a1a','#ef4444','#f59e0b','#22c55e','#3b82f6','#8b5cf6','#ec4899','#ffffff'].map(c =>
+            `<button class="color-btn${c==='#1a1a1a'?' active':''}" data-color="${c}" style="background:${c};${c==='#ffffff'?'border:2px solid #ccc;':''}"></button>`
+          ).join('')}
+        </div>
+        <div class="drawing-tools">
+          <select class="drawing-thickness" title="Brush size">
+            <option value="2">Thin</option>
+            <option value="4" selected>Medium</option>
+            <option value="8">Thick</option>
+            <option value="14">Bold</option>
+          </select>
+          <button class="tool-btn active" data-tool="pen" title="Pen">✏️ Pen</button>
+          <button class="tool-btn" data-tool="eraser" title="Eraser">🧹 Eraser</button>
+          <button class="tool-btn" data-tool="undo" title="Undo">↩️</button>
+          <button class="tool-btn" data-tool="redo" title="Redo">↪️</button>
+          <button class="tool-btn" data-tool="clear" title="Clear">🗑️ Clear</button>
+        </div>
+      </div>
+      <canvas id="${containerId}-canvas" width="${width}" height="${height}" class="drawing-canvas"></canvas>
+      <div class="tool-actions">
+        <button class="tool-action-btn secondary" onclick="downloadDrawing('${containerId}')">💾 Save as Image</button>
+        <button class="tool-action-btn primary" onclick="submitDrawing('${containerId}')">📤 Submit Drawing</button>
+        <span class="tool-status" id="${containerId}-status"></span>
+      </div>
+    </div>`;
+
+  const canvas = document.getElementById(containerId + '-canvas');
+  const ctx = canvas.getContext('2d');
+  let drawing = false;
+  let currentColor = '#1a1a1a';
+  let currentTool = 'pen';
+  let lineWidth = 4;
+  let history = [];
+  let historyIndex = -1;
+
+  // Load background image
+  function initCanvas() {
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+    if (bgImage) {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => { ctx.drawImage(img, 0, 0, width, height); saveState(); };
+      img.src = bgImage;
+    } else {
+      saveState();
+    }
+  }
+
+  function saveState() {
+    historyIndex++;
+    history = history.slice(0, historyIndex);
+    history.push(canvas.toDataURL());
+    if (history.length > 25) { history.shift(); historyIndex--; }
+  }
+
+  function undo() { if (historyIndex > 0) { historyIndex--; restoreState(); } }
+  function redo() { if (historyIndex < history.length - 1) { historyIndex++; restoreState(); } }
+
+  function restoreState() {
+    const img = new Image();
+    img.onload = () => { ctx.clearRect(0, 0, width, height); ctx.drawImage(img, 0, 0); };
+    img.src = history[historyIndex];
+  }
+
+  // Events
+  canvas.addEventListener('pointerdown', e => {
+    drawing = true;
+    ctx.beginPath();
+    const r = canvas.getBoundingClientRect();
+    const x = (e.clientX - r.left) * (width / r.width);
+    const y = (e.clientY - r.top) * (height / r.height);
+    ctx.moveTo(x, y);
+  });
+
+  canvas.addEventListener('pointermove', e => {
+    if (!drawing) return;
+    const r = canvas.getBoundingClientRect();
+    const x = (e.clientX - r.left) * (width / r.width);
+    const y = (e.clientY - r.top) * (height / r.height);
+    ctx.lineWidth = currentTool === 'eraser' ? lineWidth * 4 : lineWidth;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = currentTool === 'eraser' ? '#ffffff' : currentColor;
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  });
+
+  canvas.addEventListener('pointerup', () => { if (drawing) { drawing = false; saveState(); } });
+  canvas.addEventListener('pointerleave', () => { if (drawing) { drawing = false; saveState(); } });
+  canvas.style.touchAction = 'none'; // Prevent scroll while drawing
+
+  // Toolbar
+  container.querySelectorAll('.color-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      container.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentColor = btn.dataset.color;
+      currentTool = 'pen';
+      container.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+      container.querySelector('[data-tool="pen"]').classList.add('active');
+    });
+  });
+
+  container.querySelector('.drawing-thickness').addEventListener('change', e => {
+    lineWidth = parseInt(e.target.value);
+  });
+
+  container.querySelectorAll('.tool-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tool = btn.dataset.tool;
+      if (tool === 'undo') return undo();
+      if (tool === 'redo') return redo();
+      if (tool === 'clear') {
+        if (confirm('Clear the entire canvas?')) { initCanvas(); }
+        return;
+      }
+      container.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentTool = tool;
+    });
+  });
+
+  // Auto-save every 30s
+  setInterval(() => {
+    if (history.length > 1) {
+      localStorage.setItem(storageKey, canvas.toDataURL());
+    }
+  }, 30000);
+
+  // Restore from localStorage
+  const saved = localStorage.getItem(storageKey);
+  if (saved) {
+    const img = new Image();
+    img.onload = () => { ctx.drawImage(img, 0, 0); saveState(); };
+    img.src = saved;
+  } else {
+    initCanvas();
+  }
+
+  // Store reference for download/submit
+  window['_canvas_' + containerId] = { canvas, storageKey };
+}
+
+function downloadDrawing(containerId) {
+  const ref = window['_canvas_' + containerId];
+  if (!ref) return;
+  const link = document.createElement('a');
+  link.download = containerId + '.png';
+  link.href = ref.canvas.toDataURL();
+  link.click();
+  const status = document.getElementById(containerId + '-status');
+  if (status) { status.textContent = '✅ Image saved!'; setTimeout(() => status.textContent = '', 3000); }
+}
+
+function submitDrawing(containerId) {
+  const ref = window['_canvas_' + containerId];
+  if (!ref) return;
+  const data = ref.canvas.toDataURL();
+  localStorage.setItem(ref.storageKey, data);
+  const status = document.getElementById(containerId + '-status');
+  if (status) { status.textContent = '✅ Drawing saved! (Submit to teacher coming soon)'; setTimeout(() => status.textContent = '', 4000); }
+  // Future: submitToTeacher({ type: 'drawing', data, containerId });
+}
+
+// ===== PHOTO CAPTURE TOOL =====
+function initPhotoCapture(containerId, opts = {}) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const storageKey = opts.storageKey || containerId + '-photo';
+  const title = opts.title || 'Photo Capture';
+  const maxPhotos = opts.maxPhotos || 3;
+
+  container.innerHTML = `
+    <div class="tool-card photo-capture-wrap">
+      <div class="tool-header"><span class="tool-icon">📸</span> ${title}</div>
+      ${opts.instructions ? `<p class="tool-instructions">${opts.instructions}</p>` : ''}
+      <div class="photo-options">
+        <button class="tool-action-btn primary" id="${containerId}-cameraBtn">📷 Take Photo</button>
+        <span class="tool-or">or</span>
+        <label class="tool-action-btn secondary" for="${containerId}-fileInput">📁 Upload Photo</label>
+        <input type="file" id="${containerId}-fileInput" accept="image/*" multiple style="display:none">
+      </div>
+      <div class="photo-camera-area" id="${containerId}-cameraArea" style="display:none">
+        <video id="${containerId}-video" autoplay playsinline class="photo-preview"></video>
+        <div class="photo-camera-controls">
+          <button class="tool-action-btn primary" id="${containerId}-captureBtn">📸 Capture</button>
+          <button class="tool-action-btn secondary" id="${containerId}-switchBtn">🔄 Switch Camera</button>
+          <button class="tool-action-btn secondary" id="${containerId}-closeCam">✕ Close</button>
+        </div>
+      </div>
+      <div class="photo-gallery" id="${containerId}-gallery"></div>
+      <textarea class="tool-caption" id="${containerId}-caption" placeholder="Add a description of your photo(s)..." rows="2"></textarea>
+      <div class="tool-actions">
+        <button class="tool-action-btn primary" onclick="submitPhotos('${containerId}')">📤 Submit Photo(s)</button>
+        <span class="tool-status" id="${containerId}-status"></span>
+      </div>
+    </div>`;
+
+  let photos = JSON.parse(localStorage.getItem(storageKey) || '[]');
+  let stream = null;
+  let facingMode = 'environment';
+
+  function renderGallery() {
+    const gal = document.getElementById(containerId + '-gallery');
+    if (!photos.length) { gal.innerHTML = '<p class="photo-empty">No photos yet — take or upload up to ' + maxPhotos + '</p>'; return; }
+    gal.innerHTML = photos.map((p, i) => `
+      <div class="photo-thumb-wrap">
+        <img src="${p}" class="photo-thumb" alt="Photo ${i+1}">
+        <button class="photo-remove" onclick="removePhoto('${containerId}',${i})" title="Remove">✕</button>
+      </div>
+    `).join('');
+  }
+
+  function addPhoto(dataUrl) {
+    if (photos.length >= maxPhotos) { alert('Maximum ' + maxPhotos + ' photos. Remove one first.'); return; }
+    photos.push(dataUrl);
+    localStorage.setItem(storageKey, JSON.stringify(photos));
+    renderGallery();
+  }
+
+  window['removePhoto'] = window['removePhoto'] || function(cid, idx) {
+    const key = cid + '-photo';
+    let p = JSON.parse(localStorage.getItem(key) || '[]');
+    p.splice(idx, 1);
+    localStorage.setItem(key, JSON.stringify(p));
+    photos = p;
+    renderGallery();
+  };
+
+  // Camera
+  const cameraBtn = document.getElementById(containerId + '-cameraBtn');
+  const cameraArea = document.getElementById(containerId + '-cameraArea');
+  const video = document.getElementById(containerId + '-video');
+  const captureBtn = document.getElementById(containerId + '-captureBtn');
+  const switchBtn = document.getElementById(containerId + '-switchBtn');
+  const closeBtn = document.getElementById(containerId + '-closeCam');
+
+  async function startCamera() {
+    try {
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: false });
+      video.srcObject = stream;
+      cameraArea.style.display = 'block';
+    } catch (err) {
+      alert('Camera access denied or unavailable. Try uploading a photo instead.');
+    }
+  }
+
+  function stopCamera() {
+    if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+    cameraArea.style.display = 'none';
+  }
+
+  cameraBtn.addEventListener('click', startCamera);
+  closeBtn.addEventListener('click', stopCamera);
+  switchBtn.addEventListener('click', () => {
+    facingMode = facingMode === 'environment' ? 'user' : 'environment';
+    startCamera();
+  });
+
+  captureBtn.addEventListener('click', () => {
+    const c = document.createElement('canvas');
+    c.width = video.videoWidth;
+    c.height = video.videoHeight;
+    c.getContext('2d').drawImage(video, 0, 0);
+    addPhoto(c.toDataURL('image/jpeg', 0.85));
+    stopCamera();
+  });
+
+  // File upload
+  document.getElementById(containerId + '-fileInput').addEventListener('change', e => {
+    Array.from(e.target.files).forEach(file => {
+      if (photos.length >= maxPhotos) return;
+      const reader = new FileReader();
+      reader.onload = ev => addPhoto(ev.target.result);
+      reader.readAsDataURL(file);
+    });
+    e.target.value = '';
+  });
+
+  // Restore caption
+  const captionEl = document.getElementById(containerId + '-caption');
+  captionEl.value = localStorage.getItem(storageKey + '-caption') || '';
+  captionEl.addEventListener('input', () => localStorage.setItem(storageKey + '-caption', captionEl.value));
+
+  renderGallery();
+  window['_photo_' + containerId] = { storageKey };
+}
+
+function submitPhotos(containerId) {
+  const ref = window['_photo_' + containerId];
+  if (!ref) return;
+  const photos = JSON.parse(localStorage.getItem(ref.storageKey) || '[]');
+  if (!photos.length) { alert('Please add at least one photo before submitting.'); return; }
+  const status = document.getElementById(containerId + '-status');
+  if (status) { status.textContent = '✅ Photos saved! (Submit to teacher coming soon)'; setTimeout(() => status.textContent = '', 4000); }
+  // Future: submitToTeacher({ type: 'photos', data: photos, containerId });
+}
+
+// ===== SUBMISSION HELPER (Phase 3) =====
+const APPS_SCRIPT_URL = ''; // Will be set after teacher deploys Apps Script
+async function submitToTeacher(payload) {
+  if (!APPS_SCRIPT_URL) {
+    console.log('Apps Script URL not configured. Saving locally.', payload);
+    return { success: false, message: 'Submission endpoint not configured yet.' };
+  }
+  const name = localStorage.getItem('g7-student-name') || 'Unknown';
+  const email = localStorage.getItem('g7-student-email') || '';
+  try {
+    const resp = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ ...payload, studentName: name, studentEmail: email, timestamp: new Date().toISOString() })
+    });
+    return await resp.json();
+  } catch (err) {
+    console.error('Submission error:', err);
+    return { success: false, message: err.message };
+  }
+}
+
 // ===== INIT ON LOAD =====
 document.addEventListener('DOMContentLoaded', () => {
   loadTheme();

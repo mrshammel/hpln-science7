@@ -526,6 +526,36 @@
         <div class="glass-card content"><h3 class="section-title"><span class="icon">3️⃣</span> Force Analysis</h3><p style="font-size:.9rem;color:var(--text2);margin-bottom:8px">What internal and external forces will act on your bridge? How does your design handle each one?</p><textarea id="ptd3" placeholder="Analyze the forces on your bridge…" oninput="savePTd(3)" style="min-height:120px"></textarea></div>
         <div class="glass-card content"><h3 class="section-title"><span class="icon">4️⃣</span> Joints & Connections</h3><p style="font-size:.9rem;color:var(--text2);margin-bottom:8px">What types of joints and fasteners will you use? Explain why each connection type was chosen.</p><textarea id="ptd4" placeholder="Describe your joints and connections…" oninput="savePTd(4)" style="min-height:120px"></textarea></div>
         <div class="glass-card content"><h3 class="section-title"><span class="icon">5️⃣</span> Safety & Improvement</h3><p style="font-size:.9rem;color:var(--text2);margin-bottom:8px">What safety margin did you build in? What potential failure points exist, and how would you test and improve your design?</p><textarea id="ptd5" placeholder="Discuss safety and improvements…" oninput="savePTd(5)" style="min-height:120px"></textarea></div>
+
+        <!-- INTERACTIVE TOOLS FOR PERFORMANCE TASK -->
+        <div class="glass-card content">
+          <h3 class="section-title"><span class="icon">✏️</span> Force Diagram</h3>
+          <p style="font-size:.9rem;color:var(--text2);margin-bottom:8px">Draw your bridge with labeled force arrows showing tension, compression, shear, and torsion.</p>
+          <div id="forceDiagramCanvas"></div>
+        </div>
+        <div class="glass-card content">
+          <h3 class="section-title"><span class="icon">📸</span> Structure Photo Evidence</h3>
+          <p style="font-size:.9rem;color:var(--text2);margin-bottom:8px">If you built a model of your structure, take a photo or upload an image of it here.</p>
+          <div id="structurePhoto"></div>
+        </div>
+        <script>
+          document.addEventListener('DOMContentLoaded', function() {
+            initDrawingCanvas('forceDiagramCanvas', {
+              title: 'Force Diagram',
+              instructions: 'Draw your bridge design and use colored arrows to show the forces: red = compression (pushing), blue = tension (pulling), green = shear, orange = torsion. Label each force.',
+              storageKey: 'g7-unitd-l8-force-diagram',
+              width: 800,
+              height: 500
+            });
+            initPhotoCapture('structurePhoto', {
+              title: 'Upload Structure Photos',
+              instructions: 'Take a photo of your model bridge or upload images showing your design. You can include up to 3 photos showing different angles or the building process.',
+              storageKey: 'g7-unitd-l8-structure-photos',
+              maxPhotos: 3
+            });
+          });
+        </script>
+
         <div class="glass-card content" style="text-align:center;padding:24px"><h3 class="section-title"><span class="icon">🏆</span> Submit Your Design Report</h3><p style="font-size:.9rem;color:var(--text2);margin-bottom:16px">Make sure all 5 sections are complete.</p><button class="activity-btn" id="ptSubmitBtnD" onclick="submitPTd()" style="font-size:1rem;padding:14px 32px">📨 Submit Performance Task</button></div>
       </div>
 

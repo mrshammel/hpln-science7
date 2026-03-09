@@ -549,7 +549,19 @@
         <div class="constructed-response">
           <h4>✍️ Constructed Response</h4>
           <p style="font-size:.88rem;color:var(--text2);margin-bottom:8px">Draw or describe a food web from an Alberta ecosystem (e.g., boreal forest, prairie, wetland). Include at least 2 producers, 3 consumers, and 1 decomposer. Then explain: what would happen if one of the producers disappeared?</p>
-          <textarea id="crResponse3" placeholder="Type your response here…" oninput="saveCR3()"></textarea>
+          <textarea id="crResponse3" placeholder="Type your written response here…" oninput="saveCR3()"></textarea>
+          <div id="foodWebCanvas"></div>
+          <script>
+            document.addEventListener('DOMContentLoaded', function() {
+              initDrawingCanvas('foodWebCanvas', {
+                title: 'Draw Your Food Web',
+                instructions: 'Use the canvas below to draw your food web. Use different colors for producers (green), consumers (blue/red), and decomposers (brown). Draw arrows to show energy flow.',
+                storageKey: 'g7-unita-l3-foodweb-drawing',
+                width: 800,
+                height: 500
+              });
+            });
+          </script>
         </div>
 
         <div class="reflection-box">
