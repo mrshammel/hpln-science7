@@ -17,7 +17,7 @@
     .landing-logo h2{font-size:1.1rem;color:var(--accent);letter-spacing:-.5px}
     .landing-logo span{display:block;font-family:'Inter';font-size:.7rem;color:var(--text3);font-weight:500;letter-spacing:.5px;text-transform:uppercase;margin-top:2px}
 
-    .landing-progress{display:flex;align-items:center;gap:12px;font-size:.85rem;color:var(--text3)}
+    .landing-progress{display:flex;align-items:center;justify-content:center;gap:12px;font-size:.85rem;color:var(--text3);width:100%;margin-bottom:16px}
     .landing-progress-bar{width:160px;height:8px;background:var(--card);border-radius:20px;overflow:hidden}
     .landing-progress-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,#4ade80,#38bdf8,#a78bfa);transition:width .5s ease}
 
@@ -72,14 +72,14 @@
     <h1>Explore. Discover. Master.</h1>
     <h2 style="font-size:1.4rem;font-weight:500;color:var(--accent);letter-spacing:3px;text-transform:uppercase;margin:4px 0 16px;opacity:.85">Grade 7 Science — Alberta Curriculum</h2>
     <p>Five interactive units aligned to the Alberta Grade 7 Science curriculum. Learn at your own pace, prove your mastery, and unlock new challenges.</p>
-    <div class="landing-progress">
-      <span id="overallLabel">0 / 5 units complete</span>
-      <div class="landing-progress-bar"><div class="landing-progress-fill" id="overallFill" style="width:0%"></div></div>
-    </div>
   </div>
 
   <!-- STATS BAR -->
   <div class="stats-bar">
+    <div class="landing-progress" style="flex-basis:100%">
+      <span id="overallLabel">0 / 5 units complete</span>
+      <div class="landing-progress-bar"><div class="landing-progress-fill" id="overallFill" style="width:0%"></div></div>
+    </div>
     <div class="stat"><div class="stat-num" id="statLessons">0</div><div class="stat-label">Lessons Passed</div></div>
     <div class="stat"><div class="stat-num" id="statActivities">0</div><div class="stat-label">Activities Done</div></div>
     <div class="stat"><div class="stat-num" id="statAvg">—</div><div class="stat-label">Avg Score</div></div>
