@@ -8,7 +8,8 @@
 
 // ===== TEACHER UNLOCK =====
 function isTeacherUnlocked() {
-  return localStorage.getItem('g7-teacher-unlock') === 'true';
+  return localStorage.getItem('g7-teacher-unlock') === 'true'
+    && !!localStorage.getItem('g7-teacher-name');
 }
 
 function toggleTeacherUnlock() {
@@ -124,6 +125,11 @@ function googleSignIn() {
   if (!name || !name.trim()) return;
   const email = prompt('Enter your school email:');
   if (!email || !email.trim()) return;
+  // Clear any teacher session so lessons lock for students
+  localStorage.removeItem('g7-teacher-unlock');
+  localStorage.removeItem('g7-teacher-name');
+  localStorage.removeItem('g7-teacher-email');
+  localStorage.removeItem('g7-teacher-avatar');
   localStorage.setItem('g7-student-name', name.trim());
   localStorage.setItem('g7-student-email', email.trim());
   checkSignIn();
