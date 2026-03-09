@@ -6,6 +6,90 @@
    grade recording, CSV/JSON export, navigation utilities.
    ============================================================ */
 
+// ===== TEACHER UNLOCK =====
+function isTeacherUnlocked() {
+  return localStorage.getItem('g7-teacher-unlock') === 'true';
+}
+
+function toggleTeacherUnlock() {
+  if (isTeacherUnlocked()) {
+    if (confirm('Deactivate teacher unlock mode?')) {
+      localStorage.removeItem('g7-teacher-unlock');
+      removeUnlockBadge();
+      if (typeof updateLock === 'function') updateLock();
+      // Re-lock quiz gate buttons
+      document.querySelectorAll('[id$="-quiz-btn"]').forEach(btn => {
+        const lessonNum = btn.id.match(/(\d+)/);
+        if (lessonNum) {
+          const n = parseInt(lessonNum[1]);
+          const acts = actComplete['l' + n];
+          const allDone = acts && Object.values(acts).every(v => v);
+          if (!allDone) {
+            btn.disabled = true;
+            btn.style.opacity = '.5';
+            btn.style.cursor = 'not-allowed';
+          }
+        }
+      });
+      alert('🔒 Teacher unlock deactivated.');
+    }
+    return;
+  }
+  const code = prompt('🔐 Enter teacher access code:');
+  if (!code) return;
+  if (code.trim() === 'shammel2026') {
+    localStorage.setItem('g7-teacher-unlock', 'true');
+    applyTeacherUnlock();
+    alert('🔓 Teacher unlock activated! All lessons and quizzes are now accessible.');
+  } else {
+    alert('❌ Invalid code.');
+  }
+}
+
+function applyTeacherUnlock() {
+  showUnlockBadge();
+  // Remove all nav locks
+  document.querySelectorAll('.nav-item.locked').forEach(nav => nav.classList.remove('locked'));
+  // Enable all quiz gate buttons
+  document.querySelectorAll('[id$="-quiz-btn"]').forEach(btn => {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.style.cursor = 'pointer';
+  });
+  // Update gate messages
+  document.querySelectorAll('[id$="-gate-msg"]').forEach(msg => {
+    if (!msg.textContent.includes('All activities complete')) {
+      msg.innerHTML = '🔓 Teacher unlock active — quiz available.';
+      msg.style.color = 'var(--accent)';
+    }
+  });
+}
+
+function showUnlockBadge() {
+  if (document.getElementById('teacherUnlockBadge')) return;
+  const badge = document.createElement('div');
+  badge.id = 'teacherUnlockBadge';
+  badge.title = 'Teacher Unlock Active — Click to deactivate';
+  badge.textContent = '🔓';
+  badge.onclick = toggleTeacherUnlock;
+  Object.assign(badge.style, {
+    position: 'fixed', bottom: '16px', right: '16px', zIndex: '99999',
+    background: 'rgba(74,222,128,.15)', border: '2px solid #4ade80',
+    borderRadius: '12px', padding: '6px 12px', fontSize: '1.1rem',
+    cursor: 'pointer', backdropFilter: 'blur(8px)',
+    boxShadow: '0 2px 12px rgba(74,222,128,.25)',
+    transition: 'transform .2s', userSelect: 'none'
+  });
+  badge.onmouseenter = () => badge.style.transform = 'scale(1.15)';
+  badge.onmouseleave = () => badge.style.transform = 'scale(1)';
+  document.body.appendChild(badge);
+}
+
+function removeUnlockBadge() {
+  const badge = document.getElementById('teacherUnlockBadge');
+  if (badge) badge.remove();
+}
+
 // ===== THEME =====
 function toggleTheme() {
   document.body.classList.toggle('light');
@@ -352,14 +436,16 @@ function checkGate(lesson) {
   const allDone = Object.values(acts).every(v => v);
   const btn = document.getElementById('l' + lesson + '-quiz-btn');
   const msg = document.getElementById('l' + lesson + '-gate-msg');
-  if (btn && allDone) {
+  // Teacher unlock bypasses activity gate
+  if (btn && (allDone || isTeacherUnlocked())) {
     btn.disabled = false;
     btn.style.opacity = '1';
     btn.style.cursor = 'pointer';
-    if (msg) { msg.innerHTML = '✅ All activities complete! You may now take the quiz.'; msg.style.color = 'var(--accent)'; }
+    if (msg && allDone) { msg.innerHTML = '✅ All activities complete! You may now take the quiz.'; msg.style.color = 'var(--accent)'; }
+    else if (msg && isTeacherUnlocked()) { msg.innerHTML = '🔓 Teacher unlock active — quiz available.'; msg.style.color = 'var(--accent)'; }
     // Set localStorage flag so lockMap can unlock the quiz page
     const unitKey = document.body.dataset.unitKey || document.body.dataset.unit || 'a';
-    localStorage.setItem(`g7-unit${unitKey}-l${lesson}-gate`, 'true');
+    if (allDone) localStorage.setItem(`g7-unit${unitKey}-l${lesson}-gate`, 'true');
     updateLock();
   }
 }
@@ -370,7 +456,7 @@ function updateLock() {
   document.querySelectorAll('.nav-item[data-page]').forEach(nav => {
     const page = nav.dataset.page;
     if (lockMap[page]) {
-      if (localStorage.getItem(lockMap[page])) {
+      if (isTeacherUnlocked() || localStorage.getItem(lockMap[page])) {
         nav.classList.remove('locked');
       } else {
         nav.classList.add('locked');
@@ -381,9 +467,9 @@ function updateLock() {
 
 // ===== PAGE NAVIGATION (within a unit) =====
 function goTo(page) {
-  // Check locks
+  // Check locks (skip if teacher unlock is active)
   const unitKey = document.body.dataset.unitKey || 'a';
-  if (typeof lockMap !== 'undefined' && lockMap[page]) {
+  if (!isTeacherUnlocked() && typeof lockMap !== 'undefined' && lockMap[page]) {
     if (!localStorage.getItem(lockMap[page])) return;
   }
   document.querySelectorAll('.lesson-page').forEach(p => p.classList.remove('active'));
@@ -877,7 +963,7 @@ function submitPhotos(containerId) {
 }
 
 // ===== SUBMISSION HELPER (Phase 3) =====
-const APPS_SCRIPT_URL = ''; // Will be set after teacher deploys Apps Script
+const APPS_SCRIPT_URL = localStorage.getItem('g7-apps-script-url') || 'https://script.google.com/macros/s/AKfycbwhr5HmNc1_5RBukfLmNdR6kWn9z6czPd-2IXZY93pGvodyf4NnZcGIAxkYwrgnmWybXQ/exec';
 async function submitToTeacher(payload) {
   if (!APPS_SCRIPT_URL) {
     console.log('Apps Script URL not configured. Saving locally.', payload);
@@ -912,5 +998,16 @@ document.addEventListener('DOMContentLoaded', () => {
       const tn = document.getElementById('teacherNav');
       if (tn) tn.style.display = tn.style.display === 'none' ? '' : 'none';
     }
+    // Ctrl+Shift+L = Teacher Unlock (Ctrl+Shift+U conflicts with Chrome)
+    if (e.ctrlKey && e.shiftKey && (e.key === 'L' || e.key === 'l')) {
+      e.preventDefault();
+      toggleTeacherUnlock();
+    }
   });
+  // Auto-apply teacher unlock if already activated
+  if (isTeacherUnlocked()) {
+    setTimeout(() => applyTeacherUnlock(), 300);
+  }
+  // Console helper for teacher unlock
+  window.teacherUnlock = toggleTeacherUnlock;
 });

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -969,11 +969,30 @@
 
     function updateLock(){
       const total=8;
+      if(typeof isTeacherUnlocked==='function'&&isTeacherUnlocked()){for(let i=1;i<=total;i++){document.querySelectorAll('.nav-item').forEach(n=>{if(n.dataset.page==='lesson'+i||n.dataset.page==='lesson'+i+'-quiz')n.classList.remove('locked');});const card=document.getElementById('homeCard'+i);if(card){card.classList.remove('locked');const b=card.querySelector('.card-btn');if(b&&b.textContent.includes('Locked'))b.textContent='Start Lesson →';}}return;}
       for(let i=1;i<=total;i++){const passed=localStorage.getItem('g7-unitd-lesson'+i+'-passed');if(passed){document.querySelectorAll('.nav-item').forEach(n=>{if(n.dataset.page==='lesson'+i||n.dataset.page==='lesson'+i+'-quiz')n.classList.add('completed');});const card=document.getElementById('homeCard'+i);if(card){card.classList.remove('locked');card.classList.add('completed');const b=card.querySelector('.card-btn');if(b)b.textContent='Review ✓';}const nx=i+1;if(nx<=total){document.querySelectorAll('.nav-item').forEach(n=>{if(n.dataset.page==='lesson'+nx||n.dataset.page==='lesson'+nx+'-quiz')n.classList.remove('locked');});const nc=document.getElementById('homeCard'+nx);if(nc){nc.classList.remove('locked');const b=nc.querySelector('.card-btn');if(b&&b.textContent.includes('Locked'))b.textContent='Start Lesson →';}}}
       }
     }
     function updateProgress(){let p=0;for(let i=1;i<=8;i++)if(localStorage.getItem('g7-unitd-lesson'+i+'-passed'))p++;const f=document.getElementById('progressFill');if(f)f.style.width=Math.round(p/8*100)+'%';}
     document.addEventListener('DOMContentLoaded',()=>{updateLock();updateProgress();});
+  </script>
+  <!-- Fallback: self-contained teacher unlock if shared.js fails -->
+  <script>
+  (function(){
+    if(typeof window.teacherUnlock==='function') return;
+    function unlockAll(){
+      document.querySelectorAll('.nav-item.locked').forEach(function(n){n.classList.remove('locked');});
+      document.querySelectorAll('.lesson-card.locked,.unit-card.locked').forEach(function(c){c.classList.remove('locked');var b=c.querySelector('.card-btn');if(b&&b.textContent.indexOf('Locked')>-1)b.textContent='Start Lesson →';});
+      document.querySelectorAll('[id$="-quiz-btn"]').forEach(function(b){b.disabled=false;b.style.opacity='1';b.style.cursor='pointer';});
+    }
+    window.teacherUnlock=function(){
+      try{if(localStorage.getItem('g7-teacher-unlock')==='true'){if(confirm('Deactivate teacher unlock?')){localStorage.removeItem('g7-teacher-unlock');alert('Locked.');location.reload();}return;}}catch(e){}
+      var code=prompt('Enter teacher access code:');if(!code)return;
+      if(code.trim()==='shammel2026'){try{localStorage.setItem('g7-teacher-unlock','true');}catch(e){}unlockAll();alert('Unlocked! All lessons accessible.');}else{alert('Invalid code.');}
+    };
+    document.addEventListener('keydown',function(e){if(e.ctrlKey&&e.shiftKey&&(e.key==='L'||e.key==='l')){e.preventDefault();window.teacherUnlock();}});
+    try{if(localStorage.getItem('g7-teacher-unlock')==='true')setTimeout(unlockAll,400);}catch(e){}
+  })();
   </script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -1552,6 +1552,17 @@
     // ===== PROGRESS =====
     function updateLock() {
       const totalLessons = 7;
+      // Teacher unlock bypass — remove all locks
+      if (typeof isTeacherUnlocked === 'function' && isTeacherUnlocked()) {
+        for (let i = 1; i <= totalLessons; i++) {
+          document.querySelectorAll('.nav-item').forEach(n => {
+            if (n.dataset.page === `lesson${i}` || n.dataset.page === `lesson${i}-quiz`) n.classList.remove('locked');
+          });
+          const card = document.getElementById(`homeCard${i}`);
+          if (card) { card.classList.remove('locked'); const btn = card.querySelector('.card-btn'); if (btn && btn.textContent.includes('Locked')) btn.textContent = 'Start Lesson →'; }
+        }
+        return;
+      }
       for (let i = 1; i <= totalLessons; i++) {
         const passed = localStorage.getItem(`g7-unitb-lesson${i}-passed`);
         if (passed) {
@@ -1579,6 +1590,24 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => { updateLock(); updateProgress(); });
+  </script>
+  <!-- Fallback: self-contained teacher unlock if shared.js fails -->
+  <script>
+  (function(){
+    if(typeof window.teacherUnlock==='function') return;
+    function unlockAll(){
+      document.querySelectorAll('.nav-item.locked').forEach(function(n){n.classList.remove('locked');});
+      document.querySelectorAll('.lesson-card.locked,.unit-card.locked').forEach(function(c){c.classList.remove('locked');var b=c.querySelector('.card-btn');if(b&&b.textContent.indexOf('Locked')>-1)b.textContent='Start Lesson →';});
+      document.querySelectorAll('[id$="-quiz-btn"]').forEach(function(b){b.disabled=false;b.style.opacity='1';b.style.cursor='pointer';});
+    }
+    window.teacherUnlock=function(){
+      try{if(localStorage.getItem('g7-teacher-unlock')==='true'){if(confirm('Deactivate teacher unlock?')){localStorage.removeItem('g7-teacher-unlock');alert('Locked.');location.reload();}return;}}catch(e){}
+      var code=prompt('Enter teacher access code:');if(!code)return;
+      if(code.trim()==='shammel2026'){try{localStorage.setItem('g7-teacher-unlock','true');}catch(e){}unlockAll();alert('Unlocked! All lessons accessible.');}else{alert('Invalid code.');}
+    };
+    document.addEventListener('keydown',function(e){if(e.ctrlKey&&e.shiftKey&&(e.key==='L'||e.key==='l')){e.preventDefault();window.teacherUnlock();}});
+    try{if(localStorage.getItem('g7-teacher-unlock')==='true')setTimeout(unlockAll,400);}catch(e){}
+  })();
   </script>
 </body>
 </html>
