@@ -174,7 +174,7 @@ function recordGrade(quizId, lessonTitle, score, total, passed) {
     else grades[existing].attempts = record.attempts;
   } else { grades.push(record); }
   localStorage.setItem('g7-grades', JSON.stringify(grades));
-  const url = localStorage.getItem('g7-apps-script-url');
+  const url = localStorage.getItem('g7-apps-script-url') || APPS_SCRIPT_URL;
   if (url) {
     fetch(url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(record) }).catch(e => console.log('Apps Script sync:', e));
   }
