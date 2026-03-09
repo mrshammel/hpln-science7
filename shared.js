@@ -147,6 +147,10 @@ function studentSignOut() {
   if (!confirm('Sign out? Your progress on this device will be cleared.')) return;
   localStorage.removeItem('g7-student-name');
   localStorage.removeItem('g7-student-email');
+  localStorage.removeItem('g7-teacher-unlock');
+  localStorage.removeItem('g7-teacher-name');
+  localStorage.removeItem('g7-teacher-email');
+  localStorage.removeItem('g7-teacher-avatar');
   location.reload();
 }
 
