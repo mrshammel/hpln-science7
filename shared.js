@@ -296,14 +296,53 @@ function showResults(qid) {
 // Each unit page defines its own actComplete map and calls these helpers.
 let actComplete = {};
 
+/** Save actComplete state to localStorage */
+function saveActState() {
+  const unitKey = document.body.dataset.unitKey || document.body.dataset.unit || 'a';
+  localStorage.setItem(`g7-unit${unitKey}-actComplete`, JSON.stringify(actComplete));
+}
+
+/** Restore actComplete state from localStorage */
+function restoreActState() {
+  const unitKey = document.body.dataset.unitKey || document.body.dataset.unit || 'a';
+  const saved = localStorage.getItem(`g7-unit${unitKey}-actComplete`);
+  if (saved) {
+    try {
+      const restored = JSON.parse(saved);
+      // Merge restored state into actComplete (preserving structure)
+      for (const lesson in restored) {
+        if (!actComplete[lesson]) actComplete[lesson] = {};
+        for (const act in restored[lesson]) {
+          if (restored[lesson][act]) actComplete[lesson][act] = true;
+        }
+      }
+    } catch(e) { /* ignore corrupt data */ }
+  }
+  // Check all gates after restoring
+  for (const key in actComplete) {
+    const lessonNum = key.replace('l', '');
+    checkGate(parseInt(lessonNum));
+  }
+}
+
 /** Mark an activity as complete and check the gate */
 function markActivityDone(lesson, actName, score, total) {
   const key = 'l' + lesson;
   if (!actComplete[key]) actComplete[key] = {};
   actComplete[key][actName] = true;
+  // Persist to localStorage
+  saveActState();
   const unitKey = document.body.dataset.unitKey || 'a';
+  // Also save the individual score for potential restoration
+  localStorage.setItem(`g7-unit${unitKey}-l${lesson}-${actName}-score`, `${score}/${total}`);
   recordGrade(`${unitKey}-l${lesson}-${actName}`, `Unit ${unitKey.toUpperCase()} Lesson ${lesson} Activity: ${actName}`, score, total, true);
   checkGate(lesson);
+}
+
+/** Check if an activity was already completed (for skipping re-render) */
+function isActivityDone(lesson, actName) {
+  const key = 'l' + lesson;
+  return actComplete[key] && actComplete[key][actName];
 }
 
 /** Check if all activities for a lesson are complete; unlock quiz button */
@@ -865,6 +904,8 @@ document.addEventListener('DOMContentLoaded', () => {
   loadSavedText();
   initReadToMe();
   if (typeof updateLock === 'function') updateLock();
+  // Restore saved activity completion state
+  restoreActState();
   // Shift+T reveals teacher nav
   document.addEventListener('keydown', e => {
     if (e.shiftKey && e.key === 'T') {

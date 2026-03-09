@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -363,6 +363,13 @@
           </ul>
         </div>
 
+        <!-- REFLECTION -->
+        <div class="reflection-box">
+          <h3>🪞 Lesson Reflection</h3>
+          <p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">Think about what you learned today. What surprised you most about plants? How would your daily life be different without them?</p>
+          <textarea id="reflectionText" placeholder="Type your reflection here…" oninput="saveReflection()"></textarea>
+        </div>
+
         <!-- QUIZ GATE -->
         <div class="glass-card content" id="l1-gate" style="text-align:center;padding:24px">
           <p id="l1-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete all 3 activities above to unlock the quiz.</p>
@@ -370,13 +377,6 @@
             <button class="nav-btn" onclick="goTo('home')">← Home</button>
             <button class="nav-btn primary" id="l1-quiz-btn" onclick="goTo('lesson1-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button>
           </div>
-        </div>
-
-        <!-- REFLECTION -->
-        <div class="reflection-box">
-          <h3>🪞 Lesson Reflection</h3>
-          <p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">Think about what you learned today. What surprised you most about plants? How would your daily life be different without them?</p>
-          <textarea id="reflectionText" placeholder="Type your reflection here…" oninput="saveReflection()"></textarea>
         </div>
       </div>
 
@@ -557,18 +557,18 @@
           </ul>
         </div>
 
+        <div class="reflection-box">
+          <h3>🪞 Lesson Reflection</h3>
+          <p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">Think about the seeds and fruits you see every day (apples, dandelions, berries, maple keys). How do the dispersal methods you learned about help explain what you see in nature?</p>
+          <textarea id="reflectionText2" placeholder="Type your reflection here…" oninput="saveReflection2()"></textarea>
+        </div>
+
         <div class="glass-card content" id="l2-gate" style="text-align:center;padding:24px">
           <p id="l2-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete all 3 activities above to unlock the quiz.</p>
           <div class="lesson-nav">
             <button class="nav-btn" onclick="goTo('home')">← Home</button>
             <button class="nav-btn primary" id="l2-quiz-btn" onclick="goTo('lesson2-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button>
           </div>
-        </div>
-
-        <div class="reflection-box">
-          <h3>🪞 Lesson Reflection</h3>
-          <p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">Think about the seeds and fruits you see every day (apples, dandelions, berries, maple keys). How do the dispersal methods you learned about help explain what you see in nature?</p>
-          <textarea id="reflectionText2" placeholder="Type your reflection here…" oninput="saveReflection2()"></textarea>
         </div>
       </div>
 
@@ -687,18 +687,18 @@
           <textarea id="crResponse3" placeholder="Type your answer here…" oninput="saveCR3()"></textarea>
         </div>
 
+        <div class="reflection-box">
+          <h3>🪞 Lesson Reflection</h3>
+          <p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">Look outside or think about your neighbourhood. What types of plants can you identify? Are they vascular or non-vascular? Angiosperms or gymnosperms?</p>
+          <textarea id="reflectionText3" placeholder="Type your reflection here…" oninput="saveReflection3()"></textarea>
+        </div>
+
         <div class="glass-card content" id="l3-gate" style="text-align:center;padding:24px">
           <p id="l3-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete both activities above to unlock the quiz.</p>
           <div class="lesson-nav">
             <button class="nav-btn" onclick="goTo('lesson2-quiz')">← Previous</button>
             <button class="nav-btn primary" id="l3-quiz-btn" onclick="goTo('lesson3-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button>
           </div>
-        </div>
-
-        <div class="reflection-box">
-          <h3>🪞 Lesson Reflection</h3>
-          <p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">Look outside or think about your neighbourhood. What types of plants can you identify? Are they vascular or non-vascular? Angiosperms or gymnosperms?</p>
-          <textarea id="reflectionText3" placeholder="Type your reflection here…" oninput="saveReflection3()"></textarea>
         </div>
       </div>
 
@@ -797,18 +797,18 @@
           <textarea id="crResponse4" placeholder="Type your experiment design here…" oninput="saveCR4()"></textarea>
         </div>
 
+        <div class="reflection-box">
+          <h3>🪞 Lesson Reflection</h3>
+          <p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">If you could grow food at home, which method would you choose and why? What factors would you need to control?</p>
+          <textarea id="reflectionText4" placeholder="Type your reflection here…" oninput="saveReflection4()"></textarea>
+        </div>
+
         <div class="glass-card content" id="l4-gate" style="text-align:center;padding:24px">
           <p id="l4-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete both activities above to unlock the quiz.</p>
           <div class="lesson-nav">
             <button class="nav-btn" onclick="goTo('lesson3-quiz')">← Previous</button>
             <button class="nav-btn primary" id="l4-quiz-btn" onclick="goTo('lesson4-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button>
           </div>
-        </div>
-
-        <div class="reflection-box">
-          <h3>🪞 Lesson Reflection</h3>
-          <p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">If you could grow food at home, which method would you choose and why? What factors would you need to control?</p>
-          <textarea id="reflectionText4" placeholder="Type your reflection here…" oninput="saveReflection4()"></textarea>
         </div>
       </div>
 
@@ -910,18 +910,18 @@
           <textarea id="crResponse5" placeholder="Type your answer here…" oninput="saveCR5()"></textarea>
         </div>
 
+        <div class="reflection-box">
+          <h3>🪞 Lesson Reflection</h3>
+          <p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">Would you buy organic or conventional food? What factors would influence your decision?</p>
+          <textarea id="reflectionText5" placeholder="Type your reflection here…" oninput="saveReflection5()"></textarea>
+        </div>
+
         <div class="glass-card content" id="l5-gate" style="text-align:center;padding:24px">
           <p id="l5-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete both activities above to unlock the quiz.</p>
           <div class="lesson-nav">
             <button class="nav-btn" onclick="goTo('lesson4-quiz')">← Previous</button>
             <button class="nav-btn primary" id="l5-quiz-btn" onclick="goTo('lesson5-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button>
           </div>
-        </div>
-
-        <div class="reflection-box">
-          <h3>🪞 Lesson Reflection</h3>
-          <p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">Would you buy organic or conventional food? What factors would influence your decision?</p>
-          <textarea id="reflectionText5" placeholder="Type your reflection here…" oninput="saveReflection5()"></textarea>
         </div>
       </div>
 
@@ -1019,18 +1019,18 @@
           <textarea id="crResponse6" placeholder="Type your answer here…" oninput="saveCR6()"></textarea>
         </div>
 
+        <div class="reflection-box">
+          <h3>🪞 Lesson Reflection</h3>
+          <p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">Think about the food you eat every day. How has selective breeding or modern agriculture changed the plants that become your food?</p>
+          <textarea id="reflectionText6" placeholder="Type your reflection here…" oninput="saveReflection6()"></textarea>
+        </div>
+
         <div class="glass-card content" id="l6-gate" style="text-align:center;padding:24px">
           <p id="l6-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete both activities above to unlock the quiz.</p>
           <div class="lesson-nav">
             <button class="nav-btn" onclick="goTo('lesson5-quiz')">← Previous</button>
             <button class="nav-btn primary" id="l6-quiz-btn" onclick="goTo('lesson6-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button>
           </div>
-        </div>
-
-        <div class="reflection-box">
-          <h3>🪞 Lesson Reflection</h3>
-          <p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">Think about the food you eat every day. How has selective breeding or modern agriculture changed the plants that become your food?</p>
-          <textarea id="reflectionText6" placeholder="Type your reflection here…" oninput="saveReflection6()"></textarea>
         </div>
       </div>
 

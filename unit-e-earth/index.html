@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -257,6 +257,13 @@
           </ul>
         </div>
 
+        <!-- REFLECTION -->
+        <div class="reflection-box">
+          <h3>🪞 Lesson Reflection</h3>
+          <p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">Think about what you learned today. What was the most interesting thing you discovered about Earth's interior or rocks? Is there anything you're still unsure about?</p>
+          <textarea id="reflectionText" placeholder="Type your reflection here…" oninput="saveReflection()"></textarea>
+        </div>
+
         <!-- QUIZ GATE -->
         <div class="glass-card content" id="l1-gate" style="text-align:center;padding:24px">
           <p id="l1-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete all 3 activities above to unlock the quiz.</p>
@@ -264,13 +271,6 @@
             <button class="nav-btn" onclick="goTo('home')">← Home</button>
             <button class="nav-btn primary" id="l1-quiz-btn" onclick="goTo('lesson1-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button>
           </div>
-        </div>
-
-        <!-- REFLECTION -->
-        <div class="reflection-box">
-          <h3>🪞 Lesson Reflection</h3>
-          <p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">Think about what you learned today. What was the most interesting thing you discovered about Earth's interior or rocks? Is there anything you're still unsure about?</p>
-          <textarea id="reflectionText" placeholder="Type your reflection here…" oninput="saveReflection()"></textarea>
         </div>
       </div>
 
@@ -425,18 +425,18 @@
           </ul>
         </div>
 
+        <div class="reflection-box">
+          <h3>🪞 Lesson Reflection</h3>
+          <p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">The continents are still moving today! What do you think Earth will look like in 250 million years? How might the movement of plates affect Alberta in the distant future?</p>
+          <textarea id="reflectionText2" placeholder="Type your reflection here…" oninput="saveReflection2()"></textarea>
+        </div>
+
         <div class="glass-card content" id="l2-gate" style="text-align:center;padding:24px">
           <p id="l2-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete all 3 activities above to unlock the quiz.</p>
           <div class="lesson-nav">
             <button class="nav-btn" onclick="goTo('home')">← Home</button>
             <button class="nav-btn primary" id="l2-quiz-btn" onclick="goTo('lesson2-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button>
           </div>
-        </div>
-
-        <div class="reflection-box">
-          <h3>🪞 Lesson Reflection</h3>
-          <p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">The continents are still moving today! What do you think Earth will look like in 250 million years? How might the movement of plates affect Alberta in the distant future?</p>
-          <textarea id="reflectionText2" placeholder="Type your reflection here…" oninput="saveReflection2()"></textarea>
         </div>
       </div>
 
@@ -456,8 +456,8 @@
         <div class="glass-card content"><h3 class="section-title"><span class="icon">🔄</span> Activity 1: Rock Transformer</h3><p style="color:var(--text2);font-size:.9rem;margin-bottom:12px">Identify what process transforms each rock.</p><div id="l3TransArea"></div><div id="l3TransScore"></div></div>
         <div class="glass-card content"><h3 class="section-title"><span class="icon">🪨</span> Activity 2: Rock Type Identifier</h3><p style="color:var(--text2);font-size:.9rem;margin-bottom:12px">Classify each rock by its formation process.</p><div id="l3TypeArea"></div><div id="l3TypeScore"></div></div>
         <div class="glass-card content"><h3 class="section-title"><span class="icon">✏️</span> Constructed Response</h3><p style="font-size:.9rem;color:var(--text2);margin-bottom:8px">Trace the journey of a granite rock (igneous) as it transforms through ALL three rock types. Describe every process it goes through.</p><textarea id="crResponse3" placeholder="Type your answer here…" oninput="saveCR3()"></textarea></div>
-        <div class="glass-card content" id="l3-gate" style="text-align:center;padding:24px"><p id="l3-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete both activities to unlock the quiz.</p><div class="lesson-nav"><button class="nav-btn" onclick="goTo('lesson2-quiz')">← Previous</button><button class="nav-btn primary" id="l3-quiz-btn" onclick="goTo('lesson3-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button></div></div>
         <div class="reflection-box"><h3>🪞 Lesson Reflection</h3><textarea id="reflectionText3" placeholder="Have you ever seen a rock that looked like it had layers? That could be sedimentary rock! What rocks have you noticed in Alberta?" oninput="saveReflection3()"></textarea></div>
+        <div class="glass-card content" id="l3-gate" style="text-align:center;padding:24px"><p id="l3-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete both activities to unlock the quiz.</p><div class="lesson-nav"><button class="nav-btn" onclick="goTo('lesson2-quiz')">← Previous</button><button class="nav-btn primary" id="l3-quiz-btn" onclick="goTo('lesson3-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button></div></div>
       </div>
       <div class="lesson-page" id="page-lesson3-quiz"><div class="lesson-header"><div class="lesson-num">Lesson 3 — Quiz</div><h1 class="lesson-title">Check Your Understanding</h1><p class="lesson-subtitle">You need 80% to pass!</p></div><div class="need-help" style="margin-bottom:20px"><strong>💡 Before you start:</strong> Review the rock cycle processes and rock types.</div><div id="quiz3-area"></div></div>
 
@@ -470,8 +470,8 @@
         <div class="glass-card content"><h3 class="section-title"><span class="icon">🌬️</span> Activity 1: Weathering Classifier</h3><p style="color:var(--text2);font-size:.9rem;margin-bottom:12px">Classify each scenario as mechanical or chemical weathering.</p><div id="l4WeathArea"></div><div id="l4WeathScore"></div></div>
         <div class="glass-card content"><h3 class="section-title"><span class="icon">🏔️</span> Activity 2: Alberta Landform Matcher</h3><p style="color:var(--text2);font-size:.9rem;margin-bottom:12px">Match each Alberta landform to the erosion process that created it.</p><div id="l4LandArea"></div><div id="l4LandScore"></div></div>
         <div class="glass-card content"><h3 class="section-title"><span class="icon">✏️</span> Constructed Response</h3><p style="font-size:.9rem;color:var(--text2);margin-bottom:8px">The Drumheller Badlands and Hoodoos are world-famous landforms in Alberta. Explain how weathering and erosion created them over millions of years.</p><textarea id="crResponse4" placeholder="Type your answer here…" oninput="saveCR4()"></textarea></div>
-        <div class="glass-card content" id="l4-gate" style="text-align:center;padding:24px"><p id="l4-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete both activities to unlock the quiz.</p><div class="lesson-nav"><button class="nav-btn" onclick="goTo('lesson3-quiz')">← Previous</button><button class="nav-btn primary" id="l4-quiz-btn" onclick="goTo('lesson4-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button></div></div>
         <div class="reflection-box"><h3>🪞 Lesson Reflection</h3><textarea id="reflectionText4" placeholder="Have you visited the Badlands or seen hoodoos? What evidence of weathering or erosion can you see in your own community?" oninput="saveReflection4()"></textarea></div>
+        <div class="glass-card content" id="l4-gate" style="text-align:center;padding:24px"><p id="l4-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete both activities to unlock the quiz.</p><div class="lesson-nav"><button class="nav-btn" onclick="goTo('lesson3-quiz')">← Previous</button><button class="nav-btn primary" id="l4-quiz-btn" onclick="goTo('lesson4-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button></div></div>
       </div>
       <div class="lesson-page" id="page-lesson4-quiz"><div class="lesson-header"><div class="lesson-num">Lesson 4 — Quiz</div><h1 class="lesson-title">Check Your Understanding</h1><p class="lesson-subtitle">You need 80% to pass!</p></div><div class="need-help" style="margin-bottom:20px"><strong>💡 Before you start:</strong> Review weathering types, erosion agents, and Alberta landforms.</div><div id="quiz4-area"></div></div>
 
@@ -484,8 +484,8 @@
         <div class="glass-card content"><h3 class="section-title"><span class="icon">🦕</span> Activity 1: Fossil Layer Detective</h3><p style="color:var(--text2);font-size:.9rem;margin-bottom:12px">Use the law of superposition — determine which fossil is older based on rock layer position.</p><div id="l5FossilArea"></div><div id="l5FossilScore"></div></div>
         <div class="glass-card content"><h3 class="section-title"><span class="icon">⏳</span> Activity 2: Time Scale Navigator</h3><p style="color:var(--text2);font-size:.9rem;margin-bottom:12px">Place major events on the geological time scale.</p><div id="l5TimeArea"></div><div id="l5TimeScore"></div></div>
         <div class="glass-card content"><h3 class="section-title"><span class="icon">✏️</span> Constructed Response</h3><p style="font-size:.9rem;color:var(--text2);margin-bottom:8px">Why are fossils almost never found in igneous or metamorphic rock? Use your knowledge of how these rocks form to explain.</p><textarea id="crResponse5" placeholder="Type your answer here…" oninput="saveCR5()"></textarea></div>
-        <div class="glass-card content" id="l5-gate" style="text-align:center;padding:24px"><p id="l5-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete both activities to unlock the quiz.</p><div class="lesson-nav"><button class="nav-btn" onclick="goTo('lesson4-quiz')">← Previous</button><button class="nav-btn primary" id="l5-quiz-btn" onclick="goTo('lesson5-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button></div></div>
         <div class="reflection-box"><h3>🪞 Lesson Reflection</h3><textarea id="reflectionText5" placeholder="If you could visit the Royal Tyrrell Museum in Drumheller, what fossils would you most want to see? Why?" oninput="saveReflection5()"></textarea></div>
+        <div class="glass-card content" id="l5-gate" style="text-align:center;padding:24px"><p id="l5-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete both activities to unlock the quiz.</p><div class="lesson-nav"><button class="nav-btn" onclick="goTo('lesson4-quiz')">← Previous</button><button class="nav-btn primary" id="l5-quiz-btn" onclick="goTo('lesson5-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button></div></div>
       </div>
       <div class="lesson-page" id="page-lesson5-quiz"><div class="lesson-header"><div class="lesson-num">Lesson 5 — Quiz</div><h1 class="lesson-title">Check Your Understanding</h1><p class="lesson-subtitle">You need 80% to pass!</p></div><div class="need-help" style="margin-bottom:20px"><strong>💡 Before you start:</strong> Review fossil formation, relative dating, and the geological time scale.</div><div id="quiz5-area"></div></div>
 
@@ -498,8 +498,8 @@
         <div class="glass-card content"><h3 class="section-title"><span class="icon">⛏️</span> Activity 1: Resource Explorer</h3><p style="color:var(--text2);font-size:.9rem;margin-bottom:12px">Match each exploration method to the resource it helps find.</p><div id="l6ExploreArea"></div><div id="l6ExploreScore"></div></div>
         <div class="glass-card content"><h3 class="section-title"><span class="icon">⚖️</span> Activity 2: Impact Evaluator</h3><p style="color:var(--text2);font-size:.9rem;margin-bottom:12px">Classify each statement as a benefit or cost of resource extraction.</p><div id="l6ImpactArea"></div><div id="l6ImpactScore"></div></div>
         <div class="glass-card content"><h3 class="section-title"><span class="icon">✏️</span> Constructed Response</h3><p style="font-size:.9rem;color:var(--text2);margin-bottom:8px">Alberta's oil sands are one of the largest petroleum reserves in the world. Discuss both the economic benefits and environmental costs. What role should reclamation play?</p><textarea id="crResponse6" placeholder="Type your answer here…" oninput="saveCR6()"></textarea></div>
-        <div class="glass-card content" id="l6-gate" style="text-align:center;padding:24px"><p id="l6-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete both activities to unlock the quiz.</p><div class="lesson-nav"><button class="nav-btn" onclick="goTo('lesson5-quiz')">← Previous</button><button class="nav-btn primary" id="l6-quiz-btn" onclick="goTo('lesson6-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button></div></div>
         <div class="reflection-box"><h3>🪞 Lesson Reflection</h3><textarea id="reflectionText6" placeholder="How do Alberta's geological resources affect your daily life? Think about energy, products, and jobs." oninput="saveReflection6()"></textarea></div>
+        <div class="glass-card content" id="l6-gate" style="text-align:center;padding:24px"><p id="l6-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete both activities to unlock the quiz.</p><div class="lesson-nav"><button class="nav-btn" onclick="goTo('lesson5-quiz')">← Previous</button><button class="nav-btn primary" id="l6-quiz-btn" onclick="goTo('lesson6-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button></div></div>
       </div>
       <div class="lesson-page" id="page-lesson6-quiz"><div class="lesson-header"><div class="lesson-num">Lesson 6 — Quiz</div><h1 class="lesson-title">Check Your Understanding</h1><p class="lesson-subtitle">You need 80% to pass!</p></div><div class="need-help" style="margin-bottom:20px"><strong>💡 Before you start:</strong> Review exploration methods, Alberta resources, and environmental impacts.</div><div id="quiz6-area"></div></div>
 

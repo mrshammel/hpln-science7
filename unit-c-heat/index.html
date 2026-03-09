@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -305,6 +305,13 @@
           </ul>
         </div>
 
+        <!-- REFLECTION -->
+        <div class="reflection-box">
+          <h3>🪞 Lesson Reflection</h3>
+          <p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">Think about what you learned. What was the most surprising thing about heat and temperature? Can you think of a real-life example where understanding heat vs. temperature matters?</p>
+          <textarea id="reflectionText" placeholder="Type your reflection here…" oninput="saveReflection()"></textarea>
+        </div>
+
         <!-- QUIZ GATE -->
         <div class="glass-card content" id="l1-gate" style="text-align:center;padding:24px">
           <p id="l1-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete all 3 activities above to unlock the quiz.</p>
@@ -312,13 +319,6 @@
             <button class="nav-btn" onclick="goTo('home')">← Home</button>
             <button class="nav-btn primary" id="l1-quiz-btn" onclick="goTo('lesson1-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button>
           </div>
-        </div>
-
-        <!-- REFLECTION -->
-        <div class="reflection-box">
-          <h3>🪞 Lesson Reflection</h3>
-          <p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">Think about what you learned. What was the most surprising thing about heat and temperature? Can you think of a real-life example where understanding heat vs. temperature matters?</p>
-          <textarea id="reflectionText" placeholder="Type your reflection here…" oninput="saveReflection()"></textarea>
         </div>
       </div>
 
@@ -477,18 +477,18 @@
           </ul>
         </div>
 
+        <div class="reflection-box">
+          <h3>🪞 Lesson Reflection</h3>
+          <p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">Look around the room you’re in. Can you spot examples of conduction, convection, or radiation happening right now? What insulating materials can you see?</p>
+          <textarea id="reflectionText2" placeholder="Type your reflection here…" oninput="saveReflection2()"></textarea>
+        </div>
+
         <div class="glass-card content" id="l2-gate" style="text-align:center;padding:24px">
           <p id="l2-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete all 3 activities above to unlock the quiz.</p>
           <div class="lesson-nav">
             <button class="nav-btn" onclick="goTo('home')">← Home</button>
             <button class="nav-btn primary" id="l2-quiz-btn" onclick="goTo('lesson2-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button>
           </div>
-        </div>
-
-        <div class="reflection-box">
-          <h3>🪞 Lesson Reflection</h3>
-          <p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">Look around the room you’re in. Can you spot examples of conduction, convection, or radiation happening right now? What insulating materials can you see?</p>
-          <textarea id="reflectionText2" placeholder="Type your reflection here…" oninput="saveReflection2()"></textarea>
         </div>
       </div>
 
@@ -567,11 +567,12 @@
           <p style="font-size:.9rem;color:var(--text2);margin-bottom:8px">Explain why telephone wires sag more in summer than winter. Use the particle model in your explanation.</p>
           <textarea id="crResponse3" placeholder="Type your answer here…" oninput="saveCR3()"></textarea>
         </div>
+        <div class="reflection-box"><h3>🪞 Lesson Reflection</h3><p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">Look around your home or school. Can you find any examples of thermal expansion in action? Think about doors, pipes, sidewalks, or windows.</p><textarea id="reflectionText3" placeholder="Type your reflection here…" oninput="saveReflection3()"></textarea></div>
+
         <div class="glass-card content" id="l3-gate" style="text-align:center;padding:24px">
           <p id="l3-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete both activities above to unlock the quiz.</p>
           <div class="lesson-nav"><button class="nav-btn" onclick="goTo('lesson2-quiz')">← Previous</button><button class="nav-btn primary" id="l3-quiz-btn" onclick="goTo('lesson3-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button></div>
         </div>
-        <div class="reflection-box"><h3>🪞 Lesson Reflection</h3><p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">Look around your home or school. Can you find any examples of thermal expansion in action? Think about doors, pipes, sidewalks, or windows.</p><textarea id="reflectionText3" placeholder="Type your reflection here…" oninput="saveReflection3()"></textarea></div>
       </div>
       <!-- LESSON 3 QUIZ -->
       <div class="lesson-page" id="page-lesson3-quiz">
@@ -630,8 +631,8 @@
         <div class="glass-card content"><h3 class="section-title"><span class="icon">⚙️</span> Activity 1: Technology Timeline</h3><p style="color:var(--text2);font-size:.9rem;margin-bottom:12px">Put these heat technologies in chronological order.</p><div id="l4TimeArea"></div><div id="l4TimeScore"></div></div>
         <div class="glass-card content"><h3 class="section-title"><span class="icon">☀️</span> Activity 2: Solar Sorter</h3><p style="color:var(--text2);font-size:.9rem;margin-bottom:12px">Classify each technology as passive solar, active solar, or neither.</p><div id="l4SolarArea"></div><div id="l4SolarScore"></div></div>
         <div class="glass-card content"><h3 class="section-title"><span class="icon">✏️</span> Constructed Response</h3><p style="font-size:.9rem;color:var(--text2);margin-bottom:8px">Choose a heat technology from any era and explain HOW it works using your knowledge of heat transfer (conduction, convection, or radiation).</p><textarea id="crResponse4" placeholder="Type your answer here…" oninput="saveCR4()"></textarea></div>
-        <div class="glass-card content" id="l4-gate" style="text-align:center;padding:24px"><p id="l4-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete both activities to unlock the quiz.</p><div class="lesson-nav"><button class="nav-btn" onclick="goTo('lesson3-quiz')">← Previous</button><button class="nav-btn primary" id="l4-quiz-btn" onclick="goTo('lesson4-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button></div></div>
         <div class="reflection-box"><h3>🪞 Lesson Reflection</h3><p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">How does your home or school building use heat technology? Think about heating systems, insulation, and windows.</p><textarea id="reflectionText4" placeholder="Type your reflection here…" oninput="saveReflection4()"></textarea></div>
+        <div class="glass-card content" id="l4-gate" style="text-align:center;padding:24px"><p id="l4-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete both activities to unlock the quiz.</p><div class="lesson-nav"><button class="nav-btn" onclick="goTo('lesson3-quiz')">← Previous</button><button class="nav-btn primary" id="l4-quiz-btn" onclick="goTo('lesson4-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button></div></div>
       </div>
       <div class="lesson-page" id="page-lesson4-quiz">
         <div class="lesson-header"><div class="lesson-num">Lesson 4 — Quiz</div><h1 class="lesson-title">Check Your Understanding</h1><p class="lesson-subtitle">Two wrong answers on the same topic will trigger a mini-lesson. You need 80% to pass!</p></div>
@@ -682,8 +683,8 @@
         <div class="glass-card content"><h3 class="section-title"><span class="icon">⚡</span> Activity 1: Energy Decision Maker</h3><p style="color:var(--text2);font-size:.9rem;margin-bottom:12px">A family is choosing how to heat their home. Evaluate each option's trade-offs.</p><div id="l5EnergyArea"></div><div id="l5EnergyScore"></div></div>
         <div class="glass-card content"><h3 class="section-title"><span class="icon">🌍</span> Activity 2: Impact Evaluator</h3><p style="color:var(--text2);font-size:.9rem;margin-bottom:12px">Sort each statement as a positive or negative environmental impact.</p><div id="l5ImpactArea"></div><div id="l5ImpactScore"></div></div>
         <div class="glass-card content"><h3 class="section-title"><span class="icon">✏️</span> Constructed Response</h3><p style="font-size:.9rem;color:var(--text2);margin-bottom:8px">Should Alberta transition away from fossil fuels for home heating? Discuss at least 2 advantages and 2 challenges, then give your evidence-based opinion.</p><textarea id="crResponse5" placeholder="Type your answer here…" oninput="saveCR5()"></textarea></div>
-        <div class="glass-card content" id="l5-gate" style="text-align:center;padding:24px"><p id="l5-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete both activities to unlock the quiz.</p><div class="lesson-nav"><button class="nav-btn" onclick="goTo('lesson4-quiz')">← Previous</button><button class="nav-btn primary" id="l5-quiz-btn" onclick="goTo('lesson5-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button></div></div>
         <div class="reflection-box"><h3>🪞 Lesson Reflection</h3><p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">What changes could your family make to use energy more sustainably? Think about heating, cooling, and everyday choices.</p><textarea id="reflectionText5" placeholder="Type your reflection here…" oninput="saveReflection5()"></textarea></div>
+        <div class="glass-card content" id="l5-gate" style="text-align:center;padding:24px"><p id="l5-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete both activities to unlock the quiz.</p><div class="lesson-nav"><button class="nav-btn" onclick="goTo('lesson4-quiz')">← Previous</button><button class="nav-btn primary" id="l5-quiz-btn" onclick="goTo('lesson5-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button></div></div>
       </div>
       <div class="lesson-page" id="page-lesson5-quiz">
         <div class="lesson-header"><div class="lesson-num">Lesson 5 — Quiz</div><h1 class="lesson-title">Check Your Understanding</h1><p class="lesson-subtitle">Two wrong answers on the same topic will trigger a mini-lesson. You need 80% to pass!</p></div>

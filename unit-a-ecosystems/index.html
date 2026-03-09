@@ -258,6 +258,13 @@
           </ul>
         </div>
 
+        <!-- REFLECTION -->
+        <div class="reflection-box">
+          <h3>🪞 Lesson Reflection</h3>
+          <p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">Think about an ecosystem near where you live. What biotic and abiotic factors does it have? What might happen if one of those factors changed dramatically?</p>
+          <textarea id="reflectionText" placeholder="Type your reflection here…" oninput="saveReflection()"></textarea>
+        </div>
+
         <!-- QUIZ GATE -->
         <div class="glass-card content" id="l1-gate" style="text-align:center;padding:24px">
           <p id="l1-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete all 3 activities above to unlock the quiz.</p>
@@ -266,14 +273,8 @@
             <button class="nav-btn primary" id="l1-quiz-btn" onclick="goTo('lesson1-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button>
           </div>
         </div>
-
-        <!-- REFLECTION -->
-        <div class="reflection-box">
-          <h3>🪞 Lesson Reflection</h3>
-          <p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">Think about an ecosystem near where you live. What biotic and abiotic factors does it have? What might happen if one of those factors changed dramatically?</p>
-          <textarea id="reflectionText" placeholder="Type your reflection here…" oninput="saveReflection()"></textarea>
-        </div>
       </div>
+
 
       <!-- LESSON 1 QUIZ -->
       <div class="lesson-page" id="page-lesson1-quiz">
@@ -395,13 +396,6 @@
           <div id="l2AdaptScore"></div>
         </div>
 
-        <!-- QUIZ GATE -->
-        <div class="glass-card" style="text-align:center;padding:32px">
-          <h3 style="color:var(--accent);margin-bottom:8px">🏁 Ready for the Quiz?</h3>
-          <p id="l2-gate-msg" style="font-size:.88rem;color:var(--text3);margin-bottom:16px">Complete both activities above to unlock the quiz.</p>
-          <button class="activity-btn" id="l2-quiz-btn" disabled style="opacity:.5;cursor:not-allowed" onclick="goTo('lesson2-quiz')">Take Lesson 2 Quiz →</button>
-        </div>
-
         <!-- CONSTRUCTED RESPONSE -->
         <div class="constructed-response">
           <h4>✍️ Constructed Response</h4>
@@ -416,6 +410,13 @@
           <textarea id="reflectionText2" placeholder="Type your reflection here…" oninput="saveReflection2()"></textarea>
         </div>
 
+
+        <!-- QUIZ GATE -->
+        <div class="glass-card" style="text-align:center;padding:32px">
+          <h3 style="color:var(--accent);margin-bottom:8px">🏁 Ready for the Quiz?</h3>
+          <p id="l2-gate-msg" style="font-size:.88rem;color:var(--text3);margin-bottom:16px">Complete both activities above to unlock the quiz.</p>
+          <button class="activity-btn" id="l2-quiz-btn" disabled style="opacity:.5;cursor:not-allowed" onclick="goTo('lesson2-quiz')">Take Lesson 2 Quiz →</button>
+        </div>
         <div class="lesson-nav">
           <button class="nav-btn" onclick="goTo('lesson1')">← Lesson 1</button>
           <button class="nav-btn primary" onclick="goTo('lesson2-quiz')">Take Quiz →</button>
@@ -538,12 +539,6 @@
           <div id="l3TrophicScore"></div>
         </div>
 
-        <!-- QUIZ GATE -->
-        <div class="glass-card" style="text-align:center;padding:32px">
-          <h3 style="color:var(--accent);margin-bottom:8px">🏁 Ready for the Quiz?</h3>
-          <p id="l3-gate-msg" style="font-size:.88rem;color:var(--text3);margin-bottom:16px">Complete both activities above to unlock the quiz.</p>
-          <button class="activity-btn" id="l3-quiz-btn" disabled style="opacity:.5;cursor:not-allowed" onclick="goTo('lesson3-quiz')">Take Lesson 3 Quiz →</button>
-        </div>
 
         <!-- CONSTRUCTED RESPONSE -->
         <div class="constructed-response">
@@ -564,10 +559,11 @@
           </script>
         </div>
 
-        <div class="reflection-box">
-          <h3>🪞 Lesson Reflection</h3>
-          <p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">Think about a meal you ate today. Can you trace the energy in that meal all the way back to the sun? How many trophic levels did the energy pass through?</p>
-          <textarea id="reflectionText3" placeholder="Type your reflection here…" oninput="saveReflection3()"></textarea>
+        <!-- QUIZ GATE -->
+        <div class="glass-card" style="text-align:center;padding:32px">
+          <h3 style="color:var(--accent);margin-bottom:8px">🏁 Ready for the Quiz?</h3>
+          <p id="l3-gate-msg" style="font-size:.88rem;color:var(--text3);margin-bottom:16px">Complete both activities above to unlock the quiz.</p>
+          <button class="activity-btn" id="l3-quiz-btn" disabled style="opacity:.5;cursor:not-allowed" onclick="goTo('lesson3-quiz')">Take Lesson 3 Quiz →</button>
         </div>
 
         <div class="lesson-nav">
@@ -651,13 +647,12 @@
           <p style="color:var(--text3);font-size:.88rem">Predict which organism in each food chain would have the highest toxin concentration.</p>
           <div id="l4BioArea"></div><div id="l4BioScore"></div>
         </div>
+        <div class="constructed-response"><h4>✍️ Constructed Response</h4><p style="font-size:.88rem;color:var(--text2);margin-bottom:8px">Explain how a pesticide sprayed on crops could end up harming an eagle that lives 50 km away. Use the terms bioaccumulation, biomagnification, and food chain in your answer.</p><textarea id="crResponse4" placeholder="Type your response here…" oninput="saveCR4()"></textarea></div>
         <div class="glass-card" style="text-align:center;padding:32px">
           <h3 style="color:var(--accent);margin-bottom:8px">🏁 Ready for the Quiz?</h3>
           <p id="l4-gate-msg" style="font-size:.88rem;color:var(--text3);margin-bottom:16px">Complete both activities above to unlock.</p>
           <button class="activity-btn" id="l4-quiz-btn" disabled style="opacity:.5;cursor:not-allowed" onclick="goTo('lesson4-quiz')">Take Lesson 4 Quiz →</button>
         </div>
-        <div class="constructed-response"><h4>✍️ Constructed Response</h4><p style="font-size:.88rem;color:var(--text2);margin-bottom:8px">Explain how a pesticide sprayed on crops could end up harming an eagle that lives 50 km away. Use the terms bioaccumulation, biomagnification, and food chain in your answer.</p><textarea id="crResponse4" placeholder="Type your response here…" oninput="saveCR4()"></textarea></div>
-        <div class="reflection-box"><h3>🪞 Lesson Reflection</h3><p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">What choices can individuals make to reduce the amount of pollutants entering ecosystems?</p><textarea id="reflectionText4" placeholder="Type your reflection here…" oninput="saveReflection4()"></textarea></div>
         <div class="lesson-nav"><button class="nav-btn" onclick="goTo('lesson3')">← Lesson 3</button><button class="nav-btn primary" onclick="goTo('lesson4-quiz')">Take Quiz →</button></div>
       </div>
       <div class="lesson-page" id="page-lesson4-quiz">
@@ -725,13 +720,12 @@
           <p style="color:var(--text3);font-size:.88rem">Put the stages of succession in the correct order.</p>
           <div id="l5SuccArea"></div><div id="l5SuccScore"></div>
         </div>
+        <div class="constructed-response"><h4>✍️ Constructed Response</h4><p style="font-size:.88rem;color:var(--text2);margin-bottom:8px">A scientist notices that frog populations have declined sharply in a local wetland over 5 years. What could be causing this decline? What monitoring methods would you recommend to investigate further?</p><textarea id="crResponse5" placeholder="Type your response here…" oninput="saveCR5()"></textarea></div>
         <div class="glass-card" style="text-align:center;padding:32px">
           <h3 style="color:var(--accent);margin-bottom:8px">🏁 Ready for the Quiz?</h3>
           <p id="l5-gate-msg" style="font-size:.88rem;color:var(--text3);margin-bottom:16px">Complete both activities above to unlock.</p>
           <button class="activity-btn" id="l5-quiz-btn" disabled style="opacity:.5;cursor:not-allowed" onclick="goTo('lesson5-quiz')">Take Lesson 5 Quiz →</button>
         </div>
-        <div class="constructed-response"><h4>✍️ Constructed Response</h4><p style="font-size:.88rem;color:var(--text2);margin-bottom:8px">A scientist notices that frog populations have declined sharply in a local wetland over 5 years. What could be causing this decline? What monitoring methods would you recommend to investigate further?</p><textarea id="crResponse5" placeholder="Type your response here…" oninput="saveCR5()"></textarea></div>
-        <div class="reflection-box"><h3>🪞 Lesson Reflection</h3><p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">Have you seen any examples of succession or ecosystem change in your community? What did you notice?</p><textarea id="reflectionText5" placeholder="Type your reflection here…" oninput="saveReflection5()"></textarea></div>
         <div class="lesson-nav"><button class="nav-btn" onclick="goTo('lesson4')">← Lesson 4</button><button class="nav-btn primary" onclick="goTo('lesson5-quiz')">Take Quiz →</button></div>
       </div>
       <div class="lesson-page" id="page-lesson5-quiz">
@@ -790,13 +784,12 @@
           <p style="color:var(--text3);font-size:.88rem">Identify which species are invasive and predict their impact.</p>
           <div id="l6InvArea"></div><div id="l6InvScore"></div>
         </div>
+        <div class="constructed-response"><h4>✍️ Constructed Response</h4><p style="font-size:.88rem;color:var(--text2);margin-bottom:8px">Choose one type of human impact studied in this lesson. Explain how it affects at least two levels of a food web, and suggest one action that could reduce the impact.</p><textarea id="crResponse6" placeholder="Type your response here…" oninput="saveCR6()"></textarea></div>
         <div class="glass-card" style="text-align:center;padding:32px">
           <h3 style="color:var(--accent);margin-bottom:8px">🏁 Ready for the Quiz?</h3>
           <p id="l6-gate-msg" style="font-size:.88rem;color:var(--text3);margin-bottom:16px">Complete both activities to unlock.</p>
           <button class="activity-btn" id="l6-quiz-btn" disabled style="opacity:.5;cursor:not-allowed" onclick="goTo('lesson6-quiz')">Take Lesson 6 Quiz →</button>
         </div>
-        <div class="constructed-response"><h4>✍️ Constructed Response</h4><p style="font-size:.88rem;color:var(--text2);margin-bottom:8px">Choose one type of human impact studied in this lesson. Explain how it affects at least two levels of a food web, and suggest one action that could reduce the impact.</p><textarea id="crResponse6" placeholder="Type your response here…" oninput="saveCR6()"></textarea></div>
-        <div class="reflection-box"><h3>🪞 Lesson Reflection</h3><p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">What human impacts on ecosystems have you observed in your own community?</p><textarea id="reflectionText6" placeholder="Type your reflection here…" oninput="saveReflection6()"></textarea></div>
         <div class="lesson-nav"><button class="nav-btn" onclick="goTo('lesson5')">← Lesson 5</button><button class="nav-btn primary" onclick="goTo('lesson6-quiz')">Take Quiz →</button></div>
       </div>
       <div class="lesson-page" id="page-lesson6-quiz">
@@ -869,13 +862,12 @@
           <p style="color:var(--text3);font-size:.88rem">Classify each action as individual, community, or government level stewardship.</p>
           <div id="l7StewardArea"></div><div id="l7StewardScore"></div>
         </div>
+        <div class="constructed-response"><h4>✍️ Constructed Response</h4><p style="font-size:.88rem;color:var(--text2);margin-bottom:8px">A company wants to build a new oil pipeline through a wetland that is home to several endangered species. Write a paragraph explaining at least TWO different stakeholder perspectives, and then give your own evidence-based recommendation.</p><textarea id="crResponse7" placeholder="Type your response here…" oninput="saveCR7()"></textarea></div>
         <div class="glass-card" style="text-align:center;padding:32px">
           <h3 style="color:var(--accent);margin-bottom:8px">🏁 Ready for the Quiz?</h3>
           <p id="l7-gate-msg" style="font-size:.88rem;color:var(--text3);margin-bottom:16px">Complete both activities to unlock.</p>
           <button class="activity-btn" id="l7-quiz-btn" disabled style="opacity:.5;cursor:not-allowed" onclick="goTo('lesson7-quiz')">Take Lesson 7 Quiz →</button>
         </div>
-        <div class="constructed-response"><h4>✍️ Constructed Response</h4><p style="font-size:.88rem;color:var(--text2);margin-bottom:8px">A company wants to build a new oil pipeline through a wetland that is home to several endangered species. Write a paragraph explaining at least TWO different stakeholder perspectives, and then give your own evidence-based recommendation.</p><textarea id="crResponse7" placeholder="Type your response here…" oninput="saveCR7()"></textarea></div>
-        <div class="reflection-box"><h3>🪞 Lesson Reflection</h3><p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">What is one stewardship action you could take this week to help your local ecosystem?</p><textarea id="reflectionText7" placeholder="Type your reflection here…" oninput="saveReflection7()"></textarea></div>
         <div class="lesson-nav"><button class="nav-btn" onclick="goTo('lesson6')">← Lesson 6</button><button class="nav-btn primary" onclick="goTo('lesson7-quiz')">Take Quiz →</button></div>
       </div>
       <div class="lesson-page" id="page-lesson7-quiz">

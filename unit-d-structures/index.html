@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -245,19 +245,19 @@
           </ul>
         </div>
 
+        <!-- REFLECTION -->
+        <div class="reflection-box">
+          <h3>🪞 Lesson Reflection</h3>
+          <p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">Think about the structures around you right now. What type are they? If you could design a new structure, what type would you choose and why?</p>
+          <textarea id="reflectionText" placeholder="Type your reflection here…" oninput="saveReflection()"></textarea>
+        </div>
+
         <div class="glass-card content" id="l1-gate" style="text-align:center;padding:24px">
           <p id="l1-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete all 3 activities above to unlock the quiz.</p>
           <div class="lesson-nav">
             <button class="nav-btn" onclick="goTo('home')">← Home</button>
             <button class="nav-btn primary" id="l1-quiz-btn" onclick="goTo('lesson1-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button>
           </div>
-        </div>
-
-        <!-- REFLECTION -->
-        <div class="reflection-box">
-          <h3>🪞 Lesson Reflection</h3>
-          <p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">Think about the structures around you right now. What type are they? If you could design a new structure, what type would you choose and why?</p>
-          <textarea id="reflectionText" placeholder="Type your reflection here…" oninput="saveReflection()"></textarea>
         </div>
       </div>
 
@@ -423,18 +423,18 @@
           </ul>
         </div>
 
+        <div class="reflection-box">
+          <h3>🪞 Lesson Reflection</h3>
+          <p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">Think about the structures around you — your chair, the building you’re in, a bridge. What forces are acting on them right now? How do you think they were designed to handle those forces?</p>
+          <textarea id="reflectionText2" placeholder="Type your reflection here…" oninput="saveReflection2()"></textarea>
+        </div>
+
         <div class="glass-card content" id="l2-gate" style="text-align:center;padding:24px">
           <p id="l2-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete all 3 activities above to unlock the quiz.</p>
           <div class="lesson-nav">
             <button class="nav-btn" onclick="goTo('home')">← Home</button>
             <button class="nav-btn primary" id="l2-quiz-btn" onclick="goTo('lesson2-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button>
           </div>
-        </div>
-
-        <div class="reflection-box">
-          <h3>🪞 Lesson Reflection</h3>
-          <p style="font-size:.9rem;color:var(--text2);margin-bottom:12px">Think about the structures around you — your chair, the building you’re in, a bridge. What forces are acting on them right now? How do you think they were designed to handle those forces?</p>
-          <textarea id="reflectionText2" placeholder="Type your reflection here…" oninput="saveReflection2()"></textarea>
         </div>
       </div>
 
@@ -455,8 +455,8 @@
         <div class="glass-card content"><h3 class="section-title"><span class="icon">🌪️</span> Activity 1: Force Identifier</h3><p style="color:var(--text2);font-size:.9rem;margin-bottom:12px">Identify the external force acting in each scenario.</p><div id="l3ForceArea"></div><div id="l3ForceScore"></div></div>
         <div class="glass-card content"><h3 class="section-title"><span class="icon">🏗️</span> Activity 2: Design Defender</h3><p style="color:var(--text2);font-size:.9rem;margin-bottom:12px">Match each design feature to the external force it defends against.</p><div id="l3DefendArea"></div><div id="l3DefendScore"></div></div>
         <div class="glass-card content"><h3 class="section-title"><span class="icon">✏️</span> Constructed Response</h3><p style="font-size:.9rem;color:var(--text2);margin-bottom:8px">You are designing a bus shelter for a location in Lethbridge, Alberta, which experiences strong Chinook winds and heavy winter snow. What external forces must you consider, and how would you design the shelter to resist them?</p><textarea id="crResponse3" placeholder="Type your answer here…" oninput="saveCR3()"></textarea></div>
-        <div class="glass-card content" id="l3-gate" style="text-align:center;padding:24px"><p id="l3-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete both activities to unlock the quiz.</p><div class="lesson-nav"><button class="nav-btn" onclick="goTo('lesson2-quiz')">← Previous</button><button class="nav-btn primary" id="l3-quiz-btn" onclick="goTo('lesson3-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button></div></div>
         <div class="reflection-box"><h3>🪞 Lesson Reflection</h3><textarea id="reflectionText3" placeholder="What external forces act on your home? How is your home designed to handle them?" oninput="saveReflection3()"></textarea></div>
+        <div class="glass-card content" id="l3-gate" style="text-align:center;padding:24px"><p id="l3-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete both activities to unlock the quiz.</p><div class="lesson-nav"><button class="nav-btn" onclick="goTo('lesson2-quiz')">← Previous</button><button class="nav-btn primary" id="l3-quiz-btn" onclick="goTo('lesson3-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button></div></div>
       </div>
       <div class="lesson-page" id="page-lesson3-quiz"><div class="lesson-header"><div class="lesson-num">Lesson 3 — Quiz</div><h1 class="lesson-title">Check Your Understanding</h1><p class="lesson-subtitle">You need 80% to pass!</p></div><div class="need-help" style="margin-bottom:20px"><strong>💡 Before you start:</strong> Review external forces, environmental factors, and design adaptations.</div><div id="quiz3-area"></div></div>
 
@@ -470,8 +470,8 @@
         <div class="glass-card content"><h3 class="section-title"><span class="icon">🧪</span> Activity 1: Material Matcher</h3><p style="color:var(--text2);font-size:.9rem;margin-bottom:12px">Pick the best material for each structural challenge.</p><div id="l4MatArea"></div><div id="l4MatScore"></div></div>
         <div class="glass-card content"><h3 class="section-title"><span class="icon">🔬</span> Activity 2: Property Identifier</h3><p style="color:var(--text2);font-size:.9rem;margin-bottom:12px">Identify the key property being described.</p><div id="l4PropArea"></div><div id="l4PropScore"></div></div>
         <div class="glass-card content"><h3 class="section-title"><span class="icon">✏️</span> Constructed Response</h3><p style="font-size:.9rem;color:var(--text2);margin-bottom:8px">Why is reinforced concrete (concrete with steel rebar inside) stronger than plain concrete? Explain using the concepts of tensile and compressive strength.</p><textarea id="crResponse4" placeholder="Type your answer here…" oninput="saveCR4()"></textarea></div>
-        <div class="glass-card content" id="l4-gate" style="text-align:center;padding:24px"><p id="l4-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete both activities to unlock the quiz.</p><div class="lesson-nav"><button class="nav-btn" onclick="goTo('lesson3-quiz')">← Previous</button><button class="nav-btn primary" id="l4-quiz-btn" onclick="goTo('lesson4-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button></div></div>
         <div class="reflection-box"><h3>🪞 Lesson Reflection</h3><textarea id="reflectionText4" placeholder="Look at the room you are in. What materials were used and why?" oninput="saveReflection4()"></textarea></div>
+        <div class="glass-card content" id="l4-gate" style="text-align:center;padding:24px"><p id="l4-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete both activities to unlock the quiz.</p><div class="lesson-nav"><button class="nav-btn" onclick="goTo('lesson3-quiz')">← Previous</button><button class="nav-btn primary" id="l4-quiz-btn" onclick="goTo('lesson4-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button></div></div>
       </div>
       <div class="lesson-page" id="page-lesson4-quiz"><div class="lesson-header"><div class="lesson-num">Lesson 4 — Quiz</div><h1 class="lesson-title">Check Your Understanding</h1><p class="lesson-subtitle">You need 80% to pass!</p></div><div class="need-help" style="margin-bottom:20px"><strong>💡 Before you start:</strong> Review material properties and composites.</div><div id="quiz4-area"></div></div>
 
@@ -484,8 +484,8 @@
         <div class="glass-card content"><h3 class="section-title"><span class="icon">🔩</span> Activity 1: Joint Selector</h3><p style="color:var(--text2);font-size:.9rem;margin-bottom:12px">Choose the right joint type for each structural scenario.</p><div id="l5JointArea"></div><div id="l5JointScore"></div></div>
         <div class="glass-card content"><h3 class="section-title"><span class="icon">🔧</span> Activity 2: Fastener Expert</h3><p style="color:var(--text2);font-size:.9rem;margin-bottom:12px">Match each fastener to its best use case.</p><div id="l5FastArea"></div><div id="l5FastScore"></div></div>
         <div class="glass-card content"><h3 class="section-title"><span class="icon">✏️</span> Constructed Response</h3><p style="font-size:.9rem;color:var(--text2);margin-bottom:8px">Why do many structural failures happen at joints rather than in the middle of a beam? Use the concepts of stress concentration and force transfer in your answer.</p><textarea id="crResponse5" placeholder="Type your answer here…" oninput="saveCR5()"></textarea></div>
-        <div class="glass-card content" id="l5-gate" style="text-align:center;padding:24px"><p id="l5-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete both activities to unlock the quiz.</p><div class="lesson-nav"><button class="nav-btn" onclick="goTo('lesson4-quiz')">← Previous</button><button class="nav-btn primary" id="l5-quiz-btn" onclick="goTo('lesson5-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button></div></div>
         <div class="reflection-box"><h3>🪞 Lesson Reflection</h3><textarea id="reflectionText5" placeholder="Find a joint in the room you are in. What type is it? Why was that type chosen?" oninput="saveReflection5()"></textarea></div>
+        <div class="glass-card content" id="l5-gate" style="text-align:center;padding:24px"><p id="l5-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete both activities to unlock the quiz.</p><div class="lesson-nav"><button class="nav-btn" onclick="goTo('lesson4-quiz')">← Previous</button><button class="nav-btn primary" id="l5-quiz-btn" onclick="goTo('lesson5-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button></div></div>
       </div>
       <div class="lesson-page" id="page-lesson5-quiz"><div class="lesson-header"><div class="lesson-num">Lesson 5 — Quiz</div><h1 class="lesson-title">Check Your Understanding</h1><p class="lesson-subtitle">You need 80% to pass!</p></div><div class="need-help" style="margin-bottom:20px"><strong>💡 Before you start:</strong> Review fixed/flexible joints, fasteners, and gussets.</div><div id="quiz5-area"></div></div>
 
@@ -498,8 +498,8 @@
         <div class="glass-card content"><h3 class="section-title"><span class="icon">📐</span> Activity 1: Design Step Sequencer</h3><p style="color:var(--text2);font-size:.9rem;margin-bottom:12px">Put the design cycle steps in the correct order.</p><div id="l6StepArea"></div><div id="l6StepScore"></div></div>
         <div class="glass-card content"><h3 class="section-title"><span class="icon">🔍</span> Activity 2: Failure Spotter</h3><p style="color:var(--text2);font-size:.9rem;margin-bottom:12px">Identify what could go wrong with each design decision.</p><div id="l6FailArea"></div><div id="l6FailScore"></div></div>
         <div class="glass-card content"><h3 class="section-title"><span class="icon">✏️</span> Constructed Response</h3><p style="font-size:.9rem;color:var(--text2);margin-bottom:8px">Why do engineers build prototypes before constructing the real structure? Give at least two reasons and an example.</p><textarea id="crResponse6" placeholder="Type your answer here…" oninput="saveCR6()"></textarea></div>
-        <div class="glass-card content" id="l6-gate" style="text-align:center;padding:24px"><p id="l6-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete both activities to unlock the quiz.</p><div class="lesson-nav"><button class="nav-btn" onclick="goTo('lesson5-quiz')">← Previous</button><button class="nav-btn primary" id="l6-quiz-btn" onclick="goTo('lesson6-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button></div></div>
         <div class="reflection-box"><h3>🪞 Lesson Reflection</h3><textarea id="reflectionText6" placeholder="Think of something you had to redesign or improve. How is that similar to the engineering design cycle?" oninput="saveReflection6()"></textarea></div>
+        <div class="glass-card content" id="l6-gate" style="text-align:center;padding:24px"><p id="l6-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete both activities to unlock the quiz.</p><div class="lesson-nav"><button class="nav-btn" onclick="goTo('lesson5-quiz')">← Previous</button><button class="nav-btn primary" id="l6-quiz-btn" onclick="goTo('lesson6-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button></div></div>
       </div>
       <div class="lesson-page" id="page-lesson6-quiz"><div class="lesson-header"><div class="lesson-num">Lesson 6 — Quiz</div><h1 class="lesson-title">Check Your Understanding</h1><p class="lesson-subtitle">You need 80% to pass!</p></div><div class="need-help" style="margin-bottom:20px"><strong>💡 Before you start:</strong> Review the design cycle, safety margins, and prototyping.</div><div id="quiz6-area"></div></div>
 
@@ -512,8 +512,8 @@
         <div class="glass-card content"><h3 class="section-title"><span class="icon">🚨</span> Activity 1: Failure Detective</h3><p style="color:var(--text2);font-size:.9rem;margin-bottom:12px">Identify the mode of failure in each scenario.</p><div id="l7DetectArea"></div><div id="l7DetectScore"></div></div>
         <div class="glass-card content"><h3 class="section-title"><span class="icon">🛡️</span> Activity 2: Prevention Planner</h3><p style="color:var(--text2);font-size:.9rem;margin-bottom:12px">Match each prevention strategy to the failure type it addresses.</p><div id="l7PreventArea"></div><div id="l7PreventScore"></div></div>
         <div class="glass-card content"><h3 class="section-title"><span class="icon">✏️</span> Constructed Response</h3><p style="font-size:.9rem;color:var(--text2);margin-bottom:8px">The Tacoma Narrows Bridge collapsed in 1940 due to wind-induced resonance. Using your knowledge of external forces, resonance, and the design process, explain what went wrong and how engineers could have prevented it.</p><textarea id="crResponse7" placeholder="Type your answer here…" oninput="saveCR7()"></textarea></div>
-        <div class="glass-card content" id="l7-gate" style="text-align:center;padding:24px"><p id="l7-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete both activities to unlock the quiz.</p><div class="lesson-nav"><button class="nav-btn" onclick="goTo('lesson6-quiz')">← Previous</button><button class="nav-btn primary" id="l7-quiz-btn" onclick="goTo('lesson7-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button></div></div>
         <div class="reflection-box"><h3>🪞 Lesson Reflection</h3><textarea id="reflectionText7" placeholder="Have you ever seen a structure that was damaged or failing? What do you think caused it?" oninput="saveReflection7()"></textarea></div>
+        <div class="glass-card content" id="l7-gate" style="text-align:center;padding:24px"><p id="l7-gate-msg" style="color:var(--warn);font-weight:600;margin-bottom:12px">🔒 Complete both activities to unlock the quiz.</p><div class="lesson-nav"><button class="nav-btn" onclick="goTo('lesson6-quiz')">← Previous</button><button class="nav-btn primary" id="l7-quiz-btn" onclick="goTo('lesson7-quiz')" disabled style="opacity:.5;cursor:not-allowed">Take the Quiz 📝</button></div></div>
       </div>
       <div class="lesson-page" id="page-lesson7-quiz"><div class="lesson-header"><div class="lesson-num">Lesson 7 — Quiz</div><h1 class="lesson-title">Check Your Understanding</h1><p class="lesson-subtitle">You need 80% to pass!</p></div><div class="need-help" style="margin-bottom:20px"><strong>💡 Before you start:</strong> Review failure modes, prevention strategies, and real-world examples.</div><div id="quiz7-area"></div></div>
 
