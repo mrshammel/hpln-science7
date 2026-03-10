@@ -134,6 +134,23 @@
           <h3 class="section-title"><span class="icon">📺</span> Watch: Introduction to Ecosystems</h3>
           <div class="video-label">🎬 Video 1 — Crash Course Ecology: Ecosystem Ecology</div>
           <div class="video-wrap"><iframe src="https://www.youtube.com/embed/v6ubvEJ3KGM" title="Crash Course Ecology" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen loading="lazy"></iframe></div>
+          <div class="video-watched-bar" id="vw-l1v1">
+            <button class="mark-watched-btn" id="vw-btn-l1v1" onclick="markVideoWatched('l1v1')">👁️ I Watched This Video</button>
+            <span class="video-watched-label" id="vw-lbl-l1v1">Watch the video above, then mark as watched</span>
+          </div>
+          <div class="video-summary locked" id="vs-l1v1">
+            <button class="video-summary-toggle" onclick="toggleVideoSummary('l1v1')">📝 View Video Summary <span>🔒</span></button>
+            <div class="video-summary-content" id="vs-content-l1v1">
+              <p style="font-weight:600;color:var(--accent);margin-bottom:8px">Key Points — Ecosystem Ecology</p>
+              <ul>
+                <li>An <strong>ecosystem</strong> is a community of living organisms interacting with their non-living environment</li>
+                <li><strong>Biotic factors</strong> = living or once-living things (plants, animals, fungi, bacteria, dead organisms)</li>
+                <li><strong>Abiotic factors</strong> = non-living elements (sunlight, water, temperature, soil, air)</li>
+                <li>Energy flows through ecosystems from the sun → producers → consumers → decomposers</li>
+                <li>Nutrients are <em>recycled</em> in ecosystems, but energy is <em>not</em> — it flows one way</li>
+              </ul>
+            </div>
+          </div>
         </div>
 
         <!-- BIOTIC FACTORS -->
@@ -187,6 +204,23 @@
           <h3 class="section-title"><span class="icon">📺</span> Watch: Biotic & Abiotic Factors</h3>
           <div class="video-label">🎬 Video 2 — Amoeba Sisters: Ecological Relationships</div>
           <div class="video-wrap"><iframe src="https://www.youtube.com/embed/izRvPaAWgyw" title="Amoeba Sisters - Ecological Relationships" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen loading="lazy"></iframe></div>
+          <div class="video-watched-bar" id="vw-l1v2">
+            <button class="mark-watched-btn" id="vw-btn-l1v2" onclick="markVideoWatched('l1v2')">👁️ I Watched This Video</button>
+            <span class="video-watched-label" id="vw-lbl-l1v2">Watch the video above, then mark as watched</span>
+          </div>
+          <div class="video-summary locked" id="vs-l1v2">
+            <button class="video-summary-toggle" onclick="toggleVideoSummary('l1v2')">📝 View Video Summary <span>🔒</span></button>
+            <div class="video-summary-content" id="vs-content-l1v2">
+              <p style="font-weight:600;color:var(--accent);margin-bottom:8px">Key Points — Biotic & Abiotic Factors</p>
+              <ul>
+                <li>Biotic and abiotic factors work together to shape every ecosystem</li>
+                <li>Dead organisms are <strong>biotic</strong> — it's about origin (was it ever alive?), not current state</li>
+                <li>Abiotic factors like temperature and rainfall determine which species can survive in an area</li>
+                <li>Changing one factor (biotic or abiotic) creates a <em>ripple effect</em> throughout the ecosystem</li>
+                <li>Ecosystems meet the 5 needs of life: nutrients, energy, moisture, habitat, gas exchange</li>
+              </ul>
+            </div>
+          </div>
         </div>
 
         <!-- HOW ECOSYSTEMS MEET NEEDS -->
@@ -1077,8 +1111,8 @@
     function pickNeed(ans) {
       const sc = needsData[needsIdx], ok = ans === sc.need;
       if (ok) needsOk++;
-      document.getElementById('needsFb').innerHTML = `<div style="padding:10px;border-radius:8px;background:${ok ? 'rgba(34,197,94,.1)' : 'rgba(239,68,68,.08)'};font-size:.85rem;color:var(--text2)"><strong>${ok ? '✅' : '❌'}</strong> ${sc.explain}</div>`;
-      setTimeout(() => { needsIdx++; renderNeedsQ(); }, 1500);
+      document.querySelectorAll('#needsArea .activity-btn').forEach(b => b.disabled = true);
+      document.getElementById('needsFb').innerHTML = `<div style="padding:10px;border-radius:8px;background:${ok ? 'rgba(34,197,94,.1)' : 'rgba(239,68,68,.08)'};font-size:.85rem;color:var(--text2)"><strong>${ok ? '✅' : '❌'}</strong> ${sc.explain}<br><button class="act-next-btn" onclick="needsIdx++;renderNeedsQ()">Next Question →</button></div>`;
     }
 
     // ===== ACTIVITY 3: What If? Ecosystem Impact =====
@@ -1104,8 +1138,7 @@
       const sc = whatifData[whatifIdx], ok = idx === sc.ans;
       if (ok) whatifOk++;
       document.querySelectorAll('#whatifArea .whatif-option').forEach((o, i) => { o.style.pointerEvents = 'none'; if (i === sc.ans) o.classList.add('correct'); else if (i === idx && !ok) o.classList.add('wrong'); });
-      document.getElementById('whatifFb').innerHTML = `<div style="padding:10px;border-radius:8px;background:${ok ? 'rgba(34,197,94,.1)' : 'rgba(239,68,68,.08)'};font-size:.85rem;color:var(--text2)"><strong>${ok ? '✅' : '❌'}</strong> ${sc.explain}</div>`;
-      setTimeout(() => { whatifIdx++; renderWhatifQ(); }, 1800);
+      document.getElementById('whatifFb').innerHTML = `<div style="padding:10px;border-radius:8px;background:${ok ? 'rgba(34,197,94,.1)' : 'rgba(239,68,68,.08)'};font-size:.85rem;color:var(--text2)"><strong>${ok ? '✅' : '❌'}</strong> ${sc.explain}<br><button class="act-next-btn" onclick="whatifIdx++;renderWhatifQ()">Next Question →</button></div>`;
     }
 
     // ===== QUIZ 2 BANK =====
@@ -1367,7 +1400,7 @@
     let l5MonIdx=0,l5MonOk=0;
     function initL5Mon(){l5MonIdx=0;l5MonOk=0;renderL5Mon();document.getElementById('l5MonScore').innerHTML='';}
     function renderL5Mon(){if(l5MonIdx>=l5MonData.length){document.getElementById('l5MonScore').innerHTML=`<div class="activity-score"><div class="score-number">${l5MonOk}/${l5MonData.length}</div><p>${l5MonOk>=4?'🎉 Monitoring expert!':'📖 Review quadrats, transects, and indicator species.'}</p><button class="activity-btn secondary" onclick="initL5Mon()" style="margin-top:8px">🔄 Try Again</button></div>`;markActivityDone(5,'mon',l5MonOk,l5MonData.length);return;}const d=l5MonData[l5MonIdx];document.getElementById('l5MonArea').innerHTML=`<div class="glass-card" style="padding:16px"><p style="font-size:.95rem;margin-bottom:16px">${d.text}</p><div style="display:flex;gap:8px;flex-wrap:wrap">${['quadrat','transect','indicator'].map(m=>`<button class="activity-btn secondary" onclick="pickL5Mon('${m}')" style="flex:1;min-width:80px">${m==='quadrat'?'📐 Quadrat':m==='transect'?'📏 Transect':'🐸 Indicator Species'}</button>`).join('')}</div><div id="l5MonFb" style="margin-top:8px"></div></div><p style="color:var(--text3);font-size:.8rem">${l5MonIdx+1} of ${l5MonData.length}</p>`;}
-    function pickL5Mon(ans){const d=l5MonData[l5MonIdx],ok=ans===d.ans;if(ok)l5MonOk++;document.getElementById('l5MonFb').innerHTML=`<div style="padding:10px;border-radius:8px;background:${ok?'rgba(34,197,94,.1)':'rgba(239,68,68,.08)'};font-size:.85rem"><strong>${ok?'✅':'❌'}</strong> ${d.explain}</div>`;setTimeout(()=>{l5MonIdx++;renderL5Mon();},1500);}
+    function pickL5Mon(ans){const d=l5MonData[l5MonIdx],ok=ans===d.ans;if(ok)l5MonOk++;document.querySelectorAll('#l5MonArea .activity-btn').forEach(b=>b.disabled=true);document.getElementById('l5MonFb').innerHTML=`<div style="padding:10px;border-radius:8px;background:${ok?'rgba(34,197,94,.1)':'rgba(239,68,68,.08)'};font-size:.85rem"><strong>${ok?'✅':'❌'}</strong> ${d.explain}<br><button class="act-next-btn" onclick="l5MonIdx++;renderL5Mon()">Next Question →</button></div>`;}
 
     // L5: Succession Sequencer — reuse chain builder pattern
     const l5SuccOrder=['🪨 Bare Rock','🟢 Lichens','🌿 Mosses & Grasses','🌲 Shrubs','🌳 Mature Forest'];
@@ -1380,28 +1413,28 @@
     let l6ImpIdx=0,l6ImpOk=0;
     function initL6Imp(){l6ImpIdx=0;l6ImpOk=0;renderL6Imp();document.getElementById('l6ImpScore').innerHTML='';}
     function renderL6Imp(){if(l6ImpIdx>=l6ImpData.length){document.getElementById('l6ImpScore').innerHTML=`<div class="activity-score"><div class="score-number">${l6ImpOk}/${l6ImpData.length}</div><p>${l6ImpOk>=4?'🎉 Impact expert!':'📖 Review the 4 types of human impact.'}</p><button class="activity-btn secondary" onclick="initL6Imp()" style="margin-top:8px">🔄 Try Again</button></div>`;markActivityDone(6,'imp',l6ImpOk,l6ImpData.length);return;}const d=l6ImpData[l6ImpIdx];document.getElementById('l6ImpArea').innerHTML=`<div class="glass-card" style="padding:16px"><p style="font-size:.95rem;margin-bottom:16px">${d.text}</p><div style="display:flex;gap:8px;flex-wrap:wrap">${['pollution','habitat','invasive','extraction'].map(t=>`<button class="activity-btn secondary" onclick="pickL6Imp('${t}')" style="flex:1;min-width:80px;font-size:.8rem">${t==='pollution'?'🏭 Pollution':t==='habitat'?'🪓 Habitat Loss':t==='invasive'?'🐗 Invasive Species':'⛏️ Extraction'}</button>`).join('')}</div><div id="l6ImpFb" style="margin-top:8px"></div></div><p style="color:var(--text3);font-size:.8rem">${l6ImpIdx+1} of ${l6ImpData.length}</p>`;}
-    function pickL6Imp(ans){const d=l6ImpData[l6ImpIdx],ok=ans===d.ans;if(ok)l6ImpOk++;document.getElementById('l6ImpFb').innerHTML=`<div style="padding:10px;border-radius:8px;background:${ok?'rgba(34,197,94,.1)':'rgba(239,68,68,.08)'};font-size:.85rem"><strong>${ok?'✅':'❌'}</strong> ${d.explain}</div>`;setTimeout(()=>{l6ImpIdx++;renderL6Imp();},1500);}
+    function pickL6Imp(ans){const d=l6ImpData[l6ImpIdx],ok=ans===d.ans;if(ok)l6ImpOk++;document.querySelectorAll('#l6ImpArea .activity-btn').forEach(b=>b.disabled=true);document.getElementById('l6ImpFb').innerHTML=`<div style="padding:10px;border-radius:8px;background:${ok?'rgba(34,197,94,.1)':'rgba(239,68,68,.08)'};font-size:.85rem"><strong>${ok?'✅':'❌'}</strong> ${d.explain}<br><button class="act-next-btn" onclick="l6ImpIdx++;renderL6Imp()">Next Question →</button></div>`;}
 
     // L6: Invasive Species Detective
     const l6InvData=[{species:"🐗 Wild Boar",invasive:true,explain:"Wild boars are invasive in Alberta, destroying crops and native habitats."},{species:"🫎 Moose",invasive:false,explain:"Moose are native to Alberta."},{species:"🌸 Purple Loosestrife",invasive:true,explain:"This plant invades Alberta wetlands, displacing native species."},{species:"🌳 White Spruce",invasive:false,explain:"White spruce is a native Alberta tree."},{species:"🐚 Zebra Mussel",invasive:true,explain:"Zebra mussels are invasive and threaten Alberta waterways."}];
     let l6InvIdx=0,l6InvOk=0;
     function initL6Inv(){l6InvIdx=0;l6InvOk=0;renderL6Inv();document.getElementById('l6InvScore').innerHTML='';}
     function renderL6Inv(){if(l6InvIdx>=l6InvData.length){document.getElementById('l6InvScore').innerHTML=`<div class="activity-score"><div class="score-number">${l6InvOk}/${l6InvData.length}</div><p>${l6InvOk>=4?'🎉 Species detective!':'📖 Review which species are invasive vs. native.'}</p><button class="activity-btn secondary" onclick="initL6Inv()" style="margin-top:8px">🔄 Try Again</button></div>`;markActivityDone(6,'inv',l6InvOk,l6InvData.length);return;}const d=l6InvData[l6InvIdx];document.getElementById('l6InvArea').innerHTML=`<div class="glass-card" style="padding:16px"><p style="font-size:1.1rem;font-weight:700;margin-bottom:16px;text-align:center">${d.species}</p><div style="display:flex;gap:8px;justify-content:center"><button class="activity-btn secondary" onclick="pickL6Inv(true)">🐗 Invasive</button><button class="activity-btn secondary" onclick="pickL6Inv(false)">🏠 Native</button></div><div id="l6InvFb" style="margin-top:8px"></div></div><p style="color:var(--text3);font-size:.8rem">${l6InvIdx+1} of ${l6InvData.length}</p>`;}
-    function pickL6Inv(ans){const d=l6InvData[l6InvIdx],ok=ans===d.invasive;if(ok)l6InvOk++;document.getElementById('l6InvFb').innerHTML=`<div style="padding:10px;border-radius:8px;background:${ok?'rgba(34,197,94,.1)':'rgba(239,68,68,.08)'};font-size:.85rem"><strong>${ok?'✅':'❌'}</strong> ${d.explain}</div>`;setTimeout(()=>{l6InvIdx++;renderL6Inv();},1500);}
+    function pickL6Inv(ans){const d=l6InvData[l6InvIdx],ok=ans===d.invasive;if(ok)l6InvOk++;document.querySelectorAll('#l6InvArea .activity-btn').forEach(b=>b.disabled=true);document.getElementById('l6InvFb').innerHTML=`<div style="padding:10px;border-radius:8px;background:${ok?'rgba(34,197,94,.1)':'rgba(239,68,68,.08)'};font-size:.85rem"><strong>${ok?'✅':'❌'}</strong> ${d.explain}<br><button class="act-next-btn" onclick="l6InvIdx++;renderL6Inv()">Next Question →</button></div>`;}
 
     // L7: Perspective Analyzer
     const l7PerspData=[{text:"\"We need this pipeline to create 5,000 jobs and support our local economy.\"",ans:"industry",explain:"This represents an industry/economic perspective."},{text:"\"Our data shows caribou populations have dropped 40% in this region.\"",ans:"scientist",explain:"This represents a scientific/data-driven perspective."},{text:"\"These lands have been sacred to our people for generations.\"",ans:"indigenous",explain:"This represents an Indigenous community perspective."},{text:"\"Our children can't swim in the lake because of the pollution.\"",ans:"resident",explain:"This represents a local resident/quality of life perspective."}];
     let l7PerspIdx=0,l7PerspOk=0;
     function initL7Persp(){l7PerspIdx=0;l7PerspOk=0;renderL7Persp();document.getElementById('l7PerspScore').innerHTML='';}
     function renderL7Persp(){if(l7PerspIdx>=l7PerspData.length){document.getElementById('l7PerspScore').innerHTML=`<div class="activity-score"><div class="score-number">${l7PerspOk}/${l7PerspData.length}</div><p>${l7PerspOk>=3?'🎉 Perspective ace!':'📖 Review the 4 stakeholder perspectives.'}</p><button class="activity-btn secondary" onclick="initL7Persp()" style="margin-top:8px">🔄 Try Again</button></div>`;markActivityDone(7,'persp',l7PerspOk,l7PerspData.length);return;}const d=l7PerspData[l7PerspIdx];document.getElementById('l7PerspArea').innerHTML=`<div class="glass-card" style="padding:16px"><p style="font-size:.95rem;font-style:italic;margin-bottom:16px">${d.text}</p><div style="display:flex;gap:8px;flex-wrap:wrap">${['industry','scientist','indigenous','resident'].map(s=>`<button class="activity-btn secondary" onclick="pickL7Persp('${s}')" style="flex:1;min-width:80px;font-size:.8rem">${s==='industry'?'🏭 Industry':s==='scientist'?'🔬 Scientist':s==='indigenous'?'🤝 Indigenous':'🏠 Resident'}</button>`).join('')}</div><div id="l7PerspFb" style="margin-top:8px"></div></div><p style="color:var(--text3);font-size:.8rem">${l7PerspIdx+1} of ${l7PerspData.length}</p>`;}
-    function pickL7Persp(ans){const d=l7PerspData[l7PerspIdx],ok=ans===d.ans;if(ok)l7PerspOk++;document.getElementById('l7PerspFb').innerHTML=`<div style="padding:10px;border-radius:8px;background:${ok?'rgba(34,197,94,.1)':'rgba(239,68,68,.08)'};font-size:.85rem"><strong>${ok?'✅':'❌'}</strong> ${d.explain}</div>`;setTimeout(()=>{l7PerspIdx++;renderL7Persp();},1500);}
+    function pickL7Persp(ans){const d=l7PerspData[l7PerspIdx],ok=ans===d.ans;if(ok)l7PerspOk++;document.querySelectorAll('#l7PerspArea .activity-btn').forEach(b=>b.disabled=true);document.getElementById('l7PerspFb').innerHTML=`<div style="padding:10px;border-radius:8px;background:${ok?'rgba(34,197,94,.1)':'rgba(239,68,68,.08)'};font-size:.85rem"><strong>${ok?'✅':'❌'}</strong> ${d.explain}<br><button class="act-next-btn" onclick="l7PerspIdx++;renderL7Persp()">Next Question →</button></div>`;}
 
     // L7: Stewardship Action Sorter
     const l7StewardData=[{action:"♻️ Recycling at home",level:"individual",explain:"Personal actions like recycling are individual stewardship."},{action:"🧹 Community river clean-up day",level:"community",explain:"Organized group events = community stewardship."},{action:"🏛️ Creating a new national park",level:"government",explain:"Establishing protected areas requires government action."},{action:"🌱 Planting a native garden in your yard",level:"individual",explain:"Personal gardening choices = individual stewardship."},{action:"📊 ABMI monitoring biodiversity across Alberta",level:"government",explain:"Province-wide monitoring programs = government stewardship."},{action:"🤝 Neighbourhood habitat restoration project",level:"community",explain:"Local collaborative restoration = community stewardship."}];
     let l7StewardIdx=0,l7StewardOk=0;
     function initL7Steward(){l7StewardIdx=0;l7StewardOk=0;renderL7Steward();document.getElementById('l7StewardScore').innerHTML='';}
     function renderL7Steward(){if(l7StewardIdx>=l7StewardData.length){document.getElementById('l7StewardScore').innerHTML=`<div class="activity-score"><div class="score-number">${l7StewardOk}/${l7StewardData.length}</div><p>${l7StewardOk>=5?'🎉 Stewardship pro!':'📖 Review individual, community, and government actions.'}</p><button class="activity-btn secondary" onclick="initL7Steward()" style="margin-top:8px">🔄 Try Again</button></div>`;markActivityDone(7,'steward',l7StewardOk,l7StewardData.length);return;}const d=l7StewardData[l7StewardIdx];document.getElementById('l7StewardArea').innerHTML=`<div class="glass-card" style="padding:16px"><p style="font-size:1rem;font-weight:700;margin-bottom:16px;text-align:center">${d.action}</p><div style="display:flex;gap:8px;justify-content:center">${['individual','community','government'].map(l=>`<button class="activity-btn secondary" onclick="pickL7Steward('${l}')" style="flex:1">${l==='individual'?'🏡 Individual':l==='community'?'🏫 Community':'🏛️ Government'}</button>`).join('')}</div><div id="l7StewardFb" style="margin-top:8px"></div></div><p style="color:var(--text3);font-size:.8rem">${l7StewardIdx+1} of ${l7StewardData.length}</p>`;}
-    function pickL7Steward(ans){const d=l7StewardData[l7StewardIdx],ok=ans===d.level;if(ok)l7StewardOk++;document.getElementById('l7StewardFb').innerHTML=`<div style="padding:10px;border-radius:8px;background:${ok?'rgba(34,197,94,.1)':'rgba(239,68,68,.08)'};font-size:.85rem"><strong>${ok?'✅':'❌'}</strong> ${d.explain}</div>`;setTimeout(()=>{l7StewardIdx++;renderL7Steward();},1500);}
+    function pickL7Steward(ans){const d=l7StewardData[l7StewardIdx],ok=ans===d.level;if(ok)l7StewardOk++;document.querySelectorAll('#l7StewardArea .activity-btn').forEach(b=>b.disabled=true);document.getElementById('l7StewardFb').innerHTML=`<div style="padding:10px;border-radius:8px;background:${ok?'rgba(34,197,94,.1)':'rgba(239,68,68,.08)'};font-size:.85rem"><strong>${ok?'✅':'❌'}</strong> ${d.explain}<br><button class="act-next-btn" onclick="l7StewardIdx++;renderL7Steward()">Next Question →</button></div>`;}
 
     // ===== SAVE/LOAD for L4-L8 =====
     function saveCR4(){localStorage.setItem('g7-unita-l4-cr',document.getElementById('crResponse4').value);}
@@ -1495,7 +1528,40 @@
       const fill = document.getElementById('progressFill');
       if (fill) fill.style.width = Math.round(passed / 8 * 100) + '%';
     }
-    document.addEventListener('DOMContentLoaded', () => { updateLock(); updateProgress(); });
+    // ===== VIDEO WATCHED + SUMMARY =====
+    function markVideoWatched(vid) {
+      localStorage.setItem('g7-unita-video-' + vid, 'true');
+      applyVideoWatched(vid);
+    }
+    function applyVideoWatched(vid) {
+      const bar = document.getElementById('vw-' + vid);
+      const btn = document.getElementById('vw-btn-' + vid);
+      const lbl = document.getElementById('vw-lbl-' + vid);
+      const summary = document.getElementById('vs-' + vid);
+      if (bar) bar.classList.add('watched');
+      if (btn) { btn.textContent = '✅ Watched'; btn.classList.add('done'); btn.disabled = true; }
+      if (lbl) { lbl.textContent = 'Video complete!'; lbl.classList.add('done'); }
+      if (summary) {
+        summary.classList.remove('locked');
+        const toggle = summary.querySelector('.video-summary-toggle span');
+        if (toggle) toggle.textContent = '▼';
+      }
+    }
+    function toggleVideoSummary(vid) {
+      const summary = document.getElementById('vs-' + vid);
+      if (summary && summary.classList.contains('locked')) return; // Can't open if locked
+      const content = document.getElementById('vs-content-' + vid);
+      if (content) content.classList.toggle('open');
+      const toggle = summary.querySelector('.video-summary-toggle span');
+      if (toggle) toggle.textContent = content.classList.contains('open') ? '▲' : '▼';
+    }
+    function restoreVideoStates() {
+      const vids = ['l1v1','l1v2','l2v1','l3v1','l4v1','l5v1','l6v1','l7v1'];
+      vids.forEach(vid => {
+        if (localStorage.getItem('g7-unita-video-' + vid) === 'true') applyVideoWatched(vid);
+      });
+    }
+    document.addEventListener('DOMContentLoaded', () => { updateLock(); updateProgress(); restoreVideoStates(); });
   </script>
   <!-- Fallback: self-contained teacher unlock if shared.js fails -->
   <script>
