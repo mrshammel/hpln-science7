@@ -159,8 +159,9 @@ function initStudentGoogleSignIn() {
       theme: 'outline', size: 'large', text: 'signin_with', shape: 'pill', width: 280
     });
     // Also add a subtle manual fallback link below the Google button
+    btnContainer.style.cssText += ';flex-direction:column;align-items:center';
     const fallback = document.createElement('div');
-    fallback.style.cssText = 'margin-top:12px;font-size:.78rem;color:var(--text3)';
+    fallback.style.cssText = 'margin-top:12px;font-size:.78rem;color:var(--text3);text-align:center';
     fallback.innerHTML = '<a href="#" onclick="event.preventDefault();manualStudentSignIn()" style="color:var(--text3);text-decoration:underline">Use manual sign-in instead</a>';
     btnContainer.appendChild(fallback);
   } catch (e) {
