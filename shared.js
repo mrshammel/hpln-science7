@@ -206,6 +206,8 @@ function handleStudentCredential(response) {
   localStorage.setItem('g7-student-avatar', payload.picture || '');
   // Sync to Firebase for real-time teacher dashboard
   try { if (typeof syncStudentLogin === 'function') syncStudentLogin(payload.name, payload.email, payload.picture || ''); } catch(e) {}
+  // Register in Firestore users collection (for teacher dashboard)
+  try { if (typeof registerStudentInFirestore === 'function') registerStudentInFirestore(payload.name || payload.email.split('@')[0], payload.email, payload.picture || ''); } catch(e) {}
   checkSignIn();
 }
 
@@ -224,6 +226,8 @@ function manualStudentSignIn() {
   localStorage.setItem('g7-student-avatar', '');
   // Sync to Firebase for real-time teacher dashboard
   try { if (typeof syncStudentLogin === 'function') syncStudentLogin(name.trim(), email.trim(), ''); } catch(e) {}
+  // Register in Firestore users collection (for teacher dashboard)
+  try { if (typeof registerStudentInFirestore === 'function') registerStudentInFirestore(name.trim(), email.trim(), ''); } catch(e) {}
   checkSignIn();
 }
 
@@ -1227,6 +1231,18 @@ document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => { try { if (typeof initAIMarking === 'function') initAIMarking(); } catch(e) {} }, 500);
   // Restore progress from Firestore (Phase 9 — cross-device sync)
   setTimeout(() => { try { if (typeof restoreProgressFromFirestore === 'function') restoreProgressFromFirestore(); } catch(e) {} }, 800);
+  // Register student in Firestore if signed in (for teacher dashboard)
+  setTimeout(() => {
+    try {
+      const sEmail = localStorage.getItem('g7-student-email') || localStorage.getItem('g7-email');
+      const sName = localStorage.getItem('g7-student-name') || localStorage.getItem('g7-student');
+      if (sEmail && typeof registerStudentInFirestore === 'function') {
+        registerStudentInFirestore(sName || sEmail.split('@')[0], sEmail, localStorage.getItem('g7-student-avatar') || '');
+      }
+    } catch(e) {}
+  }, 1200);
+  // Update activity heartbeat every 3 minutes
+  setInterval(() => { try { if (typeof updateStudentActivity === 'function') updateStudentActivity(); } catch(e) {} }, 180000);
   // Shift+T reveals teacher nav
   document.addEventListener('keydown', e => {
     if (e.shiftKey && e.key === 'T') {

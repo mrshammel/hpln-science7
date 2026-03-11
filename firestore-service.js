@@ -38,6 +38,54 @@ function _serverTimestamp() {
 }
 
 // ============================================================
+// STUDENT REGISTRATION (for teacher dashboard)
+// ============================================================
+
+/**
+ * Register a student in the Firestore 'users' collection.
+ * Called on every sign-in so the teacher dashboard can detect them.
+ * @param {string} name - Student display name
+ * @param {string} email - Student email
+ * @param {string} avatar - Avatar URL (optional)
+ */
+async function registerStudentInFirestore(name, email, avatar) {
+  const db = _getDb();
+  if (!db || !email) return;
+
+  try {
+    // Use email as doc ID (sanitized)
+    const docId = email.replace(/[.#$\[\]\/]/g, '_');
+    await db.collection('users').doc(docId).set({
+      displayName: name || email.split('@')[0],
+      email: email,
+      avatar: avatar || '',
+      role: 'student',
+      lastActive: _serverTimestamp(),
+      lastSignIn: _serverTimestamp()
+    }, { merge: true });
+    console.log('[Firestore] Student registered:', name || email);
+  } catch (e) {
+    console.warn('[Firestore] Student registration failed:', e.message);
+  }
+}
+
+/**
+ * Update student last active timestamp.
+ */
+async function updateStudentActivity() {
+  const db = _getDb();
+  const email = localStorage.getItem('g7-student-email') || localStorage.getItem('g7-email');
+  if (!db || !email) return;
+
+  try {
+    const docId = email.replace(/[.#$\[\]\/]/g, '_');
+    await db.collection('users').doc(docId).update({
+      lastActive: _serverTimestamp()
+    });
+  } catch (e) {}
+}
+
+// ============================================================
 // STUDENT PROGRESS
 // ============================================================
 
