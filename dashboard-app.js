@@ -43,6 +43,22 @@ document.addEventListener('DOMContentLoaded', () => {
   initTeacherGSI();
 });
 
+// ===== MANUAL ACCESS CODE (called from dashboard.html button) =====
+function manualTeacherLogin() {
+  const code = prompt('Enter teacher access code:');
+  if (!code) return;
+  if (code.trim() === 'hpln2025') {
+    const name = prompt('Enter your name:') || 'Teacher';
+    localStorage.setItem('g7-teacher-name', name);
+    localStorage.setItem('g7-teacher-email', 'teacher@hpln.ca');
+    localStorage.setItem('g7-teacher-avatar', '');
+    localStorage.setItem('g7-teacher-unlock', 'true');
+    showDashboard(name, 'teacher@hpln.ca', '');
+  } else {
+    alert('❌ Invalid access code.');
+  }
+}
+
 function _legacyAuthCheck() {
   const tName = localStorage.getItem('g7-teacher-name');
   const tEmail = localStorage.getItem('g7-teacher-email');
