@@ -5,6 +5,9 @@
 /* --- RESET --- */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
+/* --- UTILITY --- */
+.hidden{display:none !important}
+
 /* --- THEME TOKENS --- */
 :root{
   --bg:#0f1a12;--bg2:#162016;
