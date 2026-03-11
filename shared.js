@@ -178,7 +178,7 @@ function handleStudentCredential(response) {
   if (!payload || !payload.email) { alert('Sign-in failed. Please try again.'); return; }
 
   // Check if this sign-in was from the teacher section
-  const TEACHER_EMAILS = ['amanda.shammel@hpln.ca','admin@hpln.ca'];
+  const TEACHER_EMAILS = ['amanda.shammel@hpln.ca','admin@hpln.ca','amanda.yaremchuk@gmail.com','amandahammel@prrd8.ca','coreysteeves@prrd8.ca'];
   const isTeacherSignIn = sessionStorage.getItem('hpln-signin-as') === 'teacher';
   const isTeacherEmail = TEACHER_EMAILS.includes(payload.email.toLowerCase());
   sessionStorage.removeItem('hpln-signin-as'); // clear flag

@@ -19,7 +19,10 @@ const ROLES = { STUDENT: 'student', TEACHER: 'teacher', ADMIN: 'admin' };
 // Emails that auto-receive teacher role on first sign-in
 const TEACHER_EMAILS = [
   'amanda.shammel@hpln.ca',
-  'admin@hpln.ca'
+  'admin@hpln.ca',
+  'amanda.yaremchuk@gmail.com',
+  'amandahammel@prrd8.ca',
+  'coreysteeves@prrd8.ca'
 ];
 
 // ===== INIT =====

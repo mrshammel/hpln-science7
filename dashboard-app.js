@@ -4,7 +4,7 @@
 
 const GOOGLE_CLIENT_ID = '487495658772-eck3r6d7s9in7sdc87h6knov95tr4v42.apps.googleusercontent.com';
 // Teacher email allowlist — also defined in auth-service.js TEACHER_EMAILS
-const DASHBOARD_TEACHER_EMAILS = ['amanda.shammel@hpln.ca','admin@hpln.ca'];
+const DASHBOARD_TEACHER_EMAILS = ['amanda.shammel@hpln.ca','admin@hpln.ca','amanda.yaremchuk@gmail.com','amandahammel@prrd8.ca','coreysteeves@prrd8.ca'];
 let currentSort = { col:'name', asc:true };
 
 // ===== AUTH (uses auth-guard.js) =====
