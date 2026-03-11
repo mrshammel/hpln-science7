@@ -267,8 +267,10 @@ function recordGrade(quizId, lessonTitle, score, total, passed) {
   if (url) {
     fetch(url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(record) }).catch(e => console.log('Apps Script sync:', e));
   }
-  // Sync quiz result to Firebase
+  // Sync quiz result to Firebase Realtime DB (legacy)
   try { if (typeof syncQuizResult === 'function') { var unitId = typeof getUnitId === 'function' ? getUnitId() : null; if (unitId) syncQuizResult(unitId, quizId, score, total, passed); } } catch(e) {}
+  // Sync to Firestore (Phase 3)
+  try { if (typeof saveGrade === 'function') saveGrade(record); } catch(e) { console.warn('Firestore grade sync:', e); }
 }
 
 // ===== CSV EXPORT =====
@@ -474,6 +476,8 @@ function showResults(qid) {
     localStorage.setItem(`g7-unit${unitKey}-lesson${ln}-pct`, pct);
     if (typeof updateLock === 'function') updateLock();
     if (typeof updateProgress === 'function') updateProgress();
+    // Sync to Firestore (Phase 3)
+    try { if (typeof saveProgress === 'function') saveProgress(unitKey, ln, true); } catch(e) {}
   }
   recordGrade(qid, `Unit ${unitKey.toUpperCase()} Lesson ${ln}`, s.score, s.total, pass);
   let bh = '';
