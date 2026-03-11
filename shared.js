@@ -356,6 +356,22 @@ function initQuiz(qid, quizBanks) {
   renderAQ(qid);
 }
 
+/** Shuffle options and update the correct answer index (Fisher-Yates) */
+function shuffleOptions(q) {
+  // Create index mapping
+  const indices = q.opts.map((_, i) => i);
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+  // Reorder options and find new answer position
+  const shuffled = indices.map(i => q.opts[i]);
+  const newAns = indices.indexOf(q.ans);
+  q.opts = shuffled;
+  q.ans = newAns;
+  q._shuffled = true; // mark as shuffled so we don't re-shuffle
+}
+
 /** Render adaptive quiz question */
 function renderAQ(qid) {
   const s = quizState[qid];
@@ -364,6 +380,7 @@ function renderAQ(qid) {
   if (s.inRemediation) { renderRem(qid); return; }
   if (s.currentQ >= s.total) { showResults(qid); return; }
   const q = s.questions[s.currentQ];
+  if (!q._shuffled) shuffleOptions(q);
   const letters = ['A', 'B', 'C', 'D'];
   const pct = Math.round(s.currentQ / s.total * 100);
   area.innerHTML = `<div class="quiz-view active"><div class="quiz-progress"><div class="quiz-progress-bar"><div class="quiz-progress-fill" style="width:${pct}%"></div></div><div class="quiz-progress-text">Question ${s.currentQ + 1} of ${s.total}</div></div><div class="quiz-question-wrap"><div class="question-card"><div class="q-outcome">${q.outcome}</div><div class="q-text">${q.q}</div><div class="options">${q.opts.map((o, j) => `<button class="option-btn" onclick="pickAns('${qid}',${j})"><span class="option-letter">${letters[j]}</span>${o}</button>`).join('')}</div><div class="feedback-box" id="${qid}-fb"></div><div class="quiz-nav"><button class="quiz-next-btn" id="${qid}-next" onclick="nextQ('${qid}')">Next →</button></div></div></div></div>`;
@@ -437,6 +454,7 @@ function startRemQ(qid) { quizState[qid].remIdx = 1; renderRemQ(qid); }
 function renderRemQ(qid) {
   const s = quizState[qid], q = s.remQuestions[s.remCorrect];
   if (!q) { pickRemQ(qid); renderRemQ(qid); return; }
+  if (!q._shuffled) shuffleOptions(q);
   const area = document.getElementById(qid + '-area'), letters = ['A', 'B', 'C', 'D'];
   area.innerHTML = `<div class="remediation-view active"><div class="remediation-header"><h2>📖 Mini-Lesson: ${s.remOutcome}</h2><p>Get all 3 correct to return! (${s.remCorrect}/3)</p></div><div class="question-card"><div class="q-outcome">${s.remOutcome} — Remediation</div><div class="q-text">${q.q}</div><div class="options">${q.opts.map((o, j) => `<button class="option-btn" onclick="pickRemAns('${qid}',${j})"><span class="option-letter">${letters[j]}</span>${o}</button>`).join('')}</div><div class="feedback-box" id="${qid}-rfb"></div><div class="quiz-nav"><button class="quiz-next-btn" id="${qid}-rnxt" onclick="nextRemQ('${qid}')">Next →</button></div></div></div>`;
 }
@@ -471,7 +489,7 @@ function nextRemQ(qid) {
   if (s.remCorrect >= 3) {
     s.inRemediation = false; s.remOutcome = null;
     s.currentQ = 0; s.score = 0; s.answered = 0;
-    s.questions = s.banks[qid].primary.map((q, i) => ({ ...q, idx: i, isReplacement: false, strikes: 0 }));
+    s.questions = s.banks[qid].primary.map((q, i) => ({ ...q, idx: i, isReplacement: false, strikes: 0, _shuffled: false }));
     renderAQ(qid);
     return;
   }
