@@ -112,8 +112,8 @@
         <div style="background:rgba(96,165,250,.08);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center">
           <div style="font-size:1.2rem;font-weight:700;color:#60a5fa;margin-bottom:6px">👩‍🏫 I'm a Teacher</div>
           <p style="font-size:.78rem;color:var(--text3);margin-bottom:10px">Access the teacher dashboard, analytics, and student progress</p>
-          <div id="teacherGoogleBtn" style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:10px" onmousedown="sessionStorage.setItem('hpln-signin-as','teacher')"></div>
-          <div style="font-size:.72rem;color:var(--text3);margin-bottom:8px">— or —</div>
+          <button onclick="teacherGoogleSignIn()" style="display:inline-flex;align-items:center;gap:10px;padding:10px 24px;background:#fff;border:1px solid #dadce0;border-radius:20px;font-size:.88rem;font-weight:500;color:#3c4043;cursor:pointer;transition:box-shadow .2s;box-shadow:0 1px 3px rgba(0,0,0,.08)" onmouseover="this.style.boxShadow='0 2px 6px rgba(0,0,0,.15)'" onmouseout="this.style.boxShadow='0 1px 3px rgba(0,0,0,.08)'"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" width="18" height="18"> Sign in with Google</button>
+          <div style="font-size:.72rem;color:var(--text3);margin:10px 0 8px">— or —</div>
           <button onclick="teacherAccessCode()" style="padding:8px 20px;background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.3);border-radius:8px;color:#60a5fa;font-weight:600;font-size:.82rem;cursor:pointer;transition:all .3s">🔑 Use Access Code</button>
         </div>
       </div>
@@ -380,9 +380,6 @@
       updateLandingProgress();
       updateEmptyStates();
 
-      // Init teacher Google sign-in button on the overlay
-      initTeacherOverlayGSI();
-
       // Also listen for Firebase auth state (activates once Firebase is configured)
       if (typeof onAuthStateChange === 'function') {
         onAuthStateChange(state => {
@@ -403,30 +400,20 @@
     const TEACHER_CLIENT_ID = '487495658772-eck3r6d7s9in7sdc87h6knov95tr4v42.apps.googleusercontent.com';
     const TEACHER_EMAILS_LANDING = ['amanda.shammel@hpln.ca','admin@hpln.ca'];
 
-    function initTeacherOverlayGSI() {
-      const btn = document.getElementById('teacherGoogleBtn');
-      if (!btn) return;
-      if (window.location.protocol === 'file:') {
-        btn.innerHTML = '<p style="color:var(--text3);font-size:.75rem">Google Sign-In requires https</p>';
-        return;
-      }
-
-      // GIS loads async — retry until available
-      let attempts = 0;
-      const tryRender = () => {
-        attempts++;
+    function teacherGoogleSignIn() {
+      // Set the flag BEFORE triggering Google sign-in
+      sessionStorage.setItem('hpln-signin-as', 'teacher');
+      try {
         if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
-          // GIS is ready — render the teacher button
-          google.accounts.id.renderButton(btn, {
-            theme: 'outline', size: 'large', text: 'signin_with', shape: 'pill', width: 260
-          });
-        } else if (attempts < 20) {
-          setTimeout(tryRender, 500);
+          google.accounts.id.prompt();
         } else {
-          btn.innerHTML = '<a href="dashboard.html" style="display:inline-block;padding:10px 24px;background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.3);border-radius:8px;color:#60a5fa;font-weight:600;font-size:.88rem;text-decoration:none">Open Teacher Dashboard →</a>';
+          alert('Google Sign-In is still loading. Please try again in a moment.');
+          sessionStorage.removeItem('hpln-signin-as');
         }
-      };
-      tryRender();
+      } catch(e) {
+        alert('Google Sign-In unavailable. Use the access code instead.');
+        sessionStorage.removeItem('hpln-signin-as');
+      }
     }
 
     function teacherAccessCode() {
