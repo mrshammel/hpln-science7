@@ -1205,6 +1205,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof updateLock === 'function') updateLock();
   // Restore saved activity completion state
   restoreActState();
+  // Init AI marking buttons on constructed responses (Phase 8)
+  setTimeout(() => { try { if (typeof initAIMarking === 'function') initAIMarking(); } catch(e) {} }, 500);
+  // Restore progress from Firestore (Phase 9 — cross-device sync)
+  setTimeout(() => { try { if (typeof restoreProgressFromFirestore === 'function') restoreProgressFromFirestore(); } catch(e) {} }, 800);
   // Shift+T reveals teacher nav
   document.addEventListener('keydown', e => {
     if (e.shiftKey && e.key === 'T') {

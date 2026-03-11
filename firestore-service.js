@@ -100,6 +100,43 @@ async function saveProgress(unitKey, lessonNum, passed) {
 }
 
 /**
+ * Restore lesson unlock state from Firestore → localStorage.
+ * Call on page load to sync progress across devices.
+ */
+async function restoreProgressFromFirestore() {
+  const db = _getDb();
+  const uid = _getUserId();
+  if (!db || !uid) return;
+
+  try {
+    const doc = await db.collection('studentProgress').doc(uid).get();
+    if (!doc.exists) return;
+    const data = doc.data();
+    if (!data.units) return;
+
+    let restored = 0;
+    for (const [unitKey, unitData] of Object.entries(data.units)) {
+      if (unitData.lessonsPassed && unitData.lessonsPassed.length) {
+        unitData.lessonsPassed.forEach(lessonNum => {
+          const key = `g7-unit${unitKey}-lesson${lessonNum}-passed`;
+          if (!localStorage.getItem(key)) {
+            localStorage.setItem(key, 'true');
+            restored++;
+          }
+        });
+      }
+    }
+    if (restored > 0) {
+      console.log(`[Firestore] Restored ${restored} lesson unlock(s) from cloud`);
+      // Refresh sidebar locks if function exists
+      if (typeof updateLock === 'function') updateLock();
+    }
+  } catch (e) {
+    console.warn('[Firestore] Progress restore failed:', e.message);
+  }
+}
+
+/**
  * Fetch full student progress from Firestore.
  * Falls back to localStorage if offline.
  * @returns {Object} { overallCompletion, units: { a: { lessonsCompleted, lessonsPassed[] }, ... } }
