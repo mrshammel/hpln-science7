@@ -21,13 +21,20 @@ function _getDb() {
 }
 
 function _getUserId() {
+  // Use email-based doc ID to match registration in users collection
+  const email = localStorage.getItem('g7-student-email') || localStorage.getItem('g7-email');
+  if (email) return email.replace(/[.#$\[\]\/]/g, '_');
+  // Fallback to Firebase Auth UID
   if (typeof getCurrentUser === 'function') {
     const u = getCurrentUser();
     if (u && u.uid) return u.uid;
   }
-  const email = localStorage.getItem('g7-student-email');
-  if (email) return 'offline-' + email.replace(/[^a-z0-9]/gi, '_');
   return null;
+}
+
+/** Get consistent email-based doc ID */
+function _getEmailDocId(email) {
+  return (email || '').replace(/[.#$\[\]\/]/g, '_');
 }
 
 function _serverTimestamp() {
