@@ -3,58 +3,188 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Grades — Grade 7 Science</title>
-  <meta name="description" content="View your quiz scores, activity results, and overall grade for Grade 7 Science.">
+  <title>My Grades — Grade 7 Science | HPLN</title>
+  <meta name="description" content="View your grades, feedback, and overall weighted grade for Grade 7 Science at Home Plus Learning Network.">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="shared.css">
   <style>
-    .grades-wrap{max-width:900px;margin:0 auto;padding:0 24px 60px}
-    .grades-topbar{display:flex;justify-content:space-between;align-items:center;padding:20px 24px;max-width:900px;margin:0 auto}
-    .grades-topbar .back-btn{display:flex;align-items:center;gap:8px;color:var(--text3);text-decoration:none;font-size:.88rem;padding:8px 16px;border-radius:var(--radius);border:1px solid var(--border);background:var(--card);transition:all .3s}
-    .grades-topbar .back-btn:hover{border-color:var(--accent);color:var(--accent)}
+    /* ===== GRADES PAGE STYLES ===== */
+    :root{--green:#4ade80;--yellow:#fbbf24;--red:#ef4444;--blue:#38bdf8;--purple:#a78bfa;--orange:#f97316}
+    *{box-sizing:border-box}
+    .g-wrap{max-width:1100px;margin:0 auto;padding:0 20px 80px}
+    .g-topbar{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;max-width:1100px;margin:0 auto}
+    .g-topbar .back-btn{display:flex;align-items:center;gap:8px;color:var(--text3);text-decoration:none;font-size:.85rem;padding:8px 16px;border-radius:var(--radius);border:1px solid var(--border);background:var(--card);transition:all .3s}
+    .g-topbar .back-btn:hover{border-color:var(--accent);color:var(--accent)}
 
-    /* Grade ring */
-    .grade-hero{text-align:center;margin:20px auto 40px;position:relative}
-    .grade-ring{width:180px;height:180px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column;margin:0 auto 16px;position:relative;background:var(--card);border:3px solid var(--border)}
-    .grade-ring::before{content:'';position:absolute;inset:-6px;border-radius:50%;background:conic-gradient(var(--ring-color,#4ade80) var(--ring-pct,0%),transparent 0%);z-index:-1;transition:all 1s ease}
-    .grade-ring .grade-pct{font-family:'Outfit',sans-serif;font-size:3.2rem;font-weight:800;color:var(--accent);line-height:1}
-    .grade-ring .grade-label{font-size:.78rem;color:var(--text3);margin-top:4px}
-    .grade-letter{font-family:'Outfit',sans-serif;font-size:1.4rem;font-weight:800;margin-top:8px}
-    .grade-summary{font-size:.88rem;color:var(--text3);margin-top:4px}
+    /* ===== TOP SUMMARY ===== */
+    .grade-summary{display:grid;grid-template-columns:200px 1fr;gap:24px;margin-bottom:32px;align-items:start}
+    .grade-ring-wrap{display:flex;flex-direction:column;align-items:center;padding:24px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius)}
+    .grade-ring{width:140px;height:140px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column;position:relative;background:var(--bg)}
+    .grade-ring svg{position:absolute;width:140px;height:140px;transform:rotate(-90deg)}
+    .grade-ring svg circle{fill:none;stroke-width:8;stroke-linecap:round}
+    .grade-ring svg .ring-bg{stroke:var(--border)}
+    .grade-ring svg .ring-fill{stroke:var(--green);transition:stroke-dashoffset 1s ease,stroke .5s ease}
+    .grade-ring .g-pct{font-family:'Outfit',sans-serif;font-size:2.4rem;font-weight:800;line-height:1;z-index:1}
+    .grade-ring .g-letter{font-size:.85rem;font-weight:700;z-index:1;margin-top:2px}
+    .grade-ring-label{font-size:.72rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-top:10px;text-align:center}
 
-    /* Stats row */
-    .grade-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:32px}
-    .grade-stat{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center}
-    .grade-stat .gs-val{font-family:'Outfit',sans-serif;font-size:1.6rem;font-weight:800;color:var(--accent)}
-    .grade-stat .gs-lbl{font-size:.72rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
-    @media(max-width:600px){.grade-stats{grid-template-columns:repeat(2,1fr)}}
+    .summary-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .ss-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:center;gap:10px}
+    .ss-icon{font-size:1.3rem;flex-shrink:0}
+    .ss-val{font-family:'Outfit',sans-serif;font-size:1.3rem;font-weight:800;color:var(--text)}
+    .ss-lbl{font-size:.68rem;color:var(--text3);text-transform:uppercase;letter-spacing:.3px}
+    .ss-card.alert{border-color:rgba(239,68,68,.3)}
+    .ss-card.alert .ss-val{color:var(--red)}
 
-    /* Unit section */
-    .unit-grades{margin-bottom:28px}
-    .unit-grades-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
-    .unit-grades-header h3{font-size:1rem;font-weight:700;color:var(--text)}
-    .unit-grades-header .unit-avg{margin-left:auto;font-size:.85rem;font-weight:700}
+    .trend-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:12px;font-size:.72rem;font-weight:600}
+    .trend-up{background:rgba(74,222,128,.1);color:var(--green)}
+    .trend-steady{background:rgba(56,189,248,.1);color:var(--blue)}
+    .trend-down{background:rgba(239,68,68,.08);color:var(--red)}
 
-    /* Grade row */
-    .grade-row{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;transition:all .2s}
-    .grade-row:hover{border-color:var(--accent);transform:translateX(4px)}
-    .grade-row .gr-icon{font-size:1.3rem;flex-shrink:0}
-    .grade-row .gr-info{flex:1;min-width:0}
-    .grade-row .gr-title{font-weight:600;font-size:.88rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .grade-row .gr-meta{font-size:.72rem;color:var(--text3);display:flex;gap:12px;margin-top:2px}
-    .grade-row .gr-score{font-family:'Outfit',sans-serif;font-size:1.1rem;font-weight:800;flex-shrink:0;min-width:50px;text-align:right}
-    .grade-row .gr-bar{width:80px;height:6px;border-radius:3px;background:var(--card2);overflow:hidden;flex-shrink:0}
-    .grade-row .gr-bar-fill{height:100%;border-radius:3px;transition:width .5s ease}
-    .grade-row .gr-badge{font-size:.68rem;padding:2px 8px;border-radius:10px;font-weight:600;flex-shrink:0}
-    .passed{background:rgba(74,222,128,.12);color:#4ade80}
-    .failed{background:rgba(239,68,68,.1);color:#ef4444}
-    .retry{background:rgba(251,191,36,.12);color:#fbbf24}
+    /* ===== CATEGORY CARDS ===== */
+    .cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:32px}
+    .cat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;position:relative;overflow:hidden}
+    .cat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+    .cat-card.formative::before{background:var(--green)}
+    .cat-card.assignment::before{background:var(--blue)}
+    .cat-card.performance::before{background:var(--purple)}
+    .cat-card.quiz::before{background:var(--orange)}
+    .cat-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+    .cat-name{font-weight:700;font-size:.82rem;color:var(--text)}
+    .cat-weight{font-size:.65rem;color:var(--text3);background:var(--card2);padding:2px 8px;border-radius:8px}
+    .cat-avg{font-family:'Outfit',sans-serif;font-size:1.8rem;font-weight:800;line-height:1}
+    .cat-items{font-size:.7rem;color:var(--text3);margin-top:4px}
+    .cat-bar{height:4px;background:var(--card2);border-radius:2px;margin-top:10px;overflow:hidden}
+    .cat-bar-fill{height:100%;border-radius:2px;transition:width .8s ease}
+    .cat-contrib{font-size:.68rem;color:var(--text3);margin-top:6px;display:flex;justify-content:space-between}
+    .cat-contrib strong{color:var(--text2)}
 
-    /* Empty state */
+    /* ===== WEIGHTED BREAKDOWN ===== */
+    .weight-summary{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:28px;padding:14px 18px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius)}
+    .weight-summary .ws-title{flex-basis:100%;font-size:.75rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+    .ws-item{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--text2);flex:1;min-width:150px}
+    .ws-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+    .ws-val{font-weight:700;color:var(--text)}
+
+    /* ===== FILTERS ===== */
+    .filter-bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;align-items:center}
+    .filter-bar select,.filter-bar input{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;font-size:.8rem;color:var(--text);font-family:'Inter',sans-serif;min-width:0}
+    .filter-bar select:focus,.filter-bar input:focus{outline:none;border-color:var(--accent)}
+    .filter-bar input[type="text"]{flex:1;min-width:160px}
+    .filter-bar .filter-count{font-size:.75rem;color:var(--text3);margin-left:auto}
+
+    /* ===== GRADE TABLE ===== */
+    .grade-table-wrap{overflow-x:auto;margin-bottom:32px}
+    .grade-table{width:100%;border-collapse:separate;border-spacing:0}
+    .grade-table thead th{background:var(--card);border-bottom:2px solid var(--border);padding:10px 12px;font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);text-align:left;position:sticky;top:0;white-space:nowrap;cursor:pointer;user-select:none}
+    .grade-table thead th:hover{color:var(--accent)}
+    .grade-table tbody tr{cursor:pointer;transition:all .15s}
+    .grade-table tbody tr:hover{background:var(--card)}
+    .grade-table tbody td{padding:12px;border-bottom:1px solid var(--border);font-size:.82rem;color:var(--text2);vertical-align:middle}
+    .grade-table .gt-title{font-weight:600;color:var(--text);max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .grade-table .gt-unit{font-size:.72rem;color:var(--text3)}
+    .grade-table .gt-score{font-family:'Outfit',sans-serif;font-weight:700;font-size:.95rem}
+    .grade-table .gt-pct{font-weight:700;font-size:.85rem}
+    .gt-bar{width:60px;height:5px;background:var(--card2);border-radius:3px;display:inline-block;vertical-align:middle;margin-left:6px;overflow:hidden}
+    .gt-bar-fill{height:100%;border-radius:3px}
+    .gt-feedback-preview{font-size:.7rem;color:var(--text3);max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+    /* Status chips */
+    .status-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:10px;font-size:.68rem;font-weight:600;white-space:nowrap}
+    .s-completed{background:rgba(74,222,128,.1);color:var(--green)}
+    .s-missing{background:rgba(239,68,68,.1);color:var(--red)}
+    .s-pending{background:rgba(251,191,36,.1);color:var(--yellow)}
+    .s-returned{background:rgba(56,189,248,.1);color:var(--blue)}
+    .s-revision{background:rgba(167,139,250,.1);color:var(--purple)}
+    .s-exempt{background:var(--card2);color:var(--text3)}
+
+    /* Type chips */
+    .type-chip{font-size:.66rem;padding:2px 8px;border-radius:8px;font-weight:600}
+    .t-formative{background:rgba(74,222,128,.08);color:var(--green)}
+    .t-assignment{background:rgba(56,189,248,.08);color:var(--blue)}
+    .t-performance{background:rgba(167,139,250,.08);color:var(--purple)}
+    .t-quiz{background:rgba(249,115,22,.08);color:var(--orange)}
+
+    /* Review badges */
+    .review-badge{display:inline-flex;align-items:center;gap:3px;font-size:.62rem;padding:2px 7px;border-radius:6px;font-weight:600}
+    .rb-ai{background:rgba(167,139,250,.1);color:var(--purple)}
+    .rb-teacher{background:rgba(74,222,128,.1);color:var(--green)}
+    .rb-final{background:rgba(56,189,248,.1);color:var(--blue)}
+    .rb-provisional{background:rgba(251,191,36,.1);color:var(--yellow)}
+
+    /* ===== DETAIL MODAL ===== */
+    .detail-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:10000;display:none;justify-content:center;align-items:flex-start;padding:40px 20px;overflow-y:auto}
+    .detail-overlay.open{display:flex}
+    .detail-panel{background:var(--bg);border:1px solid var(--border);border-radius:16px;width:100%;max-width:700px;max-height:90vh;overflow-y:auto;box-shadow:0 16px 48px rgba(0,0,0,.3)}
+    .detail-header{padding:24px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:16px}
+    .detail-header .dh-icon{font-size:2rem}
+    .detail-header .dh-info{flex:1}
+    .detail-header .dh-title{font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:4px}
+    .detail-header .dh-meta{display:flex;flex-wrap:wrap;gap:6px;font-size:.75rem}
+    .detail-close{background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--text3);padding:4px;line-height:1}
+    .detail-close:hover{color:var(--text)}
+    .detail-body{padding:24px}
+    .detail-section{margin-bottom:20px}
+    .detail-section h4{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+    .detail-score-row{display:flex;gap:16px;margin-bottom:16px}
+    .detail-score-card{flex:1;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center}
+    .detail-score-card .ds-val{font-family:'Outfit',sans-serif;font-size:1.6rem;font-weight:800}
+    .detail-score-card .ds-lbl{font-size:.68rem;color:var(--text3);text-transform:uppercase;margin-top:2px}
+
+    /* Rubric */
+    .rubric-row{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:6px}
+    .rubric-name{flex:1;font-size:.82rem;font-weight:600;color:var(--text)}
+    .rubric-score{font-family:'Outfit',sans-serif;font-size:.95rem;font-weight:700}
+    .rubric-bar{width:80px;height:5px;background:var(--card2);border-radius:3px;overflow:hidden}
+    .rubric-bar-fill{height:100%;border-radius:3px}
+
+    /* Feedback */
+    .feedback-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:10px}
+    .feedback-card .fb-source{display:flex;align-items:center;gap:6px;font-size:.72rem;font-weight:700;margin-bottom:8px}
+    .feedback-card .fb-text{font-size:.82rem;color:var(--text2);line-height:1.6}
+    .feedback-card .fb-strengths{margin-top:10px;padding:10px 14px;background:rgba(74,222,128,.05);border-radius:8px;font-size:.8rem}
+    .feedback-card .fb-next{margin-top:8px;padding:10px 14px;background:rgba(56,189,248,.05);border-radius:8px;font-size:.8rem}
+
+    /* ===== RECENT FEEDBACK ===== */
+    .recent-fb{margin-bottom:32px}
+    .recent-fb h3{font-size:.95rem;font-weight:700;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+    .rfb-card{display:flex;gap:12px;padding:14px 16px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;cursor:pointer;transition:all .2s}
+    .rfb-card:hover{border-color:var(--accent);transform:translateX(3px)}
+    .rfb-icon{font-size:1.2rem;flex-shrink:0;margin-top:2px}
+    .rfb-info{flex:1;min-width:0}
+    .rfb-title{font-weight:600;font-size:.85rem;color:var(--text)}
+    .rfb-snippet{font-size:.75rem;color:var(--text3);margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .rfb-date{font-size:.68rem;color:var(--text3);flex-shrink:0;white-space:nowrap}
+
+    /* ===== GRADE POLICY ===== */
+    .policy-section{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:32px}
+    .policy-section h3{font-size:1rem;font-weight:700;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+    .policy-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+    .policy-item{padding:12px 16px;background:var(--bg);border-radius:var(--radius);border:1px solid var(--border)}
+    .policy-item h4{font-size:.82rem;font-weight:700;color:var(--accent);margin-bottom:6px}
+    .policy-item p{font-size:.78rem;color:var(--text2);line-height:1.5;margin:0}
+
+    /* ===== EMPTY STATE ===== */
     .empty-state{text-align:center;padding:60px 20px;color:var(--text3)}
     .empty-state .empty-icon{font-size:4rem;margin-bottom:16px}
     .empty-state h3{color:var(--text);margin-bottom:8px}
     .empty-state a{color:var(--accent);text-decoration:none;font-weight:600}
+
+    /* ===== RESPONSIVE ===== */
+    @media(max-width:900px){
+      .grade-summary{grid-template-columns:1fr}
+      .grade-ring-wrap{flex-direction:row;gap:20px;justify-content:center}
+      .cat-grid{grid-template-columns:repeat(2,1fr)}
+      .summary-stats{grid-template-columns:repeat(2,1fr)}
+      .policy-grid{grid-template-columns:1fr}
+    }
+    @media(max-width:600px){
+      .cat-grid{grid-template-columns:1fr}
+      .summary-stats{grid-template-columns:1fr}
+      .grade-ring-wrap{flex-direction:column}
+      .detail-panel{border-radius:12px}
+      .detail-score-row{flex-direction:column}
+    }
   </style>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -65,13 +195,13 @@
     <div class="signin-card">
       <div style="font-size:3rem;margin-bottom:12px">📊</div>
       <h2>View Your Grades</h2>
-      <p>Sign in with your Google account to see your scores.</p>
+      <p>Sign in with your Google account to see your grades and feedback.</p>
       <div id="studentGoogleBtn" style="display:flex;justify-content:center;margin-top:8px"></div>
     </div>
   </div>
 
   <!-- TOP BAR -->
-  <div class="grades-topbar">
+  <div class="g-topbar">
     <a href="index.html" class="back-btn">← Back to Units</a>
     <div class="top-actions">
       <span id="studentDisplay" style="font-size:.85rem;color:var(--text3)"></span>
@@ -79,238 +209,413 @@
     </div>
   </div>
 
-  <!-- GRADE HERO -->
-  <div class="grades-wrap">
-    <div class="grade-hero">
-      <div class="grade-ring" id="gradeRing">
-        <div class="grade-pct" id="gradePct">—</div>
-        <div class="grade-label">Overall Grade</div>
-      </div>
-      <div class="grade-letter" id="gradeLetter"></div>
-      <div class="grade-summary" id="gradeSummary"></div>
+  <div class="g-wrap">
+
+    <!-- 1. TOP GRADE SUMMARY -->
+    <div class="grade-summary" id="gradeSummary"></div>
+
+    <!-- 2. CATEGORY BREAKDOWN CARDS -->
+    <div class="cat-grid" id="catGrid"></div>
+
+    <!-- WEIGHTED BREAKDOWN LINE -->
+    <div class="weight-summary" id="weightSummary"></div>
+
+    <!-- 6. RECENT FEEDBACK -->
+    <div class="recent-fb" id="recentFeedback"></div>
+
+    <!-- 3. FILTERS -->
+    <div class="filter-bar" id="filterBar">
+      <select id="filterUnit" onchange="renderTable()">
+        <option value="">All Units</option>
+        <option value="A">Unit A — Ecosystems</option>
+        <option value="B">Unit B — Plants</option>
+        <option value="C">Unit C — Heat</option>
+        <option value="D">Unit D — Structures</option>
+        <option value="E">Unit E — Planet Earth</option>
+      </select>
+      <select id="filterType" onchange="renderTable()">
+        <option value="">All Types</option>
+        <option value="Formative Activity">Formative Activity</option>
+        <option value="Assignment">Assignment</option>
+        <option value="Performance Task">Performance Task</option>
+        <option value="Quiz">Quiz</option>
+      </select>
+      <select id="filterStatus" onchange="renderTable()">
+        <option value="">All Statuses</option>
+        <option value="Completed">Completed</option>
+        <option value="Missing">Missing</option>
+        <option value="Submitted – Pending Review">Pending Review</option>
+        <option value="Returned with Feedback">Returned</option>
+        <option value="Needs Revision">Needs Revision</option>
+        <option value="Exempt">Exempt</option>
+      </select>
+      <select id="sortBy" onchange="renderTable()">
+        <option value="newest">Newest First</option>
+        <option value="oldest">Oldest First</option>
+        <option value="highest">Highest Score</option>
+        <option value="lowest">Lowest Score</option>
+        <option value="missing">Missing First</option>
+      </select>
+      <input type="text" id="searchInput" placeholder="🔍 Search assignments..." oninput="renderTable()">
+      <div class="filter-count" id="filterCount"></div>
     </div>
 
-    <!-- STATS -->
-    <div class="grade-stats" id="gradeStats"></div>
+    <!-- 4. GRADEBOOK TABLE -->
+    <div class="grade-table-wrap">
+      <table class="grade-table" id="gradeTable">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Unit</th>
+            <th>Type</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Score</th>
+            <th>%</th>
+            <th>Feedback</th>
+          </tr>
+        </thead>
+        <tbody id="gradeTableBody"></tbody>
+      </table>
+    </div>
 
-    <!-- GRADES BY UNIT -->
-    <div id="gradesList"></div>
+    <!-- 7. GRADE POLICY -->
+    <div class="policy-section" id="policySection">
+      <h3>📖 How Grades Work</h3>
+      <div class="policy-grid">
+        <div class="policy-item">
+          <h4>📊 Weighted Categories</h4>
+          <p>Your overall grade is calculated using weighted categories: <strong>Formative Activities (10%)</strong> for in-lesson practice, <strong>Assignments (30%)</strong> for unit tasks and projects, <strong>Performance Tasks (35%)</strong> for major demonstrations of learning, and <strong>Quizzes (25%)</strong> for knowledge checks.</p>
+        </div>
+        <div class="policy-item">
+          <h4>📈 Current Grade</h4>
+          <p>Your grade is based on <strong>completed and graded items only</strong>. As you finish more work, your grade will adjust. Missing items are tracked separately and may affect your grade if not submitted.</p>
+        </div>
+        <div class="policy-item">
+          <h4>🔄 Reassessment</h4>
+          <p>For quizzes, your <strong>highest score</strong> counts if you've made multiple attempts. For assignments marked "Needs Revision," you can resubmit for a better mark. Performance tasks may allow revision at the teacher's discretion.</p>
+        </div>
+        <div class="policy-item">
+          <h4>🤖 AI Feedback</h4>
+          <p>Some written responses are scored by AI first to give you <strong>instant feedback</strong>. These marks are labelled "AI Feedback" and may be <strong>reviewed and adjusted by your teacher</strong>. Final marks are labelled "Teacher Reviewed" or "Finalized."</p>
+        </div>
+        <div class="policy-item">
+          <h4>⏳ Pending Review</h4>
+          <p>Items marked "Submitted — Pending Review" have been received but haven't been graded yet. You'll see your mark once your teacher (or AI) reviews your work.</p>
+        </div>
+        <div class="policy-item">
+          <h4>❓ Missing Work</h4>
+          <p>Missing assignments are highlighted so you can catch up. They aren't counted in your current average, but <strong>your teacher will follow up</strong> on unsubmitted work. Get it in as soon as you can!</p>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /g-wrap -->
+
+  <!-- 5. DETAIL MODAL -->
+  <div class="detail-overlay" id="detailOverlay" onclick="if(event.target===this)closeDetail()">
+    <div class="detail-panel" id="detailPanel"></div>
   </div>
 
   <script src="shared.js"></script>
   <script>
-    // ===== GRADE DATA =====
-    const unitMeta = {
-      a: { name: 'Interactions & Ecosystems', icon: '🌿', lessons: 8, prefix: 'unita' },
-      b: { name: 'Plants for Food & Fibre', icon: '🌱', lessons: 7, prefix: 'unitb' },
-      c: { name: 'Heat & Temperature', icon: '🔥', lessons: 6, prefix: 'unitc' },
-      d: { name: 'Structures & Forces', icon: '🏗️', lessons: 7, prefix: 'unitd' },
-      e: { name: 'Planet Earth', icon: '🌍', lessons: 7, prefix: 'unite' }
-    };
+  // ========== MOCK DATA ==========
+  const GRADE_ITEMS = [
+    // UNIT A
+    {id:1,title:'Ecosystem Components Sorting Activity',unit:'A',unitName:'Interactions & Ecosystems',type:'Formative Activity',category:'formative',date:'2026-02-03',status:'Completed',score:9,total:10,feedback:'Great job identifying biotic and abiotic factors! You correctly sorted 9 out of 10 items.',reviewType:'ai',strengths:'Strong understanding of biotic vs abiotic classification.',nextSteps:'Review the difference between abiotic factors like humidity and temperature.'},
+    {id:2,title:'Food Web Builder — Prairie Ecosystem',unit:'A',unitName:'Interactions & Ecosystems',type:'Formative Activity',category:'formative',date:'2026-02-05',status:'Completed',score:8,total:10,feedback:'You built a mostly accurate food web. One connection was reversed.',reviewType:'ai',strengths:'Excellent identification of producers and consumers.',nextSteps:'Double-check the direction of energy flow arrows — they point from prey to predator.'},
+    {id:3,title:'Symbiotic Relationships Written Response',unit:'A',unitName:'Interactions & Ecosystems',type:'Assignment',category:'assignment',date:'2026-02-10',status:'Returned with Feedback',score:22,total:28,feedback:'Solid understanding of mutualism and parasitism. Your example of the tick and deer was excellent. Your commensalism example could be more specific — "barnacles on a whale" needs more explanation of why the whale is unaffected.',reviewType:'teacher',strengths:'Clear use of real-world Alberta examples. Well-organized paragraphs.',nextSteps:'Strengthen your commensalism explanation. Add why the host is neither helped nor harmed.',rubric:[{name:'Scientific Understanding',score:7,total:8},{name:'Use of Evidence',score:6,total:8},{name:'Communication',score:5,total:6},{name:'Application of Concepts',score:4,total:6}]},
+    {id:4,title:'Lesson 1 Quiz — Ecosystem Basics',unit:'A',unitName:'Interactions & Ecosystems',type:'Quiz',category:'quiz',date:'2026-02-07',status:'Completed',score:7,total:8,feedback:'Excellent! You missed the question about energy pyramids.',reviewType:'teacher',strengths:'Strong foundational knowledge of ecosystem components.',nextSteps:'Review how energy decreases at each trophic level.'},
+    {id:5,title:'Lesson 2 Quiz — Symbiosis & Adaptations',unit:'A',unitName:'Interactions & Ecosystems',type:'Quiz',category:'quiz',date:'2026-02-12',status:'Completed',score:6,total:8,feedback:'Good work. Review mimicry vs camouflage.',reviewType:'teacher',strengths:'Solid understanding of mutualism and parasitism.',nextSteps:'Study the difference between mimicry and camouflage. Review adaptation examples.'},
+    {id:6,title:'Ecosystem Impact Performance Task',unit:'A',unitName:'Interactions & Ecosystems',type:'Performance Task',category:'performance',date:'2026-02-18',status:'Returned with Feedback',score:30,total:36,feedback:'This is a strong performance task submission. Your analysis of the keystone species removal scenario was thoughtful and demonstrated Grade 7–level scientific reasoning. The diagram was clear and well-labelled.',reviewType:'teacher',strengths:'Thorough analysis with multiple cascading effects identified. Excellent use of scientific vocabulary.',nextSteps:'Include Indigenous perspectives on ecosystem stewardship as discussed in Lesson 7.',rubric:[{name:'Scientific Understanding',score:8,total:9},{name:'Use of Evidence',score:7,total:9},{name:'Communication',score:8,total:9},{name:'Application of Concepts',score:7,total:9}]},
 
-    function getGradeColor(pct) {
-      if (pct >= 80) return '#4ade80';
-      if (pct >= 65) return '#fbbf24';
-      return '#ef4444';
-    }
-    function getGradeLetter(pct) {
-      if (pct >= 90) return 'A+';
-      if (pct >= 85) return 'A';
-      if (pct >= 80) return 'A-';
-      if (pct >= 77) return 'B+';
-      if (pct >= 73) return 'B';
-      if (pct >= 70) return 'B-';
-      if (pct >= 67) return 'C+';
-      if (pct >= 63) return 'C';
-      if (pct >= 60) return 'C-';
-      if (pct >= 55) return 'D+';
-      if (pct >= 50) return 'D';
-      return 'F';
-    }
+    // UNIT B
+    {id:7,title:'Plant Structure Labelling Activity',unit:'B',unitName:'Plants for Food & Fibre',type:'Formative Activity',category:'formative',date:'2026-02-20',status:'Completed',score:10,total:10,feedback:'Perfect! All plant structures correctly identified.',reviewType:'ai',strengths:'Excellent knowledge of root, stem, leaf, and flower structures.',nextSteps:'You\'re ready for the photosynthesis lesson!'},
+    {id:8,title:'Photosynthesis Diagram Assignment',unit:'B',unitName:'Plants for Food & Fibre',type:'Assignment',category:'assignment',date:'2026-02-24',status:'Needs Revision',score:15,total:24,feedback:'Your diagram shows the basic inputs and outputs of photosynthesis, but the chemical equation is incomplete. You need to balance the equation and label where each reactant enters the plant.',reviewType:'teacher',strengths:'Good understanding that sunlight is the energy source and that CO₂ + water are inputs.',nextSteps:'1) Balance the photosynthesis equation. 2) Show where CO₂ enters (stomata) and where water enters (roots). 3) Resubmit by March 7.',rubric:[{name:'Scientific Understanding',score:5,total:8},{name:'Use of Evidence',score:4,total:6},{name:'Communication',score:3,total:5},{name:'Application of Concepts',score:3,total:5}]},
+    {id:9,title:'Lesson 1 Quiz — Plant Structures',unit:'B',unitName:'Plants for Food & Fibre',type:'Quiz',category:'quiz',date:'2026-02-22',status:'Completed',score:8,total:8,feedback:'Perfect score! Outstanding knowledge of plant anatomy.',reviewType:'teacher',strengths:'Flawless understanding of plant structures and their functions.',nextSteps:'Continue this level of preparation for upcoming quizzes.'},
+    {id:10,title:'Selective Breeding Video Explanation',unit:'B',unitName:'Plants for Food & Fibre',type:'Assignment',category:'assignment',date:'2026-03-01',status:'Submitted – Pending Review',score:null,total:20,feedback:null,reviewType:null},
 
-    function renderGrades() {
-      const grades = JSON.parse(localStorage.getItem('g7-grades') || '[]');
-      const email = localStorage.getItem('g7-student-email') || localStorage.getItem('g7-email') || '';
+    // UNIT C
+    {id:11,title:'Particle Model Simulation',unit:'C',unitName:'Heat & Temperature',type:'Formative Activity',category:'formative',date:'2026-03-03',status:'Completed',score:7,total:10,feedback:'You correctly demonstrated particle speed changes with temperature but missed the spacing difference between solids and gases.',reviewType:'ai',strengths:'Good understanding of particle speed and temperature relationship.',nextSteps:'Review how particle spacing differs between states of matter.'},
+    {id:12,title:'Heat Transfer Written Explanation',unit:'C',unitName:'Heat & Temperature',type:'Assignment',category:'assignment',date:'2026-03-05',status:'Returned with Feedback',score:19,total:24,feedback:'Well-written explanation of conduction and convection. Your radiation section could include more real-world examples beyond "the sun."',reviewType:'ai',aiFeedback:true,strengths:'Clear and accurate descriptions of conduction (particle collisions) and convection (fluid circulation). Good use of the "metal spoon in hot soup" example.',nextSteps:'Add 2 more examples of radiation (e.g., campfire warmth, infrared heaters). Explain why radiation doesn\'t need a medium.',rubric:[{name:'Scientific Understanding',score:6,total:8},{name:'Use of Evidence',score:5,total:6},{name:'Communication',score:5,total:5},{name:'Application of Concepts',score:3,total:5}]},
+    {id:13,title:'Lesson 1 Quiz — Particle Model',unit:'C',unitName:'Heat & Temperature',type:'Quiz',category:'quiz',date:'2026-03-04',status:'Completed',score:5,total:8,feedback:'Review the difference between heat and temperature. They are not the same thing!',reviewType:'teacher',strengths:'Good understanding of particle motion.',nextSteps:'Heat = total thermal energy transferred. Temperature = average kinetic energy of particles. Study this distinction.'},
+    {id:14,title:'Insulation Design Challenge',unit:'C',unitName:'Heat & Temperature',type:'Performance Task',category:'performance',date:'2026-03-08',status:'Submitted – Pending Review',score:null,total:40,feedback:null,reviewType:null},
 
-      // Filter to this student's grades
-      const myGrades = grades.filter(g => !email || g.email === email || g.email === 'unknown');
+    // UNIT D
+    {id:15,title:'Structure Types Sorting Activity',unit:'D',unitName:'Structures & Forces',type:'Formative Activity',category:'formative',date:'2026-03-10',status:'Completed',score:10,total:10,feedback:'All structures correctly classified as shell, frame, or solid!',reviewType:'ai',strengths:'Excellent classification skills.',nextSteps:'Think about real Alberta structures that combine types.'},
+    {id:16,title:'Forces Diagram Assignment',unit:'D',unitName:'Structures & Forces',type:'Assignment',category:'assignment',date:'2026-03-12',status:'Missing',score:null,total:20,feedback:null,reviewType:null},
+    {id:17,title:'Lesson 1 Quiz — Structure Types',unit:'D',unitName:'Structures & Forces',type:'Quiz',category:'quiz',date:'2026-03-11',status:'Completed',score:7,total:8,feedback:'Only missed the question about the CN Tower classification.',reviewType:'teacher',strengths:'Strong understanding of shell, frame, and solid structures.',nextSteps:'The CN Tower is a combination structure — review how structures can combine types.'},
 
-      if (myGrades.length === 0) {
-        document.getElementById('gradeStats').innerHTML = '';
-        document.getElementById('gradesList').innerHTML = `
-          <div class="empty-state">
-            <div class="empty-icon">📝</div>
-            <h3>No Grades Yet</h3>
-            <p>Complete quizzes in your units to see your grades here.</p>
-            <a href="index.html">← Go to Units</a>
-          </div>`;
-        return;
+    // UNIT E
+    {id:18,title:'Earth Layer Builder',unit:'E',unitName:'Planet Earth',type:'Formative Activity',category:'formative',date:'2026-03-14',status:'Completed',score:4,total:4,feedback:'Layers placed in perfect order!',reviewType:'ai',strengths:'Complete understanding of crust → mantle → outer core → inner core.',nextSteps:'Great foundation for Lesson 2 on plate tectonics.'},
+    {id:19,title:'Rock Type Classifier',unit:'E',unitName:'Planet Earth',type:'Formative Activity',category:'formative',date:'2026-03-14',status:'Completed',score:5,total:6,feedback:'5 of 6 rocks correctly classified. Marble was identified as sedimentary instead of metamorphic.',reviewType:'ai',strengths:'Strong ability to use clues to classify rocks.',nextSteps:'Remember: marble = limestone + heat & pressure = metamorphic.'},
+    {id:20,title:'Lesson 1 Quiz — Earth\'s Layers',unit:'E',unitName:'Planet Earth',type:'Quiz',category:'quiz',date:'2026-03-15',status:'Completed',score:8,total:8,feedback:'Perfect score! You really understand Earth\'s interior.',reviewType:'teacher',strengths:'Flawless knowledge of layers, composition, and how scientists study them.',nextSteps:'Excellent work — continue to Lesson 2.'},
+    {id:21,title:'Plate Tectonics Research Assignment',unit:'E',unitName:'Planet Earth',type:'Assignment',category:'assignment',date:'2026-03-18',status:'Missing',score:null,total:24,feedback:null,reviewType:null},
+    {id:22,title:'Geological Time Written Response',unit:'E',unitName:'Planet Earth',type:'Assignment',category:'assignment',date:'2026-03-20',status:'Returned with Feedback',score:18,total:24,feedback:'Good timeline of major events. Your explanation of how scientists use fossils to date rock layers was well done. The connection to Alberta\'s geological history could be stronger.',reviewType:'ai',aiFeedback:true,teacherReviewed:false,strengths:'Clear chronological organization. Good use of era names (Paleozoic, Mesozoic, Cenozoic).',nextSteps:'Connect geological time to Alberta specifically — mention the Western Interior Seaway and the formation of the Rocky Mountains.',rubric:[{name:'Scientific Understanding',score:6,total:8},{name:'Use of Evidence',score:5,total:6},{name:'Communication',score:4,total:5},{name:'Application of Concepts',score:3,total:5}]}
+  ];
+
+  // ========== CATEGORY CONFIG ==========
+  const CATEGORIES = {
+    formative: {name:'Formative Activities',weight:10,icon:'🧪',color:'var(--green)',class:'formative'},
+    assignment: {name:'Assignments',weight:30,icon:'📝',color:'var(--blue)',class:'assignment'},
+    performance: {name:'Performance Tasks',weight:35,icon:'🎯',color:'var(--purple)',class:'performance'},
+    quiz: {name:'Quizzes',weight:25,icon:'📋',color:'var(--orange)',class:'quiz'}
+  };
+
+  // ========== CALCULATIONS ==========
+  function calcCategoryStats(cat) {
+    const items = GRADE_ITEMS.filter(g => g.category === cat);
+    const graded = items.filter(g => g.score !== null && g.status !== 'Exempt');
+    const totalScore = graded.reduce((s,g) => s + g.score, 0);
+    const totalPossible = graded.reduce((s,g) => s + g.total, 0);
+    const avg = totalPossible > 0 ? (totalScore / totalPossible * 100) : 0;
+    return { items: items.length, graded: graded.length, totalScore, totalPossible, avg: Math.round(avg * 10) / 10 };
+  }
+
+  function calcOverallGrade() {
+    let weighted = 0, weightUsed = 0;
+    Object.keys(CATEGORIES).forEach(cat => {
+      const stats = calcCategoryStats(cat);
+      if (stats.graded > 0) {
+        weighted += (stats.avg / 100) * CATEGORIES[cat].weight;
+        weightUsed += CATEGORIES[cat].weight;
       }
-
-      // Calculate overall stats
-      const quizGrades = myGrades.filter(g => g.quizId && g.quizId.startsWith('quiz'));
-      const totalScore = quizGrades.reduce((s, g) => s + g.score, 0);
-      const totalPossible = quizGrades.reduce((s, g) => s + g.total, 0);
-      const overallPct = totalPossible > 0 ? Math.round(totalScore / totalPossible * 100) : 0;
-      const passedCount = quizGrades.filter(g => g.passed).length;
-      const totalAttempts = quizGrades.reduce((s, g) => s + (g.attempts || 1), 0);
-      const bestScore = quizGrades.length ? Math.max(...quizGrades.map(g => g.percentage)) : 0;
-
-      // Grade ring
-      const ring = document.getElementById('gradeRing');
-      ring.style.setProperty('--ring-pct', overallPct + '%');
-      ring.style.setProperty('--ring-color', getGradeColor(overallPct));
-      document.getElementById('gradePct').textContent = overallPct + '%';
-      document.getElementById('gradePct').style.color = getGradeColor(overallPct);
-
-      const letter = getGradeLetter(overallPct);
-      document.getElementById('gradeLetter').textContent = letter;
-      document.getElementById('gradeLetter').style.color = getGradeColor(overallPct);
-      document.getElementById('gradeSummary').textContent = passedCount + ' of ' + quizGrades.length + ' quizzes passed';
-
-      // Stats row
-      document.getElementById('gradeStats').innerHTML = [
-        { val: quizGrades.length, lbl: 'Quizzes Taken' },
-        { val: passedCount, lbl: 'Quizzes Passed' },
-        { val: bestScore + '%', lbl: 'Best Score' },
-        { val: totalAttempts, lbl: 'Total Attempts' }
-      ].map(s => `<div class="grade-stat"><div class="gs-val">${s.val}</div><div class="gs-lbl">${s.lbl}</div></div>`).join('');
-
-      // Group by unit
-      const unitGroups = {};
-      const unitKeys = Object.keys(unitMeta);
-      unitKeys.forEach(u => { unitGroups[u] = []; });
-
-      quizGrades.forEach(g => {
-        // Determine which unit this quiz belongs to
-        let assignedUnit = null;
-        unitKeys.forEach(u => {
-          const p = unitMeta[u].prefix;
-          if (g.quizId && (g.quizId.includes(p) || g.quizId.includes('unit' + u) || g.quizId.includes('-' + u + '-'))) {
-            assignedUnit = u;
-          }
-        });
-        // Fallback: try to match from lessonTitle
-        if (!assignedUnit && g.lessonTitle) {
-          unitKeys.forEach(u => {
-            if (g.lessonTitle.toLowerCase().includes(unitMeta[u].name.toLowerCase().split(' ')[0].toLowerCase())) {
-              assignedUnit = u;
-            }
-          });
-        }
-        // Fallback: try quizId pattern like quiz1, quiz2 etc
-        if (!assignedUnit) assignedUnit = 'a'; // default
-        unitGroups[assignedUnit].push(g);
-      });
-
-      // Also gather lesson pass status for each unit
-      let html = '';
-      unitKeys.forEach(u => {
-        const meta = unitMeta[u];
-        const unitGrades = unitGroups[u];
-        
-        // Count lesson passes
-        let lessonsPassed = 0;
-        for (let i = 1; i <= meta.lessons; i++) {
-          if (localStorage.getItem('g7-unit' + u + '-lesson' + i + '-passed')) lessonsPassed++;
-        }
-
-        // Skip units with no data
-        if (unitGrades.length === 0 && lessonsPassed === 0) return;
-
-        const unitAvg = unitGrades.length > 0 
-          ? Math.round(unitGrades.reduce((s,g) => s + g.percentage, 0) / unitGrades.length) 
-          : 0;
-        const avgColor = getGradeColor(unitAvg);
-
-        html += `<div class="unit-grades">
-          <div class="unit-grades-header">
-            <span style="font-size:1.3rem">${meta.icon}</span>
-            <h3>Unit ${u.toUpperCase()} — ${meta.name}</h3>
-            ${unitGrades.length > 0 ? `<div class="unit-avg" style="color:${avgColor}">${unitAvg}% avg</div>` : ''}
-          </div>`;
-
-        // Lesson pass rows
-        for (let i = 1; i <= meta.lessons; i++) {
-          const passed = localStorage.getItem('g7-unit' + u + '-lesson' + i + '-passed');
-          const quizForLesson = unitGrades.find(g => g.quizId && g.quizId.includes(String(i)));
-
-          if (quizForLesson) {
-            const pct = quizForLesson.percentage;
-            const color = getGradeColor(pct);
-            const attempts = quizForLesson.attempts || 1;
-            const date = quizForLesson.timestamp ? new Date(quizForLesson.timestamp).toLocaleDateString('en-CA', {month:'short', day:'numeric'}) : '';
-            
-            html += `<div class="grade-row">
-              <div class="gr-icon">${quizForLesson.passed ? '✅' : '❌'}</div>
-              <div class="gr-info">
-                <div class="gr-title">${quizForLesson.lessonTitle || 'Lesson ' + i + ' Quiz'}</div>
-                <div class="gr-meta">
-                  <span>${quizForLesson.score}/${quizForLesson.total} correct</span>
-                  <span>${attempts > 1 ? attempts + ' attempts' : '1st try'}</span>
-                  ${date ? '<span>' + date + '</span>' : ''}
-                </div>
-              </div>
-              <div class="gr-score" style="color:${color}">${pct}%</div>
-              <div class="gr-bar"><div class="gr-bar-fill" style="width:${pct}%;background:${color}"></div></div>
-              <span class="gr-badge ${quizForLesson.passed ? 'passed' : 'failed'}">${quizForLesson.passed ? 'Passed' : 'Retry'}</span>
-            </div>`;
-          } else if (passed) {
-            html += `<div class="grade-row">
-              <div class="gr-icon">✅</div>
-              <div class="gr-info">
-                <div class="gr-title">Lesson ${i} Quiz</div>
-                <div class="gr-meta"><span>Passed</span></div>
-              </div>
-              <div class="gr-score" style="color:#4ade80">✓</div>
-              <div class="gr-bar"><div class="gr-bar-fill" style="width:100%;background:#4ade80"></div></div>
-              <span class="gr-badge passed">Passed</span>
-            </div>`;
-          }
-        }
-
-        // Show remaining quizzes that didn't match a lesson number
-        const unmatchedGrades = unitGrades.filter(g => {
-          for (let i = 1; i <= meta.lessons; i++) {
-            if (g.quizId && g.quizId.includes(String(i))) return false;
-          }
-          return true;
-        });
-        unmatchedGrades.forEach(g => {
-          const pct = g.percentage;
-          const color = getGradeColor(pct);
-          html += `<div class="grade-row">
-            <div class="gr-icon">${g.passed ? '✅' : '❌'}</div>
-            <div class="gr-info">
-              <div class="gr-title">${g.lessonTitle || g.quizId || 'Quiz'}</div>
-              <div class="gr-meta"><span>${g.score}/${g.total}</span></div>
-            </div>
-            <div class="gr-score" style="color:${color}">${pct}%</div>
-            <div class="gr-bar"><div class="gr-bar-fill" style="width:${pct}%;background:${color}"></div></div>
-            <span class="gr-badge ${g.passed ? 'passed' : 'failed'}">${g.passed ? 'Passed' : 'Retry'}</span>
-          </div>`;
-        });
-
-        html += '</div>';
-      });
-
-      if (!html) {
-        html = `<div class="empty-state">
-          <div class="empty-icon">📝</div>
-          <h3>No Grades Yet</h3>
-          <p>Complete quizzes to see your scores here.</p>
-          <a href="index.html">← Go to Units</a>
-        </div>`;
-      }
-
-      document.getElementById('gradesList').innerHTML = html;
-    }
-
-    // ===== INIT =====
-    document.addEventListener('DOMContentLoaded', () => {
-      renderGrades();
     });
+    return weightUsed > 0 ? Math.round(weighted / weightUsed * 100 * 10) / 10 : 0;
+  }
+
+  function getLetterGrade(pct) {
+    if(pct>=90)return'A+';if(pct>=85)return'A';if(pct>=80)return'A-';
+    if(pct>=77)return'B+';if(pct>=73)return'B';if(pct>=70)return'B-';
+    if(pct>=67)return'C+';if(pct>=63)return'C';if(pct>=60)return'C-';
+    if(pct>=55)return'D+';if(pct>=50)return'D';return'F';
+  }
+  function getGradeColor(pct){if(pct>=80)return'var(--green)';if(pct>=65)return'var(--yellow)';return'var(--red)';}
+
+  // ========== RENDER SUMMARY ==========
+  function renderSummary() {
+    const overall = calcOverallGrade();
+    const graded = GRADE_ITEMS.filter(g => g.score !== null).length;
+    const missing = GRADE_ITEMS.filter(g => g.status === 'Missing').length;
+    const pending = GRADE_ITEMS.filter(g => g.status === 'Submitted – Pending Review').length;
+    const totalItems = GRADE_ITEMS.length;
+    const completedItems = GRADE_ITEMS.filter(g => g.status !== 'Missing' && g.status !== 'Submitted – Pending Review').length;
+    const completion = Math.round(completedItems / totalItems * 100);
+    const color = getGradeColor(overall);
+    const circ = 2 * Math.PI * 58;
+    const offset = circ - (overall / 100) * circ;
+
+    document.getElementById('gradeSummary').innerHTML = `
+      <div class="grade-ring-wrap">
+        <div class="grade-ring">
+          <svg viewBox="0 0 140 140">
+            <circle class="ring-bg" cx="70" cy="70" r="58"/>
+            <circle class="ring-fill" cx="70" cy="70" r="58" style="stroke:${color};stroke-dasharray:${circ};stroke-dashoffset:${offset}"/>
+          </svg>
+          <div class="g-pct" style="color:${color}">${overall}%</div>
+          <div class="g-letter" style="color:${color}">${getLetterGrade(overall)}</div>
+        </div>
+        <div class="grade-ring-label">Current Weighted Grade</div>
+      </div>
+      <div class="summary-stats">
+        <div class="ss-card"><div class="ss-icon">📈</div><div><div class="ss-val">${completion}%</div><div class="ss-lbl">Course Completion</div></div></div>
+        <div class="ss-card"><div class="ss-icon">✅</div><div><div class="ss-val">${graded}</div><div class="ss-lbl">Graded Items</div></div></div>
+        <div class="ss-card${missing>0?' alert':''}"><div class="ss-icon">${missing>0?'⚠️':'📦'}</div><div><div class="ss-val">${missing}</div><div class="ss-lbl">Missing Items</div></div></div>
+        <div class="ss-card"><div class="ss-icon">⏳</div><div><div class="ss-val">${pending}</div><div class="ss-lbl">Awaiting Review</div></div></div>
+        <div class="ss-card"><div class="ss-icon">📊</div><div><div class="ss-val">${totalItems}</div><div class="ss-lbl">Total Items</div></div></div>
+        <div class="ss-card"><div class="ss-icon">📈</div><div><span class="trend-chip trend-up">↗ Improving</span><div class="ss-lbl" style="margin-top:4px">Recent Trend</div></div></div>
+      </div>`;
+  }
+
+  // ========== RENDER CATEGORIES ==========
+  function renderCategories() {
+    let catHTML = '', weightHTML = '<div class="ws-title">Weighted Contribution to Overall Grade</div>';
+    Object.keys(CATEGORIES).forEach(cat => {
+      const c = CATEGORIES[cat];
+      const s = calcCategoryStats(cat);
+      const contrib = s.graded > 0 ? Math.round(s.avg / 100 * c.weight * 10) / 10 : 0;
+      const col = s.graded > 0 ? getGradeColor(s.avg) : 'var(--text3)';
+      catHTML += `<div class="cat-card ${c.class}">
+        <div class="cat-head"><div class="cat-name">${c.icon} ${c.name}</div><div class="cat-weight">${c.weight}%</div></div>
+        <div class="cat-avg" style="color:${col}">${s.graded>0?s.avg+'%':'—'}</div>
+        <div class="cat-items">${s.graded} of ${s.items} graded</div>
+        <div class="cat-bar"><div class="cat-bar-fill" style="width:${s.avg}%;background:${col}"></div></div>
+        <div class="cat-contrib"><span>Contribution</span><strong>${contrib} / ${c.weight}</strong></div>
+      </div>`;
+      weightHTML += `<div class="ws-item"><div class="ws-dot" style="background:${c.color}"></div>${c.name}: <span class="ws-val">${contrib} / ${c.weight}</span></div>`;
+    });
+    document.getElementById('catGrid').innerHTML = catHTML;
+    document.getElementById('weightSummary').innerHTML = weightHTML;
+  }
+
+  // ========== RENDER TABLE ==========
+  function renderTable() {
+    let items = [...GRADE_ITEMS];
+    const unit = document.getElementById('filterUnit').value;
+    const type = document.getElementById('filterType').value;
+    const status = document.getElementById('filterStatus').value;
+    const sort = document.getElementById('sortBy').value;
+    const search = (document.getElementById('searchInput').value||'').toLowerCase();
+
+    if(unit) items = items.filter(g => g.unit === unit);
+    if(type) items = items.filter(g => g.type === type);
+    if(status) items = items.filter(g => g.status === status);
+    if(search) items = items.filter(g => g.title.toLowerCase().includes(search));
+
+    if(sort==='newest') items.sort((a,b) => new Date(b.date)-new Date(a.date));
+    if(sort==='oldest') items.sort((a,b) => new Date(a.date)-new Date(b.date));
+    if(sort==='highest') items.sort((a,b) => ((b.score||0)/(b.total||1))-((a.score||0)/(a.total||1)));
+    if(sort==='lowest') items.sort((a,b) => ((a.score||0)/(a.total||1))-((b.score||0)/(b.total||1)));
+    if(sort==='missing') items.sort((a,b) => (a.status==='Missing'?-1:1)-(b.status==='Missing'?-1:1));
+
+    document.getElementById('filterCount').textContent = items.length + ' of ' + GRADE_ITEMS.length + ' items';
+
+    const statusMap = {'Completed':'s-completed','Missing':'s-missing','Submitted – Pending Review':'s-pending','Returned with Feedback':'s-returned','Needs Revision':'s-revision','Exempt':'s-exempt'};
+    const typeMap = {'Formative Activity':'t-formative','Assignment':'t-assignment','Performance Task':'t-performance','Quiz':'t-quiz'};
+
+    document.getElementById('gradeTableBody').innerHTML = items.map(g => {
+      const pct = g.score !== null ? Math.round(g.score/g.total*100) : null;
+      const col = pct !== null ? getGradeColor(pct) : 'var(--text3)';
+      const dateStr = new Date(g.date).toLocaleDateString('en-CA',{month:'short',day:'numeric'});
+      return `<tr onclick="openDetail(${g.id})">
+        <td>
+          <div class="gt-title">${g.title}</div>
+          <div class="gt-unit">Unit ${g.unit}</div>
+        </td>
+        <td><span class="type-chip ${typeMap[g.type]||''}">${g.type}</span></td>
+        <td style="white-space:nowrap">${dateStr}</td>
+        <td><span class="status-chip ${statusMap[g.status]||''}">${g.status==='Submitted – Pending Review'?'Pending':g.status==='Returned with Feedback'?'Returned':g.status}</span></td>
+        <td class="gt-score" style="color:${col}">${g.score!==null?g.score+'/'+g.total:'—'}</td>
+        <td class="gt-pct" style="color:${col}">${pct!==null?pct+'%':'—'}<span class="gt-bar"><span class="gt-bar-fill" style="width:${pct||0}%;background:${col}"></span></span></td>
+        <td>${g.reviewType?'<span class="review-badge '+(g.reviewType==='ai'?'rb-ai':'rb-teacher')+'">'+(g.reviewType==='ai'?'🤖 AI':'👩‍🏫 Teacher')+'</span>':''}<div class="gt-feedback-preview">${g.feedback||''}</div></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // ========== RENDER RECENT FEEDBACK ==========
+  function renderRecentFeedback() {
+    const returned = GRADE_ITEMS.filter(g => g.feedback && (g.status==='Returned with Feedback'||g.status==='Completed'||g.status==='Needs Revision'))
+      .sort((a,b) => new Date(b.date)-new Date(a.date)).slice(0,5);
+    if(!returned.length){ document.getElementById('recentFeedback').innerHTML=''; return; }
+    document.getElementById('recentFeedback').innerHTML = `<h3>💬 Recent Feedback</h3>` +
+      returned.map(g => {
+        const icon = g.status==='Needs Revision'?'🔄':g.status==='Returned with Feedback'?'📬':'✅';
+        const dateStr = new Date(g.date).toLocaleDateString('en-CA',{month:'short',day:'numeric'});
+        return `<div class="rfb-card" onclick="openDetail(${g.id})">
+          <div class="rfb-icon">${icon}</div>
+          <div class="rfb-info">
+            <div class="rfb-title">${g.title}</div>
+            <div class="rfb-snippet">${g.feedback}</div>
+          </div>
+          <div class="rfb-date">${dateStr}</div>
+        </div>`;
+      }).join('');
+  }
+
+  // ========== DETAIL MODAL ==========
+  function openDetail(id) {
+    const g = GRADE_ITEMS.find(i => i.id === id);
+    if(!g) return;
+    const pct = g.score !== null ? Math.round(g.score/g.total*100) : null;
+    const col = pct !== null ? getGradeColor(pct) : 'var(--text3)';
+    const dateStr = new Date(g.date).toLocaleDateString('en-CA',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+    const statusMap = {'Completed':'s-completed','Missing':'s-missing','Submitted – Pending Review':'s-pending','Returned with Feedback':'s-returned','Needs Revision':'s-revision','Exempt':'s-exempt'};
+    const typeMap = {'Formative Activity':'t-formative','Assignment':'t-assignment','Performance Task':'t-performance','Quiz':'t-quiz'};
+
+    let reviewBadges = '';
+    if(g.reviewType==='ai'&&!g.teacherReviewed) reviewBadges='<span class="review-badge rb-ai">🤖 AI Feedback</span> <span class="review-badge rb-provisional">⏳ Provisional</span>';
+    else if(g.reviewType==='ai'&&g.teacherReviewed) reviewBadges='<span class="review-badge rb-ai">🤖 AI Feedback</span> <span class="review-badge rb-teacher">👩‍🏫 Teacher Reviewed</span>';
+    else if(g.reviewType==='teacher') reviewBadges='<span class="review-badge rb-teacher">👩‍🏫 Teacher Reviewed</span> <span class="review-badge rb-final">✓ Finalized</span>';
+
+    let html = `
+      <div class="detail-header">
+        <div class="dh-icon">${g.type==='Quiz'?'📋':g.type==='Performance Task'?'🎯':g.type==='Assignment'?'📝':'🧪'}</div>
+        <div class="dh-info">
+          <div class="dh-title">${g.title}</div>
+          <div class="dh-meta">
+            <span class="type-chip ${typeMap[g.type]||''}">${g.type}</span>
+            <span class="status-chip ${statusMap[g.status]||''}">${g.status==='Submitted – Pending Review'?'Pending Review':g.status==='Returned with Feedback'?'Returned with Feedback':g.status}</span>
+            ${reviewBadges}
+          </div>
+        </div>
+        <button class="detail-close" onclick="closeDetail()">✕</button>
+      </div>
+      <div class="detail-body">
+        <div style="font-size:.78rem;color:var(--text3);margin-bottom:16px">Unit ${g.unit} — ${g.unitName} · ${dateStr}</div>`;
+
+    // Score cards
+    if(pct !== null) {
+      html += `<div class="detail-score-row">
+        <div class="detail-score-card"><div class="ds-val" style="color:${col}">${g.score} / ${g.total}</div><div class="ds-lbl">Score</div></div>
+        <div class="detail-score-card"><div class="ds-val" style="color:${col}">${pct}%</div><div class="ds-lbl">Percentage</div></div>
+        <div class="detail-score-card"><div class="ds-val" style="color:${col}">${getLetterGrade(pct)}</div><div class="ds-lbl">Letter Grade</div></div>
+      </div>`;
+    } else {
+      html += `<div style="padding:24px;text-align:center;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px">
+        <div style="font-size:2rem;margin-bottom:8px">${g.status==='Missing'?'⚠️':'⏳'}</div>
+        <div style="font-weight:700;color:var(--text)">${g.status==='Missing'?'Not Yet Submitted':'Awaiting Review'}</div>
+        <div style="font-size:.8rem;color:var(--text3);margin-top:4px">${g.status==='Missing'?'This assignment is missing. Please submit as soon as possible.':'Your submission has been received and is being reviewed.'}</div>
+      </div>`;
+    }
+
+    // Rubric
+    if(g.rubric) {
+      html += `<div class="detail-section"><h4>📊 Rubric Breakdown</h4>`;
+      g.rubric.forEach(r => {
+        const rPct = Math.round(r.score/r.total*100);
+        const rCol = getGradeColor(rPct);
+        html += `<div class="rubric-row">
+          <div class="rubric-name">${r.name}</div>
+          <div class="rubric-score" style="color:${rCol}">${r.score}/${r.total}</div>
+          <div class="rubric-bar"><div class="rubric-bar-fill" style="width:${rPct}%;background:${rCol}"></div></div>
+        </div>`;
+      });
+      html += '</div>';
+    }
+
+    // Feedback
+    if(g.feedback) {
+      html += `<div class="detail-section"><h4>💬 Feedback</h4>
+        <div class="feedback-card">
+          <div class="fb-source">${g.reviewType==='ai'?'<span class="review-badge rb-ai">🤖 AI Feedback</span>':'<span class="review-badge rb-teacher">👩‍🏫 Teacher Feedback</span>'}</div>
+          <div class="fb-text">${g.feedback}</div>
+          ${g.strengths?'<div class="fb-strengths"><strong style="color:var(--green)">💪 Strengths:</strong> '+g.strengths+'</div>':''}
+          ${g.nextSteps?'<div class="fb-next"><strong style="color:var(--blue)">🎯 Next Steps:</strong> '+g.nextSteps+'</div>':''}
+        </div>
+        ${g.aiFeedback&&!g.teacherReviewed?'<div style="font-size:.72rem;color:var(--yellow);margin-top:8px;padding:8px 12px;background:rgba(251,191,36,.06);border-radius:8px">⚠️ This mark is based on AI feedback and may be adjusted after teacher review.</div>':''}
+      </div>`;
+    }
+
+    // Status-specific messages
+    if(g.status==='Needs Revision') {
+      html += `<div style="padding:14px 18px;background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.15);border-radius:var(--radius);font-size:.82rem;color:var(--text2)">
+        <strong style="color:var(--purple)">🔄 Revision Requested</strong><br>Your teacher has asked you to revise and resubmit this assignment. Review the feedback above and make improvements.
+      </div>`;
+    }
+
+    html += '</div>';
+    document.getElementById('detailPanel').innerHTML = html;
+    document.getElementById('detailOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeDetail() {
+    document.getElementById('detailOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  // Close on Escape key
+  document.addEventListener('keydown', e => { if(e.key==='Escape') closeDetail(); });
+
+  // ========== INIT ==========
+  document.addEventListener('DOMContentLoaded', () => {
+    renderSummary();
+    renderCategories();
+    renderTable();
+    renderRecentFeedback();
+  });
   </script>
+
   <!-- Fallback teacher unlock -->
   <script>
   (function(){
