@@ -40,9 +40,12 @@ function initAuthService() {
   }
 
   const auth = getFirebaseAuth();
+  let _hadFirebaseUser = false;  // Track if we ever had a Firebase Auth user
+
   auth.onAuthStateChanged(async (user) => {
     _currentUser = user;
     if (user) {
+      _hadFirebaseUser = true;
       // Sync profile to Firestore
       _userProfile = await _ensureUserProfile(user);
       // Cache to localStorage for offline/quick access
@@ -50,8 +53,18 @@ function initAuthService() {
       console.log(`[Auth] Signed in: ${user.displayName} (${_userProfile.role})`);
     } else {
       _userProfile = null;
-      _clearLocalCache();
-      console.log('[Auth] Signed out');
+      // ONLY clear localStorage if user explicitly signed out of Firebase Auth
+      // Do NOT clear if this is just a fresh page load with no Firebase session
+      // (students sign in via GIS which uses localStorage, not Firebase Auth)
+      if (_hadFirebaseUser) {
+        _clearLocalCache();
+        _hadFirebaseUser = false;
+        console.log('[Auth] Signed out — cleared session');
+      } else {
+        // No Firebase user, but check for GIS/localStorage session
+        _checkOfflineAuth();
+        console.log('[Auth] No Firebase session — checking localStorage');
+      }
     }
     _authReady = true;
     _notifyAuthCallbacks();
