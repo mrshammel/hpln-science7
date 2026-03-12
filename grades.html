@@ -703,33 +703,65 @@
     if (typeof initAuthService === 'function') initAuthService();
 
     // Check if student is already signed in
-    const studentEmail = localStorage.getItem('g7-student-email') || localStorage.getItem('g7-email') || '';
-    const studentName = localStorage.getItem('g7-student') || localStorage.getItem('g7-student-name') || '';
     const signinOverlay = document.getElementById('signinOverlay');
 
-    if (studentEmail) {
-      // Student already signed in — hide overlay, show name
-      signinOverlay.style.display = 'none';
-      const disp = document.getElementById('studentDisplay');
-      if (disp) disp.textContent = studentName || studentEmail;
-    } else {
-      // Not signed in — show overlay
-      signinOverlay.style.display = 'flex';
-      // Set up GIS button if available
-      if (typeof google !== 'undefined' && google.accounts) {
-        google.accounts.id.renderButton(document.getElementById('studentGoogleBtn'), { theme: 'outline', size: 'large', width: 260, text: 'signin_with' });
+    function checkStudentAuth() {
+      const studentEmail = localStorage.getItem('g7-student-email') || localStorage.getItem('g7-email') || '';
+      const studentName = localStorage.getItem('g7-student') || localStorage.getItem('g7-student-name') || '';
+      if (studentEmail) {
+        if (signinOverlay) signinOverlay.style.display = 'none';
+        const disp = document.getElementById('studentDisplay');
+        if (disp) disp.textContent = studentName || studentEmail;
+        return true;
       }
+      return false;
+    }
+
+    // Immediate check
+    const isSignedIn = checkStudentAuth();
+
+    if (!isSignedIn) {
+      // Show overlay but also poll for sign-in (GIS may set localStorage async)
+      if (signinOverlay) signinOverlay.style.display = 'flex';
+      // Set up GIS button if available
+      setTimeout(() => {
+        try {
+          if (typeof google !== 'undefined' && google.accounts) {
+            google.accounts.id.renderButton(document.getElementById('studentGoogleBtn'), { theme: 'outline', size: 'large', width: 260, text: 'signin_with' });
+          }
+        } catch(e) {}
+      }, 500);
+      // Poll for sign-in (GIS callback or manual sign-in will set localStorage)
+      let pollCount = 0;
+      const pollInterval = setInterval(() => {
+        if (checkStudentAuth()) {
+          clearInterval(pollInterval);
+          // Now load and render grades
+          loadAndRenderGrades();
+        }
+        if (pollCount++ > 40) clearInterval(pollInterval);  // Stop after 20 seconds
+      }, 500);
       return; // Don't load grades until signed in
     }
 
+    // Student is signed in — load grades immediately
+    await loadAndRenderGrades();
+  });
+
+  async function loadAndRenderGrades() {
     // Try Firestore first, then fall back to localStorage
-    const firestoreItems = await loadGradeItemsFromFirestore();
-    if (firestoreItems && firestoreItems.length > 0) {
-      GRADE_ITEMS = firestoreItems;
-      console.log('[Grades] Loaded ' + firestoreItems.length + ' items from Firestore');
-    } else {
+    try {
+      const firestoreItems = await loadGradeItemsFromFirestore();
+      if (firestoreItems && firestoreItems.length > 0) {
+        GRADE_ITEMS = firestoreItems;
+        console.log('[Grades] Loaded ' + firestoreItems.length + ' items from Firestore');
+      } else {
+        GRADE_ITEMS = loadGradeItemsFromLocal();
+        console.log('[Grades] Loaded ' + GRADE_ITEMS.length + ' items from localStorage');
+      }
+    } catch(e) {
       GRADE_ITEMS = loadGradeItemsFromLocal();
-      console.log('[Grades] Loaded ' + GRADE_ITEMS.length + ' items from localStorage');
+      console.log('[Grades] Fallback to localStorage:', GRADE_ITEMS.length, 'items');
     }
 
     if (GRADE_ITEMS.length === 0) {
@@ -750,7 +782,7 @@
     renderCategories();
     renderTable();
     renderRecentFeedback();
-  });
+  }
 
   // Manual sign-in for grades page
   function gradesManualSignin() {
