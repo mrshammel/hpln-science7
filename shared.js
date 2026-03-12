@@ -248,7 +248,7 @@ function checkSignIn() {
       const firstName = name.split(' ')[0];
       const avatarHtml = avatar ? '<img src="' + avatar + '" alt="" style="width:24px;height:24px;border-radius:50%;vertical-align:middle;margin-right:6px;border:1.5px solid var(--accent)">' : '👤 ';
       display.innerHTML = avatarHtml + firstName +
-        ' <a href="#" onclick="event.preventDefault();studentSignOut()" title="Sign out" style="color:var(--text3);text-decoration:none;margin-left:6px;font-size:.75rem;opacity:.7">✕</a>';
+        ' <button onclick="studentSignOut()" style="background:none;border:1px solid var(--border);color:var(--text3);font-size:.72rem;padding:4px 10px;border-radius:6px;cursor:pointer;margin-left:8px;transition:all .2s" onmouseover="this.style.borderColor=\'var(--accent)\';this.style.color=\'var(--accent)\'" onmouseout="this.style.borderColor=\'var(--border)\';this.style.color=\'var(--text3)\'">Sign Out</button>';
     }
   } else {
     if (overlay) overlay.classList.remove('hidden');

@@ -719,10 +719,15 @@
     function checkStudentAuth() {
       const studentEmail = localStorage.getItem('g7-student-email') || localStorage.getItem('g7-email') || '';
       const studentName = localStorage.getItem('g7-student') || localStorage.getItem('g7-student-name') || '';
+      const avatar = localStorage.getItem('g7-student-avatar') || '';
       if (studentEmail) {
         if (signinOverlay) signinOverlay.style.display = 'none';
         const disp = document.getElementById('studentDisplay');
-        if (disp) disp.textContent = studentName || studentEmail;
+        if (disp) {
+          const avatarHtml = avatar ? '<img src="' + avatar + '" alt="" style="width:24px;height:24px;border-radius:50%;vertical-align:middle;margin-right:6px;border:1.5px solid var(--accent)">' : '';
+          disp.innerHTML = avatarHtml + (studentName || studentEmail) +
+            ' <button onclick="studentSignOut()" style="background:none;border:1px solid var(--border);color:var(--text3);font-size:.72rem;padding:4px 10px;border-radius:6px;cursor:pointer;margin-left:8px;transition:all .2s" onmouseover="this.style.borderColor=\'var(--accent)\';this.style.color=\'var(--accent)\'" onmouseout="this.style.borderColor=\'var(--border)\';this.style.color=\'var(--text3)\'">Sign Out</button>';
+        }
         return true;
       }
       return false;
