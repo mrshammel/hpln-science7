@@ -100,7 +100,8 @@ function toggleTheme() {
   localStorage.setItem('g7-theme', light ? 'light' : 'dark');
 }
 function loadTheme() {
-  if (localStorage.getItem('g7-theme') === 'light') document.body.classList.add('light');
+  // Default to light mode; only go dark if user explicitly chose it
+  if (localStorage.getItem('g7-theme') !== 'dark') document.body.classList.add('light');
   const btn = document.getElementById('themeBtn');
   if (btn) btn.innerHTML = document.body.classList.contains('light') ? '🌙 Dark' : '☀️ Light';
 }
