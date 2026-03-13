@@ -105,16 +105,22 @@
     .grade-card.g9 .subject-tag { background:rgba(148,163,184,.08); border-color:rgba(148,163,184,.2); color:#94a3b8; }
 
     /* Coming Soon cards */
-    .grade-card.coming-soon { cursor:default; opacity:.85; }
+    .grade-card.coming-soon { cursor:default; opacity:1; position:relative; }
     .grade-card.coming-soon:hover { transform:none; box-shadow:var(--shadow); }
     .grade-card.coming-soon .enter-btn {
       background:var(--border); color:var(--text3); cursor:default;
-      pointer-events:none; opacity:.7;
+      pointer-events:none; opacity:.5;
     }
-    .grade-card.coming-soon .coming-badge {
-      display:inline-block; background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.25);
-      color:#f59e0b; font-size:.72rem; font-weight:700; text-transform:uppercase;
-      letter-spacing:1.5px; padding:4px 14px; border-radius:20px; margin-bottom:12px;
+    .grade-card.coming-soon::after {
+      content:'COMING SOON'; position:absolute; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      background:rgba(248,249,251,.72); backdrop-filter:blur(2px);
+      border-radius:var(--radius); z-index:2;
+      font-family:'Outfit'; font-size:1.6rem; font-weight:800;
+      color:#64748b; letter-spacing:3px; text-transform:uppercase;
+    }
+    body.dark .grade-card.coming-soon::after {
+      background:rgba(15,15,25,.72); color:#94a3b8;
     }
 
     /* Sign-in overlay */
@@ -218,7 +224,6 @@
       <span class="grade-emoji">🧪</span>
       <h2>Grade 8</h2>
       <div class="grade-tagline">Alberta Curriculum</div>
-      <span class="coming-badge">🔒 Coming Soon</span>
       <p>Grade 8 courses are currently being developed and will include English Language Arts, Math, Science, and Social Studies.</p>
       <div class="subjects">
         <span class="subject-tag">📖 ELA</span>
@@ -229,12 +234,11 @@
       <span class="enter-btn" aria-disabled="true">Coming Soon</span>
     </div>
 
-    <!-- Grade 9 (Under Construction) -->
+    <!-- Grade 9 (Coming Soon) -->
     <div class="grade-card g9 coming-soon">
       <span class="grade-emoji">🏗️</span>
       <h2>Grade 9</h2>
       <div class="grade-tagline">Alberta Curriculum</div>
-      <span class="coming-badge">🚧 Under Construction</span>
       <p>Grade 9 courses are under construction and will include English Language Arts, Math, Science, and Social Studies.</p>
       <div class="subjects">
         <span class="subject-tag">📖 ELA</span>
@@ -242,7 +246,7 @@
         <span class="subject-tag">🔬 Science</span>
         <span class="subject-tag">🌍 Social Studies</span>
       </div>
-      <span class="enter-btn" aria-disabled="true">Under Construction</span>
+      <span class="enter-btn" aria-disabled="true">Coming Soon</span>
     </div>
   </div>
 
