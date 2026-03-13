@@ -6,7 +6,7 @@
   <title>Grade 7 &mdash; Home Plus Online Learning</title>
   <meta name="description" content="Interactive mastery-based Grade 7 lessons aligned to the Alberta Curriculum. Science, ELA, Math, and Social Studies.">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../shared.css">
+  <link rel="stylesheet" href="science/shared.css">
   <style>
     /* Landing-page-only overrides */
     .landing-wrap{max-width:1200px;margin:0 auto;padding:0 24px 60px}
@@ -84,7 +84,7 @@
   <!-- TOP BAR -->
   <div class="landing-topbar">
     <div class="landing-logo">
-      <a href="../grade-6/index.html" style="font-size:.82rem;color:var(--text3);text-decoration:none;font-weight:500;transition:color .2s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text3)'">← Grade 6 Platform</a>
+      <a href="../index.html" style="font-size:.82rem;color:var(--text3);text-decoration:none;font-weight:500;transition:color .2s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text3)'">← Home Plus</a>
     </div>
     <div class="top-actions" style="display:flex;align-items:center;gap:16px">
       <span id="studentDisplay" style="font-size:.85rem;color:var(--text3)"></span>
@@ -95,7 +95,7 @@
   <!-- HERO -->
   <div class="landing-wrap">
     <div class="landing-hero" style="text-align:center;margin-bottom:36px">
-      <img src="../assets/hpln-logo.png" alt="Home Plus Online Learning" style="height:160px;margin-bottom:20px;display:block;margin-left:auto;margin-right:auto">
+      <img src="science/assets/hpln-logo.png" alt="Home Plus Online Learning" style="height:160px;margin-bottom:20px;display:block;margin-left:auto;margin-right:auto">
       <h1 style="font-family:'Outfit';font-size:2.2rem;font-weight:800;color:var(--text1);line-height:1.2;margin-bottom:8px">Learn. Grow. Master.</h1>
       <h2 style="font-family:'Outfit';font-size:1.1rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:2px;margin-bottom:16px">Grade 7 &mdash; Alberta Curriculum</h2>
       <p style="font-size:1rem;color:var(--text3);max-width:600px;margin:0 auto;line-height:1.6">Choose a subject to begin your learning journey. Master lessons, complete activities, and prove your knowledge.</p>
@@ -118,7 +118,7 @@
     <div class="unit-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px">
 
       <!-- SCIENCE (Active) -->
-      <div class="glass-card subject-card" data-subject="science" onclick="window.location.href='../index.html'" style="cursor:pointer">
+      <div class="glass-card subject-card" data-subject="science" onclick="window.location.href='science/index.html'" style="cursor:pointer">
         <div style="text-align:center;margin-bottom:16px">
           <div style="font-size:3rem;margin-bottom:8px">🔬</div>
           <h3 style="font-family:'Outfit';font-size:1.3rem;color:var(--accent);margin-bottom:4px">Science</h3>
@@ -189,11 +189,11 @@
 
   <!-- FOOTER -->
   <div class="footer">
-    <p>Aligned to the Alberta Grade 7 Curriculum &middot; Mastery-Based Learning &middot; <a href="../grade-6/index.html">📚 Grade 6 Platform →</a></p>
+    <p>Aligned to the Alberta Grade 7 Curriculum &middot; Mastery-Based Learning &middot; <a href="../index.html">🏠 Home Plus</a> &middot; <a href="../grade-6/index.html">📚 Grade 6</a></p>
     <p style="margin-top:6px;opacity:.6">Home Plus Online Learning &copy; 2026</p>
   </div>
 
-  <script src="../shared.js"></script>
+  <script src="science/shared.js"></script>
   <script>
     // ===== GOOGLE SIGN-IN =====
     async function handleGoogleSignIn() {
