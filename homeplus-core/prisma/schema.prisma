@@ -1,0 +1,135 @@
+// Prisma schema for Home Plus LMS
+// Database: PostgreSQL via Supabase
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============= USERS =============
+model User {
+  id         String   @id @default(cuid())
+  name       String
+  email      String   @unique
+  googleId   String?  @unique @map("google_id")
+  role       Role     @default(STUDENT)
+  gradeLevel Int?     @map("grade_level")
+  avatar     String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  submissions Submission[]
+  progress    StudentProgress[]
+
+  @@map("users")
+}
+
+enum Role {
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+// ============= CURRICULUM STRUCTURE =============
+model Subject {
+  id         String  @id @default(cuid())
+  gradeLevel Int     @map("grade_level")
+  name       String
+  icon       String  @default("📚")
+  order      Int     @default(0)
+  active     Boolean @default(false)
+
+  units Unit[]
+
+  @@map("subjects")
+}
+
+model Unit {
+  id          String  @id @default(cuid())
+  subjectId   String  @map("subject_id")
+  title       String
+  description String?
+  icon        String?
+  order       Int     @default(0)
+
+  subject Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  lessons Lesson[]
+
+  @@map("units")
+}
+
+model Lesson {
+  id       String @id @default(cuid())
+  unitId   String @map("unit_id")
+  title    String
+  subtitle String?
+  order    Int    @default(0)
+
+  unit       Unit              @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  activities Activity[]
+  progress   StudentProgress[]
+
+  @@map("lessons")
+}
+
+// ============= ACTIVITIES =============
+model Activity {
+  id        String       @id @default(cuid())
+  lessonId  String       @map("lesson_id")
+  type      ActivityType
+  title     String
+  content   Json?        // Questions, prompts, rubrics as JSON
+  points    Int          @default(0)
+  order     Int          @default(0)
+
+  lesson      Lesson       @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  submissions Submission[]
+
+  @@map("activities")
+}
+
+enum ActivityType {
+  QUIZ
+  ASSIGNMENT
+  REFLECTION
+  ACTIVITY
+}
+
+// ============= STUDENT DATA =============
+model Submission {
+  id          String   @id @default(cuid())
+  studentId   String   @map("student_id")
+  activityId  String   @map("activity_id")
+  response    Json?
+  score       Float?
+  maxScore    Float?   @map("max_score")
+  submittedAt DateTime @default(now()) @map("submitted_at")
+
+  student  User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@map("submissions")
+}
+
+model StudentProgress {
+  id          String         @id @default(cuid())
+  studentId   String         @map("student_id")
+  lessonId    String         @map("lesson_id")
+  status      ProgressStatus @default(NOT_STARTED)
+  completedAt DateTime?      @map("completed_at")
+
+  student User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  lesson  Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, lessonId])
+  @@map("student_progress")
+}
+
+enum ProgressStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETE
+}
