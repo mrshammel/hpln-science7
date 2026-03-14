@@ -9,7 +9,28 @@
   <link rel="stylesheet" href="../../shared.css">
 </head>
 <body data-unit-key="ela-u5">
-  <div class="signin-overlay" id="signinOverlay"><div class="signin-card"><div style="font-size:3rem;margin-bottom:12px">🌿</div><h2>Welcome, Creator!</h2><p>Enter your name and email to track your progress.</p><button class="signin-btn" onclick="googleSignIn()">Get Started →</button></div></div>
+  <div class="signin-overlay" id="signinOverlay">
+    <div class="signin-card">
+      <div style="font-size:3rem;margin-bottom:12px">📖</div>
+      <h2>Please Sign In</h2>
+      <p>Sign in at Home Plus to access this lesson and track your progress.</p>
+      <a href="../../../index.html" class="signin-btn" style="display:flex;align-items:center;justify-content:center;gap:10px;margin:0 auto;text-decoration:none;color:#fff">
+        🏠 Go to Home Plus to Sign In
+      </a>
+    </div>
+  </div>
+
+  <script>
+    // Auto-dismiss overlay if already signed in via Home Plus
+    (function() {
+      var name = localStorage.getItem('g6-student-name');
+      var email = localStorage.getItem('g6-student-email');
+      if (name && email) {
+        var ov = document.getElementById('signinOverlay');
+        if (ov) ov.style.display = 'none';
+      }
+    })();
+  </script>
   <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
 
   <aside class="sidebar" id="sidebar">
