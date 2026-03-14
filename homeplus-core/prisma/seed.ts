@@ -1,14 +1,12 @@
+import { config } from 'dotenv';
+config({ path: '.env.local' });
+
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  datasourceUrl: process.env.DATABASE_URL,
+});
 
-/**
- * Seed the database with test data:
- * - 1 subject (Grade 7 Science)
- * - 1 unit (Interactions & Ecosystems)
- * - 2 lessons
- * - 2 activities (1 quiz, 1 assignment)
- */
 async function main() {
   console.log('🌱 Seeding database...\n');
 
@@ -84,12 +82,7 @@ async function main() {
         questions: [
           {
             question: 'What are the two main components of an ecosystem?',
-            options: [
-              'Living and non-living things',
-              'Water and air',
-              'Plants and animals',
-              'Sun and soil',
-            ],
+            options: ['Living and non-living things', 'Water and air', 'Plants and animals', 'Sun and soil'],
             answer: 0,
           },
           {
