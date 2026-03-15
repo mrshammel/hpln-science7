@@ -54,11 +54,11 @@ export default async function StudentDetailPage({ params }: PageProps) {
     submissions,
     notes,
   ] = await Promise.all([
-    getStudentWrittenResponses(id),
-    getStudentArtifacts(id),
-    getStudentOutcomeMastery(id),
-    getStudentUnitProgress(id),
-    getLastAcademicEvent(id),
+    getStudentWrittenResponses(id, teacherId),
+    getStudentArtifacts(id, teacherId),
+    getStudentOutcomeMastery(id, teacherId),
+    getStudentUnitProgress(id, teacherId),
+    getLastAcademicEvent(id, teacherId),
     getStudentSubmissions(id, teacherId),
     getStudentNotes(id, teacherId),
   ]);

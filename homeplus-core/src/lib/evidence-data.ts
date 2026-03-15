@@ -1,11 +1,28 @@
 // ============================================
 // Evidence of Learning Data Layer — Home Plus LMS
 // ============================================
-// Production-ready data access for student evidence, artifacts, and mastery.
-// All functions accept student ID — no name-based joins.
+// Teacher-scoped data access for student evidence, artifacts, and mastery.
+// All functions accept (studentId, teacherId) for authorization.
+// Demo data is isolated behind USE_DEMO — production errors surface cleanly.
+//
+// Key design decisions:
+//   - assertTeacherCanAccessStudent() centralizes authorization
+//   - Outcome mastery uses real evidence count (no take: 1 limit)
+//   - Grade level derived from student, not hardcoded
+//   - Unit progress scoped to student's assigned grade/subject
+//   - Last academic event derived from max(submission, lesson completion)
+//   - Safe submission type mapping via toSubmissionType()
 
 import { prisma } from '@/lib/db';
 import { truncateText } from '@/lib/helpers';
+
+// ---------- Demo Mode ----------
+
+const USE_DEMO = true; // Toggle false when real data is available
+
+function isDemoMode(): boolean {
+  return USE_DEMO;
+}
 
 // ---------- Types ----------
 
@@ -75,7 +92,7 @@ export function getMasteryStyle(level: MasteryLevel): { color: string; bg: strin
     MEETING:          { color: '#059669', bg: '#d1fae5', label: 'Meeting' },
     EXCEEDING:        { color: '#2563eb', bg: '#dbeafe', label: 'Exceeding' },
   };
-  return styles[level];
+  return styles[level] || styles.NOT_YET_ASSESSED;
 }
 
 export function getSubmissionTypeLabel(type: SubmissionType): string {
@@ -90,10 +107,335 @@ export function getSubmissionTypeLabel(type: SubmissionType): string {
     PROJECT_FILE: 'Project File',
     PORTFOLIO_EVIDENCE: 'Portfolio',
   };
-  return labels[type];
+  return labels[type] || 'Submission';
 }
 
-// ---------- Demo Data (keyed by student ID) ----------
+// ---------- Safety Helpers ----------
+
+/** Valid submission types — used for safe mapping from DB values */
+const VALID_SUBMISSION_TYPES: Set<string> = new Set([
+  'QUIZ_RESPONSE', 'SHORT_ANSWER', 'PARAGRAPH_RESPONSE', 'ESSAY', 'REFLECTION',
+  'UPLOADED_WORKSHEET', 'IMAGE_ARTIFACT', 'PROJECT_FILE', 'PORTFOLIO_EVIDENCE',
+]);
+
+/** Safely map a database submission type to the SubmissionType union */
+function toSubmissionType(dbValue: string | null, fallback: SubmissionType = 'QUIZ_RESPONSE'): SubmissionType {
+  if (dbValue && VALID_SUBMISSION_TYPES.has(dbValue)) return dbValue as SubmissionType;
+  return fallback;
+}
+
+/** Valid mastery levels — used for safe mapping from DB values */
+const VALID_MASTERY_LEVELS: Set<string> = new Set([
+  'NOT_YET_ASSESSED', 'EMERGING', 'APPROACHING', 'MEETING', 'EXCEEDING',
+]);
+
+/** Safely map a database mastery level to the MasteryLevel union */
+function toMasteryLevel(dbValue: string | null): MasteryLevel {
+  if (dbValue && VALID_MASTERY_LEVELS.has(dbValue)) return dbValue as MasteryLevel;
+  return 'NOT_YET_ASSESSED';
+}
+
+// ---------- Teacher Authorization ----------
+
+/**
+ * Verify that a teacher is authorized to access a student's data.
+ * Checks assignedTeacherId on the student record.
+ * In demo mode, always returns true for demo-* IDs.
+ */
+async function assertTeacherCanAccessStudent(studentId: string, teacherId: string): Promise<boolean> {
+  if (studentId.startsWith('demo-') && isDemoMode()) return true;
+
+  try {
+    const student = await prisma.user.findFirst({
+      where: {
+        id: studentId,
+        role: 'STUDENT',
+        assignedTeacherId: teacherId,
+      },
+      select: { id: true },
+    });
+    return student !== null;
+  } catch {
+    return false;
+  }
+}
+
+/** Get a student's grade level for dynamic outcome/unit queries */
+async function getStudentGradeLevel(studentId: string): Promise<number | null> {
+  try {
+    const student = await prisma.user.findUnique({
+      where: { id: studentId },
+      select: { gradeLevel: true },
+    });
+    return student?.gradeLevel || null;
+  } catch {
+    return null;
+  }
+}
+
+// ---------- Teacher-Scoped Data Fetching ----------
+
+/**
+ * Written responses — teacher-scoped.
+ */
+export async function getStudentWrittenResponses(studentId: string, teacherId: string): Promise<WrittenResponse[]> {
+  if (studentId.startsWith('demo-') && isDemoMode()) {
+    return getDemoWrittenResponsesById(studentId);
+  }
+
+  const authorized = await assertTeacherCanAccessStudent(studentId, teacherId);
+  if (!authorized) return [];
+
+  try {
+    const subs = await prisma.submission.findMany({
+      where: {
+        studentId,
+        writtenResponse: { not: null },
+      },
+      orderBy: { submittedAt: 'desc' },
+      include: { activity: { include: { lesson: { include: { unit: true } } } } },
+    });
+    if (subs.length === 0) return [];
+    return subs.map((s) => ({
+      id: s.id,
+      title: (s as any).activity.title,
+      submissionType: toSubmissionType(s.submissionType, 'PARAGRAPH_RESPONSE'),
+      unitLesson: `${(s as any).activity.lesson.unit.title} · ${(s as any).activity.lesson.title}`,
+      writtenResponse: s.writtenResponse || '',
+      preview: truncateText(s.writtenResponse || '', 120),
+      score: s.score,
+      maxScore: s.maxScore,
+      reviewed: s.reviewed,
+      teacherFeedback: s.teacherFeedback || null,
+      submittedAt: s.submittedAt,
+    }));
+  } catch (err) {
+    console.error('[evidence-data] getStudentWrittenResponses failed:', err);
+    return [];
+  }
+}
+
+/**
+ * Uploaded artifacts — teacher-scoped.
+ */
+export async function getStudentArtifacts(studentId: string, teacherId: string): Promise<ArtifactSubmission[]> {
+  if (studentId.startsWith('demo-') && isDemoMode()) {
+    return getDemoArtifactsById(studentId);
+  }
+
+  const authorized = await assertTeacherCanAccessStudent(studentId, teacherId);
+  if (!authorized) return [];
+
+  try {
+    const subs = await prisma.submission.findMany({
+      where: {
+        studentId,
+        fileUrl: { not: null },
+      },
+      orderBy: { submittedAt: 'desc' },
+      include: { activity: { include: { lesson: { include: { unit: true } } } } },
+    });
+    if (subs.length === 0) return [];
+    return subs.map((s) => ({
+      id: s.id,
+      title: (s as any).activity.title,
+      submissionType: toSubmissionType(s.submissionType, 'UPLOADED_WORKSHEET'),
+      unitLesson: `${(s as any).activity.lesson.unit.title} · ${(s as any).activity.lesson.title}`,
+      fileName: s.fileName || 'file',
+      fileUrl: s.fileUrl || '#',
+      reviewed: s.reviewed,
+      submittedAt: s.submittedAt,
+    }));
+  } catch (err) {
+    console.error('[evidence-data] getStudentArtifacts failed:', err);
+    return [];
+  }
+}
+
+/**
+ * Outcome mastery — teacher-scoped, grade-dynamic, real evidence count.
+ * Uses two separate queries:
+ *   1. All mastery judgments (no take: 1) for real evidence count
+ *   2. Latest judgment for current mastery level
+ */
+export async function getStudentOutcomeMastery(studentId: string, teacherId: string): Promise<OutcomeMastery[]> {
+  if (studentId.startsWith('demo-') && isDemoMode()) {
+    return getDemoOutcomeMasteryById(studentId);
+  }
+
+  const authorized = await assertTeacherCanAccessStudent(studentId, teacherId);
+  if (!authorized) return [];
+
+  try {
+    // Derive grade from the student, not hardcoded
+    const gradeLevel = await getStudentGradeLevel(studentId);
+    if (!gradeLevel) return [];
+
+    const outcomes = await prisma.learningOutcome.findMany({
+      where: { gradeLevel },
+      include: {
+        masteryJudgments: {
+          where: { studentId },
+          orderBy: { assessedAt: 'desc' },
+          // No take: 1 — we need real evidence count
+          include: { submission: { select: { activity: { select: { title: true } } } } },
+        },
+      },
+      orderBy: { code: 'asc' },
+    });
+    if (outcomes.length === 0) return [];
+
+    return outcomes.map((o) => {
+      const allJudgments = (o as any).masteryJudgments || [];
+      const latest = allJudgments[0] || null;
+      return {
+        outcomeId: o.id,
+        outcomeCode: o.code,
+        outcomeDescription: o.description,
+        unitContext: o.unitContext,
+        masteryLevel: toMasteryLevel(latest?.masteryLevel || null),
+        evidenceCount: allJudgments.length,  // Real count, not capped at 1
+        latestEvidence: latest?.submission?.activity?.title || null,
+        latestDate: latest?.assessedAt || null,
+        teacherNote: latest?.teacherNote || null,
+      };
+    });
+  } catch (err) {
+    console.error('[evidence-data] getStudentOutcomeMastery failed:', err);
+    return [];
+  }
+}
+
+/**
+ * Unit progress — teacher-scoped, assigned-path only.
+ * Scoped to the student's grade + active subjects, not the global catalog.
+ */
+export async function getStudentUnitProgress(studentId: string, teacherId: string): Promise<StudentUnitProgress[]> {
+  if (studentId.startsWith('demo-') && isDemoMode()) {
+    return getDemoUnitProgressById(studentId);
+  }
+
+  const authorized = await assertTeacherCanAccessStudent(studentId, teacherId);
+  if (!authorized) return [];
+
+  try {
+    // Derive grade from the student for assigned-path scoping
+    const gradeLevel = await getStudentGradeLevel(studentId);
+
+    const units = await prisma.unit.findMany({
+      where: gradeLevel
+        ? { subject: { gradeLevel, active: true } }
+        : { subject: { active: true } },
+      include: {
+        lessons: {
+          include: {
+            progress: { where: { studentId } },
+            activities: { include: { submissions: { where: { studentId } } } },
+          },
+        },
+      },
+      orderBy: { order: 'asc' },
+    });
+    if (units.length === 0) return [];
+
+    return units.map((u) => {
+      const totalLessons = u.lessons.length;
+      const completedLessons = u.lessons.filter((l) =>
+        l.progress.some((p) => p.status === 'COMPLETE')
+      ).length;
+      const allSubs = u.lessons.flatMap((l) => l.activities.flatMap((a) => a.submissions));
+      const scored = allSubs.filter((s) => s.score !== null && s.maxScore !== null);
+      const avgScore = scored.length > 0
+        ? scored.reduce((sum, s) => sum + ((s.score! / s.maxScore!) * 100), 0) / scored.length
+        : null;
+      return {
+        unitId: u.id,
+        unitTitle: u.title,
+        unitIcon: u.icon || '📘',
+        completedLessons,
+        totalLessons,
+        completionPct: totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0,
+        avgScore: avgScore !== null ? Math.round(avgScore) : null,
+      };
+    });
+  } catch (err) {
+    console.error('[evidence-data] getStudentUnitProgress failed:', err);
+    return [];
+  }
+}
+
+/**
+ * Last academic event — teacher-scoped, from all meaningful activity.
+ * Checks both submissions and lesson completions, matching the pacing engine's
+ * definition of meaningful academic activity.
+ */
+export async function getLastAcademicEvent(studentId: string, teacherId: string): Promise<LastAcademicEvent | null> {
+  if (studentId.startsWith('demo-') && isDemoMode()) {
+    return getDemoLastEventById(studentId);
+  }
+
+  const authorized = await assertTeacherCanAccessStudent(studentId, teacherId);
+  if (!authorized) return null;
+
+  try {
+    // Source 1: latest submission
+    const latestSub = await prisma.submission.findFirst({
+      where: { studentId },
+      orderBy: { submittedAt: 'desc' },
+      include: { activity: { select: { title: true, type: true } } },
+    });
+
+    // Source 2: latest lesson completion
+    const latestCompletion = await prisma.studentProgress.findFirst({
+      where: { studentId, status: 'COMPLETE', completedAt: { not: null } },
+      orderBy: { completedAt: 'desc' },
+      include: { lesson: { select: { title: true } } },
+    });
+
+    // Pick the most recent of the two
+    const subDate = latestSub?.submittedAt || null;
+    const compDate = latestCompletion?.completedAt || null;
+
+    const activityTypeLabels: Record<string, string> = {
+      QUIZ: 'Quiz', ASSIGNMENT: 'Assignment', REFLECTION: 'Reflection', ACTIVITY: 'Activity',
+    };
+
+    if (subDate && compDate) {
+      if (subDate >= compDate) {
+        return {
+          title: (latestSub as any).activity.title,
+          type: activityTypeLabels[(latestSub as any).activity.type] || (latestSub as any).activity.type,
+          date: subDate,
+        };
+      } else {
+        return {
+          title: (latestCompletion as any).lesson.title,
+          type: 'Lesson Completion',
+          date: compDate,
+        };
+      }
+    } else if (subDate) {
+      return {
+        title: (latestSub as any).activity.title,
+        type: activityTypeLabels[(latestSub as any).activity.type] || (latestSub as any).activity.type,
+        date: subDate,
+      };
+    } else if (compDate) {
+      return {
+        title: (latestCompletion as any).lesson.title,
+        type: 'Lesson Completion',
+        date: compDate,
+      };
+    }
+
+    return null;
+  } catch (err) {
+    console.error('[evidence-data] getLastAcademicEvent failed:', err);
+    return null;
+  }
+}
+
+// ---------- Demo Data (isolated, only used when USE_DEMO = true) ----------
 
 const demoWrittenResponses: Record<string, WrittenResponse[]> = {
   'demo-0': [ // Ava Chen
@@ -189,153 +531,6 @@ const demoLastAcademicEvents: Record<string, LastAcademicEvent> = {
   'demo-6': { title: 'Insulation Experiment', type: 'Assignment', date: new Date('2026-03-06') },
   'demo-7': { title: 'Food Webs Introduction', type: 'Quiz', date: new Date('2026-03-13') },
 };
-
-// ---------- ID-Based Data Fetching ----------
-
-export async function getStudentWrittenResponses(studentId: string): Promise<WrittenResponse[]> {
-  try {
-    const subs = await prisma.submission.findMany({
-      where: {
-        studentId,
-        writtenResponse: { not: null },
-      },
-      orderBy: { submittedAt: 'desc' },
-      include: { activity: { include: { lesson: { include: { unit: true } } } } },
-    });
-    if (subs.length === 0) return getDemoWrittenResponsesById(studentId);
-    return subs.map((s) => ({
-      id: s.id,
-      title: s.activity.title,
-      submissionType: (s.submissionType as SubmissionType) || 'PARAGRAPH_RESPONSE',
-      unitLesson: `${s.activity.lesson.unit.title} · ${s.activity.lesson.title}`,
-      writtenResponse: s.writtenResponse || '',
-      preview: truncateText(s.writtenResponse || '', 120),
-      score: s.score,
-      maxScore: s.maxScore,
-      reviewed: s.reviewed,
-      teacherFeedback: s.teacherFeedback || null,
-      submittedAt: s.submittedAt,
-    }));
-  } catch {
-    return getDemoWrittenResponsesById(studentId);
-  }
-}
-
-export async function getStudentArtifacts(studentId: string): Promise<ArtifactSubmission[]> {
-  try {
-    const subs = await prisma.submission.findMany({
-      where: {
-        studentId,
-        fileUrl: { not: null },
-      },
-      orderBy: { submittedAt: 'desc' },
-      include: { activity: { include: { lesson: { include: { unit: true } } } } },
-    });
-    if (subs.length === 0) return getDemoArtifactsById(studentId);
-    return subs.map((s) => ({
-      id: s.id,
-      title: s.activity.title,
-      submissionType: (s.submissionType as SubmissionType) || 'UPLOADED_WORKSHEET',
-      unitLesson: `${s.activity.lesson.unit.title} · ${s.activity.lesson.title}`,
-      fileName: s.fileName || 'file',
-      fileUrl: s.fileUrl || '#',
-      reviewed: s.reviewed,
-      submittedAt: s.submittedAt,
-    }));
-  } catch {
-    return getDemoArtifactsById(studentId);
-  }
-}
-
-export async function getStudentOutcomeMastery(studentId: string): Promise<OutcomeMastery[]> {
-  try {
-    const outcomes = await prisma.learningOutcome.findMany({
-      where: { gradeLevel: 7 },
-      include: {
-        masteryJudgments: {
-          where: { studentId },
-          orderBy: { assessedAt: 'desc' },
-          take: 1,
-          include: { submission: { select: { activity: { select: { title: true } } } } },
-        },
-      },
-      orderBy: { code: 'asc' },
-    });
-    if (outcomes.length === 0) return getDemoOutcomeMasteryById(studentId);
-    return outcomes.map((o) => {
-      const latest = o.masteryJudgments[0];
-      return {
-        outcomeId: o.id,
-        outcomeCode: o.code,
-        outcomeDescription: o.description,
-        unitContext: o.unitContext,
-        masteryLevel: (latest?.masteryLevel as MasteryLevel) || 'NOT_YET_ASSESSED',
-        evidenceCount: o.masteryJudgments.length,
-        latestEvidence: latest?.submission?.activity?.title || null,
-        latestDate: latest?.assessedAt || null,
-        teacherNote: latest?.teacherNote || null,
-      };
-    });
-  } catch {
-    return getDemoOutcomeMasteryById(studentId);
-  }
-}
-
-export async function getStudentUnitProgress(studentId: string): Promise<StudentUnitProgress[]> {
-  try {
-    const units = await prisma.unit.findMany({
-      include: {
-        lessons: {
-          include: {
-            progress: { where: { studentId } },
-            activities: { include: { submissions: { where: { studentId } } } },
-          },
-        },
-      },
-      orderBy: { orderIndex: 'asc' },
-    });
-    if (units.length === 0) return getDemoUnitProgressById(studentId);
-    return units.map((u) => {
-      const totalLessons = u.lessons.length;
-      const completedLessons = u.lessons.filter((l) =>
-        l.progress.some((p) => p.status === 'COMPLETE')
-      ).length;
-      const allSubs = u.lessons.flatMap((l) => l.activities.flatMap((a) => a.submissions));
-      const scored = allSubs.filter((s) => s.score !== null && s.maxScore !== null);
-      const avgScore = scored.length > 0
-        ? scored.reduce((sum, s) => sum + ((s.score! / s.maxScore!) * 100), 0) / scored.length
-        : null;
-      return {
-        unitId: u.id,
-        unitTitle: u.title,
-        unitIcon: u.icon || '📘',
-        completedLessons,
-        totalLessons,
-        completionPct: totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0,
-        avgScore: avgScore !== null ? Math.round(avgScore) : null,
-      };
-    });
-  } catch {
-    return getDemoUnitProgressById(studentId);
-  }
-}
-
-export async function getLastAcademicEvent(studentId: string): Promise<LastAcademicEvent | null> {
-  try {
-    const sub = await prisma.submission.findFirst({
-      where: { studentId },
-      orderBy: { submittedAt: 'desc' },
-      include: { activity: { select: { title: true, type: true } } },
-    });
-    if (!sub) return getDemoLastEventById(studentId);
-    const typeLabels: Record<string, string> = {
-      QUIZ: 'Quiz', ASSIGNMENT: 'Assignment', REFLECTION: 'Reflection', ACTIVITY: 'Activity',
-    };
-    return { title: sub.activity.title, type: typeLabels[sub.activity.type] || sub.activity.type, date: sub.submittedAt };
-  } catch {
-    return getDemoLastEventById(studentId);
-  }
-}
 
 // ---------- Demo Fallbacks (by ID) ----------
 
