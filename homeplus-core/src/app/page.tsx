@@ -1,27 +1,96 @@
+"use client";
+
 import Image from "next/image";
+import { useState } from "react";
 import styles from "./page.module.css";
 
 export default function HomePage() {
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
   return (
     <div className={styles.page}>
-      {/* ===== HERO SECTION ===== */}
-      <section className={styles.hero}>
-        <div className={styles.heroContainer}>
-          {/* Left: Logo + Tagline + Description + CTAs */}
-          <div className={`${styles.heroLeft} animate-in`}>
+      {/* ===== HEADER / NAVIGATION ===== */}
+      <header className={styles.header}>
+        <div className={styles.headerInner}>
+          <a href="/" className={styles.headerBrand}>
             <Image
               src="/images/hpln-logo.png"
               alt="Home Plus Online Learning"
-              width={420}
-              height={132}
-              className={styles.logoImage}
+              width={180}
+              height={56}
+              className={styles.headerLogo}
               priority
             />
+          </a>
 
-            <h1 className={styles.heroTagline}>
-              Your child&apos;s learning,{" "}
+          {/* Desktop nav */}
+          <nav className={styles.headerNav}>
+            <a href="#about" className={styles.navLink}>About</a>
+            <a href="#how-it-works" className={styles.navLink}>How It Works</a>
+            <a href="#apply" className={styles.navLink}>Apply</a>
+            <div className={styles.navDivider} />
+            <a
+              href="/api/auth/signin/google?callbackUrl=/dashboard"
+              className={styles.navSignIn}
+            >
+              Student Sign In
+            </a>
+            <a
+              href="/api/auth/signin/google?callbackUrl=/teacher"
+              className={styles.navSignInTeacher}
+            >
+              Teacher Sign In
+            </a>
+          </nav>
+
+          {/* Mobile hamburger */}
+          <button
+            className={styles.hamburger}
+            onClick={() => setMobileNavOpen(!mobileNavOpen)}
+            aria-label="Toggle menu"
+          >
+            <span className={`${styles.hamburgerLine} ${mobileNavOpen ? styles.open : ""}`} />
+            <span className={`${styles.hamburgerLine} ${mobileNavOpen ? styles.open : ""}`} />
+            <span className={`${styles.hamburgerLine} ${mobileNavOpen ? styles.open : ""}`} />
+          </button>
+        </div>
+
+        {/* Mobile nav panel */}
+        {mobileNavOpen && (
+          <div className={styles.mobileNav}>
+            <a href="#about" className={styles.mobileNavLink} onClick={() => setMobileNavOpen(false)}>About</a>
+            <a href="#how-it-works" className={styles.mobileNavLink} onClick={() => setMobileNavOpen(false)}>How It Works</a>
+            <a href="#apply" className={styles.mobileNavLink} onClick={() => setMobileNavOpen(false)}>Apply</a>
+            <div className={styles.mobileNavDivider} />
+            <a
+              href="/api/auth/signin/google?callbackUrl=/dashboard"
+              className={`${styles.ctaBtn} ${styles.ctaStudent} ${styles.mobileNavBtn}`}
+            >
+              🎒 Student Sign In
+            </a>
+            <a
+              href="/api/auth/signin/google?callbackUrl=/teacher"
+              className={`${styles.ctaBtn} ${styles.ctaTeacher} ${styles.mobileNavBtn}`}
+            >
+              👩‍🏫 Teacher Sign In
+            </a>
+          </div>
+        )}
+      </header>
+
+      {/* ===== HERO SECTION ===== */}
+      <section className={styles.hero} id="about">
+        <div className={styles.heroContainer}>
+          {/* Left: Headline + Description + CTAs */}
+          <div className={styles.heroLeft}>
+            <div className={`${styles.heroBadge} animate-in`}>
+              Alberta Curriculum · Grades 1–9
+            </div>
+
+            <h1 className={`${styles.heroTagline} animate-in`}>
+              Structured learning at home,{" "}
               <span className={styles.heroTaglineAccent}>
-                guided and supported every step of the way
+                supported every step of the way
               </span>
             </h1>
 
@@ -50,32 +119,23 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Right: Learn. Grow. Succeed. pillars */}
-          <div className={`${styles.heroRight} animate-in delay-2`}>
+          {/* Right: Pillars artwork */}
+          <div className={`${styles.heroRight} animate-in delay-1`}>
             <Image
               src="/images/pillars-lgs.png"
               alt="Learn. Grow. Succeed."
-              width={500}
-              height={350}
+              width={420}
+              height={180}
               className={styles.pillarsImage}
             />
           </div>
         </div>
-
-        {/* Decorative wave transition */}
-        <div className={styles.heroWave}>
-          <svg viewBox="0 0 1440 80" preserveAspectRatio="none">
-            <path
-              d="M0,32 C360,80 540,0 720,40 C900,80 1080,16 1440,48 L1440,80 L0,80 Z"
-              fill="var(--hp-bg)"
-            />
-          </svg>
-        </div>
       </section>
 
       {/* ===== HOW IT WORKS ===== */}
-      <section className={styles.howItWorks}>
+      <section className={styles.howItWorks} id="how-it-works">
         <div className={styles.sectionContainer}>
+          <div className={styles.sectionLabel}>Our Approach</div>
           <h2 className={styles.sectionTitle}>How Home Plus Works</h2>
           <p className={styles.sectionSubtitle}>
             A structured, supportive approach to learning at home — designed
@@ -84,7 +144,7 @@ export default function HomePage() {
 
           <div className={styles.featureGrid}>
             <div className={styles.feature}>
-              <div className={styles.featureIcon}>📚</div>
+              <div className={`${styles.featureIcon} ${styles.featureIconBlue}`}>📚</div>
               <h3 className={styles.featureTitle}>Flexible Learning</h3>
               <p className={styles.featureDesc}>
                 Students learn at their own pace with structured lessons they
@@ -94,7 +154,7 @@ export default function HomePage() {
             </div>
 
             <div className={styles.feature}>
-              <div className={styles.featureIcon}>🧭</div>
+              <div className={`${styles.featureIcon} ${styles.featureIconGreen}`}>🧭</div>
               <h3 className={styles.featureTitle}>Clear Direction</h3>
               <p className={styles.featureDesc}>
                 Every lesson has defined learning targets, step-by-step
@@ -104,7 +164,7 @@ export default function HomePage() {
             </div>
 
             <div className={styles.feature}>
-              <div className={styles.featureIcon}>👩‍🏫</div>
+              <div className={`${styles.featureIcon} ${styles.featureIconTeal}`}>👩‍🏫</div>
               <h3 className={styles.featureTitle}>Teacher Support</h3>
               <p className={styles.featureDesc}>
                 Teachers monitor progress, provide feedback, and offer
@@ -113,7 +173,7 @@ export default function HomePage() {
             </div>
 
             <div className={styles.feature}>
-              <div className={styles.featureIcon}>⭐</div>
+              <div className={`${styles.featureIcon} ${styles.featureIconAmber}`}>⭐</div>
               <h3 className={styles.featureTitle}>Quality Curriculum</h3>
               <p className={styles.featureDesc}>
                 Aligned to the Alberta curriculum with engaging activities,
@@ -127,6 +187,7 @@ export default function HomePage() {
       {/* ===== AUDIENCE CARDS ===== */}
       <section className={styles.audience}>
         <div className={styles.sectionContainer}>
+          <div className={styles.sectionLabel}>Who It&apos;s For</div>
           <h2 className={styles.sectionTitle}>Built for Everyone</h2>
           <p className={styles.sectionSubtitle}>
             Whether you&apos;re a student, teacher, or family — Home Plus is
@@ -181,13 +242,15 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ===== CTA BANNER ===== */}
-      <section className={styles.ctaBanner}>
+      {/* ===== APPLICATION CTA ===== */}
+      <section className={styles.ctaBanner} id="apply">
         <div className={styles.sectionContainer}>
-          <h2 className={styles.ctaBannerTitle}>Ready to get started?</h2>
+          <h2 className={styles.ctaBannerTitle}>
+            Ready to join Home Plus?
+          </h2>
           <p className={styles.ctaBannerDesc}>
-            Sign in to access your lessons, track your progress, and start
-            learning today.
+            Sign in to access your courses, track your progress, and start your
+            learning journey with Home Plus today.
           </p>
           <div className={styles.ctaBannerActions}>
             <a
@@ -213,8 +276,8 @@ export default function HomePage() {
             <Image
               src="/images/hpln-logo.png"
               alt="Home Plus"
-              width={160}
-              height={50}
+              width={150}
+              height={47}
               className={styles.footerLogoImg}
             />
             <p className={styles.footerTagline}>
