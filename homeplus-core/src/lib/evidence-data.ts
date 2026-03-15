@@ -192,7 +192,10 @@ function buildSubjectFilter(ctx: GradeSubjectContext) {
 
 /** Build unit-scoping filter for unit queries */
 function buildUnitSubjectFilter(ctx: GradeSubjectContext) {
-  if (ctx.subjectId.startsWith('demo-')) return { subject: { gradeLevel: ctx.grade, active: true } };
+  if (ctx.subjectId.startsWith('demo-')) {
+    // Even in demo mode, constrain to the intended subject name
+    return { subject: { gradeLevel: ctx.grade, name: ctx.subjectName, active: true } };
+  }
   return { subjectId: ctx.subjectId };
 }
 
@@ -305,11 +308,11 @@ export async function getStudentOutcomeMastery(
   if (!authorized) return [];
 
   try {
-    // Use grade from context, not from a separate student lookup
+    // Use grade + subject from context — subjectArea matches ctx.subjectName (e.g. "Science")
     const outcomes = await prisma.learningOutcome.findMany({
       where: {
         gradeLevel: ctx.grade,
-        // TODO: add subjectId filter when LearningOutcome model supports it
+        subjectArea: ctx.subjectName,
       },
       include: {
         masteryJudgments: {

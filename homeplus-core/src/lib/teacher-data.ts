@@ -272,7 +272,7 @@ export async function getStudentsWithPacing(teacherId: string, ctx: GradeSubject
     if (students.length === 0) return [];
 
     const assignedLessons = await getAssignedLessonCount(ctx);
-    return students.map((s: PrismaStudentRecord) => buildStudentWithPacing(s as PrismaStudentRecord, assignedLessons));
+    return students.map((s: PrismaStudentRecord) => buildStudentWithPacing(s, assignedLessons));
   } catch (err) {
     if (isDemoMode()) return getDemoStudents();
     console.error('[teacher-data] getStudentsWithPacing failed:', err);
@@ -302,6 +302,7 @@ export async function getStudentById(
         id: studentId,
         role: 'STUDENT',
         assignedTeacherId: teacherId,
+        gradeLevel: ctx.grade,
       },
       include: {
         progress: {
@@ -438,7 +439,7 @@ export async function getStudentSubmissions(
     const subs = await prisma.submission.findMany({
       where: {
         studentId,
-        student: { assignedTeacherId: teacherId },
+        student: { assignedTeacherId: teacherId, gradeLevel: ctx.grade },
         ...submissionWhere,
       },
       orderBy: { submittedAt: 'desc' },
