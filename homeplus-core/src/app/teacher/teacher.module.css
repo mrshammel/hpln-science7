@@ -669,6 +669,133 @@
   line-height: 1.5;
 }
 
+/* ===== BADGE STACK ===== */
+.badgeStack {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* ===== PACING LEGEND ===== */
+.pacingLegend {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 16px;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  color: var(--hp-text3);
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legendBar {
+  display: inline-block;
+  width: 24px;
+  height: 6px;
+  border-radius: 3px;
+}
+
+.legendMarker {
+  display: inline-block;
+  width: 2px;
+  height: 14px;
+  background: #1e293b;
+  opacity: 0.4;
+  border-radius: 1px;
+}
+
+/* ===== CLICKABLE ROW ===== */
+.clickableRow {
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.clickableRow:hover {
+  background: #f1f5f9 !important;
+}
+
+/* ===== STUDENT DETAIL HEADER ===== */
+.studentHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 24px;
+  margin-bottom: 24px;
+  background: var(--hp-surface);
+  border: 1px solid var(--hp-border);
+  border-radius: 16px;
+}
+
+.studentHeaderAvatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--hp-primary-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.3rem;
+  color: var(--hp-primary);
+  flex-shrink: 0;
+}
+
+.studentHeaderInfo {
+  flex: 1;
+}
+
+.studentHeaderName {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--hp-text);
+  margin: 0 0 4px;
+}
+
+.studentHeaderMeta {
+  font-size: 0.85rem;
+  color: var(--hp-text3);
+  line-height: 1.5;
+}
+
+.studentHeaderActions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ===== PACING DETAIL GRID ===== */
+.pacingDetailGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.pacingDetailItem {
+  min-width: 0;
+}
+
+.pacingDetailLabel {
+  font-size: 0.75rem;
+  color: var(--hp-text3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.pacingDetailValue {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--hp-text);
+  line-height: 1.2;
+}
+
 /* ===== MOBILE OVERLAY ===== */
 .overlay {
   display: none;
@@ -693,6 +820,14 @@
   }
 
   .pacingSummary {
+    flex-wrap: wrap;
+  }
+
+  .pacingDetailGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .studentHeader {
     flex-wrap: wrap;
   }
 }
@@ -769,5 +904,21 @@
 
   .signOutBtn {
     display: none;
+  }
+
+  .studentHeader {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .studentHeaderActions {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .pacingDetailGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
   }
 }

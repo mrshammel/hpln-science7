@@ -1,6 +1,7 @@
+import Link from 'next/link';
 import styles from '../teacher.module.css';
 import { getStudentsWithPacing } from '@/lib/teacher-data';
-import { getPacingStyle } from '@/lib/pacing';
+import { getAcademicPacingStyle, getEngagementStyle, formatDaysSinceActive } from '@/lib/pacing';
 
 export default async function StudentsPage() {
   const students = await getStudentsWithPacing();
@@ -9,18 +10,18 @@ export default async function StudentsPage() {
     <>
       {/* Search/Filter Controls */}
       <div className={styles.tableControls}>
-        <input
-          type="text"
-          className={styles.searchInput}
-          placeholder="🔍 Search students..."
-        />
+        <input type="text" className={styles.searchInput} placeholder="🔍 Search students..." />
         <select className={styles.filterSelect}>
           <option value="">All Pacing</option>
           <option value="ON_PACE">On Pace</option>
           <option value="BEHIND">Behind</option>
           <option value="AHEAD">Ahead</option>
-          <option value="STALLED">Stalled</option>
           <option value="NEWLY_ENROLLED">Newly Enrolled</option>
+        </select>
+        <select className={styles.filterSelect}>
+          <option value="">All Engagement</option>
+          <option value="ACTIVE">Active</option>
+          <option value="STALLED">Stalled</option>
         </select>
         <select className={styles.filterSelect}>
           <option value="">All Units</option>
@@ -48,45 +49,36 @@ export default async function StudentsPage() {
                   <th>Student</th>
                   <th>Grade</th>
                   <th>Current Unit</th>
-                  <th>Current Lesson</th>
                   <th>Progress</th>
                   <th>Avg Score</th>
-                  <th>Last Active</th>
+                  <th>Last Academic Activity</th>
                   <th>Pacing</th>
+                  <th>Engagement</th>
                 </tr>
               </thead>
               <tbody>
                 {students.map((s) => {
-                  const style = getPacingStyle(s.pacing.status);
-                  const lastActive = s.lastActivityDate
-                    ? new Date(s.lastActivityDate).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })
-                    : 'No activity';
+                  const aStyle = getAcademicPacingStyle(s.pacing.academicStatus);
+                  const eStyle = getEngagementStyle(s.pacing.engagementStatus);
                   const progressColor = s.pacing.actualProgress >= 70 ? '#059669'
                     : s.pacing.actualProgress >= 40 ? '#d97706' : '#dc2626';
 
                   return (
-                    <tr key={s.id}>
+                    <tr key={s.id} className={styles.clickableRow}>
                       <td>
-                        <div className={styles.studentName}>
+                        <Link href={`/teacher/students/${s.id}`} className={styles.studentName} style={{ textDecoration: 'none', color: 'inherit' }}>
                           <div className={styles.tableAvatar}>
                             {s.name.split(' ').map((n) => n[0]).join('')}
                           </div>
                           {s.name}
-                        </div>
+                        </Link>
                       </td>
                       <td style={{ fontSize: '0.85rem' }}>{s.gradeLevel || '—'}</td>
                       <td style={{ fontSize: '0.85rem' }}>{s.currentUnit || '—'}</td>
-                      <td style={{ fontSize: '0.85rem' }}>{s.currentLesson || '—'}</td>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <div className={styles.progressBarWrap} style={{ width: 80 }}>
-                            <div
-                              className={styles.progressBarFill}
-                              style={{
-                                width: `${Math.min(100, s.pacing.actualProgress)}%`,
-                                background: progressColor,
-                              }}
-                            />
+                            <div className={styles.progressBarFill} style={{ width: `${Math.min(100, s.pacing.actualProgress)}%`, background: progressColor }} />
                           </div>
                           <span style={{ fontSize: '0.78rem', fontWeight: 600 }}>
                             {Math.round(s.pacing.actualProgress)}%
@@ -96,13 +88,17 @@ export default async function StudentsPage() {
                       <td style={{ fontSize: '0.85rem', fontWeight: 600 }}>
                         {s.avgScore !== null ? `${Math.round(s.avgScore)}%` : '—'}
                       </td>
-                      <td style={{ fontSize: '0.82rem', color: '#64748b' }}>{lastActive}</td>
+                      <td style={{ fontSize: '0.82rem', color: '#64748b' }}>
+                        {formatDaysSinceActive(s.pacing.daysSinceActive)}
+                      </td>
                       <td>
-                        <span
-                          className={styles.pacingBadge}
-                          style={{ background: style.bg, color: style.color }}
-                        >
-                          {style.icon} {s.pacing.label}
+                        <span className={styles.pacingBadge} style={{ background: aStyle.bg, color: aStyle.color }}>
+                          {aStyle.icon} {s.pacing.academicLabel}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={styles.pacingBadge} style={{ background: eStyle.bg, color: eStyle.color }}>
+                          {eStyle.icon} {s.pacing.engagementStatus === 'STALLED' ? 'Stalled' : 'Active'}
                         </span>
                       </td>
                     </tr>

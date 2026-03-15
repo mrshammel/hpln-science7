@@ -1,23 +1,24 @@
+import Link from 'next/link';
 import styles from './teacher.module.css';
 import { getStudentsWithPacing, getOverviewMetrics, getUnitProgress } from '@/lib/teacher-data';
-import { getPacingStyle } from '@/lib/pacing';
+import { getAcademicPacingStyle, getEngagementStyle, formatDaysSinceActive } from '@/lib/pacing';
 
 export default async function TeacherOverview() {
   const students = await getStudentsWithPacing();
   const metrics = await getOverviewMetrics(students);
   const unitProgress = getUnitProgress(students);
 
-  // Needs attention: significantly behind or stalled
+  // Needs attention: significantly behind OR stalled
   const needsAttention = students
-    .filter((s) => s.pacing.status === 'SIGNIFICANTLY_BEHIND' || s.pacing.status === 'STALLED')
+    .filter((s) => s.pacing.academicStatus === 'SIGNIFICANTLY_BEHIND' || s.pacing.engagementStatus === 'STALLED')
     .slice(0, 5);
 
-  // Students to celebrate: ahead, on pace with high scores, or recently completed
+  // Celebrate: ahead, on pace with high scores, or complete
   const celebrate = students
     .filter((s) =>
-      s.pacing.status === 'AHEAD' ||
-      (s.pacing.status === 'ON_PACE' && s.avgScore !== null && s.avgScore >= 85) ||
-      s.pacing.status === 'COMPLETE'
+      s.pacing.academicStatus === 'AHEAD' ||
+      (s.pacing.academicStatus === 'ON_PACE' && s.avgScore !== null && s.avgScore >= 85) ||
+      s.pacing.academicStatus === 'COMPLETE'
     )
     .slice(0, 4);
 
@@ -31,7 +32,7 @@ export default async function TeacherOverview() {
         <MetricCard icon="🚨" label="Needs Attention" value={metrics.needsAttention} bg="#fee2e2" />
         <MetricCard icon="📊" label="Avg Progress" value={`${Math.round(metrics.avgProgress)}%`} bg="#ede9fe" />
         <MetricCard icon="🏆" label="Avg Score" value={metrics.avgScore ? `${Math.round(metrics.avgScore)}%` : '—'} bg="#fef3c7" />
-        <MetricCard icon="👥" label="Total Students" value={metrics.totalStudents} bg="#e0e7ff" />
+        <MetricCard icon="⏸️" label="Stalled" value={metrics.stalledCount} bg="#f3f4f6" />
         <MetricCard icon="📝" label="Pending Reviews" value={metrics.pendingReviews} bg="#fce7f3" />
       </div>
 
@@ -48,33 +49,37 @@ export default async function TeacherOverview() {
             </div>
           ) : (
             needsAttention.map((s) => {
-              const style = getPacingStyle(s.pacing.status);
-              const reason = s.pacing.status === 'STALLED'
-                ? `No activity in ${s.pacing.daysSinceLastActivity} days`
-                : `${Math.abs(s.pacing.daysBehindOrAhead)} days behind pace`;
+              const aStyle = getAcademicPacingStyle(s.pacing.academicStatus);
+              const eStyle = getEngagementStyle(s.pacing.engagementStatus);
+              // Build plain-language reason
+              const reasons: string[] = [];
+              if (s.pacing.academicStatus === 'SIGNIFICANTLY_BEHIND')
+                reasons.push(`${Math.abs(s.pacing.daysBehindOrAhead)} days behind pace`);
+              if (s.pacing.engagementStatus === 'STALLED')
+                reasons.push(formatDaysSinceActive(s.pacing.daysSinceActive));
+
               return (
-                <div key={s.id} className={styles.attentionItem}>
+                <Link key={s.id} href={`/teacher/students/${s.id}`} className={styles.attentionItem} style={{ textDecoration: 'none' }}>
                   <div className={styles.attentionAvatar}>
                     {s.name.split(' ').map((n) => n[0]).join('')}
                   </div>
                   <div className={styles.attentionInfo}>
                     <div className={styles.attentionName}>{s.name}</div>
                     <div className={styles.attentionReason}>
-                      {s.currentUnit && <>{s.currentUnit} · </>}
-                      {reason}
+                      Grade {s.gradeLevel} · {s.currentUnit || '—'} · {reasons.join(' · ')}
                     </div>
                   </div>
-                  <span
-                    className={styles.pacingBadge}
-                    style={{ background: style.bg, color: style.color }}
-                  >
-                    {style.icon} {s.pacing.label}
-                  </span>
-                  <div className={styles.attentionActions}>
-                    <button className={styles.smallBtn}>View</button>
-                    <button className={styles.smallBtn}>Note</button>
+                  <div className={styles.badgeStack}>
+                    <span className={styles.pacingBadge} style={{ background: aStyle.bg, color: aStyle.color }}>
+                      {aStyle.icon} {s.pacing.academicLabel}
+                    </span>
+                    {s.pacing.engagementStatus === 'STALLED' && (
+                      <span className={styles.pacingBadge} style={{ background: eStyle.bg, color: eStyle.color }}>
+                        {eStyle.icon} Stalled
+                      </span>
+                    )}
                   </div>
-                </div>
+                </Link>
               );
             })
           )}
@@ -92,19 +97,19 @@ export default async function TeacherOverview() {
             ) : (
               celebrate.map((s) => {
                 let reason = '';
-                if (s.pacing.status === 'COMPLETE') reason = 'Completed all lessons!';
-                else if (s.pacing.status === 'AHEAD') reason = `${s.pacing.daysBehindOrAhead} days ahead of pace`;
+                if (s.pacing.academicStatus === 'COMPLETE') reason = 'Completed all lessons!';
+                else if (s.pacing.academicStatus === 'AHEAD') reason = `${s.pacing.daysBehindOrAhead} days ahead of pace`;
                 else if (s.avgScore && s.avgScore >= 85) reason = `Strong performance — ${Math.round(s.avgScore)}% avg`;
                 return (
-                  <div key={s.id} className={styles.celebrateItem}>
+                  <Link key={s.id} href={`/teacher/students/${s.id}`} className={styles.celebrateItem} style={{ textDecoration: 'none', color: 'inherit' }}>
                     <span className={styles.celebrateEmoji}>
-                      {s.pacing.status === 'COMPLETE' ? '🎉' : s.pacing.status === 'AHEAD' ? '🚀' : '⭐'}
+                      {s.pacing.academicStatus === 'COMPLETE' ? '🎉' : s.pacing.academicStatus === 'AHEAD' ? '🚀' : '⭐'}
                     </span>
                     <div className={styles.celebrateInfo}>
                       <div className={styles.celebrateName}>{s.name}</div>
                       <div className={styles.celebrateReason}>{reason}</div>
                     </div>
-                  </div>
+                  </Link>
                 );
               })
             )}
@@ -137,13 +142,10 @@ export default async function TeacherOverview() {
   );
 }
 
-// Reusable metric card component
 function MetricCard({ icon, label, value, bg }: { icon: string; label: string; value: string | number; bg: string }) {
   return (
     <div className={styles.metricCard}>
-      <div className={styles.metricIcon} style={{ background: bg }}>
-        {icon}
-      </div>
+      <div className={styles.metricIcon} style={{ background: bg }}>{icon}</div>
       <div className={styles.metricInfo}>
         <div className={styles.metricLabel}>{label}</div>
         <div className={styles.metricValue}>{value}</div>
