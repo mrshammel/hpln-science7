@@ -1,3 +1,4 @@
+import Image from "next/image";
 import styles from "./page.module.css";
 
 export default function HomePage() {
@@ -8,10 +9,14 @@ export default function HomePage() {
         <div className={`hp-container ${styles.heroInner}`}>
           {/* Logo */}
           <div className={`${styles.logo} animate-in`}>
-            <div className={styles.logoIcon}>
-              <span>🏠</span>
-            </div>
-            <span className={styles.logoText}>Home Plus</span>
+            <Image
+              src="/images/hpln-logo.png"
+              alt="Home Plus Online Learning"
+              width={320}
+              height={100}
+              className={styles.logoImage}
+              priority
+            />
           </div>
 
           {/* Welcome */}
@@ -21,11 +26,13 @@ export default function HomePage() {
 
           {/* 3 Pillars */}
           <div className={`${styles.pillars} animate-in delay-2`}>
-            <span className={styles.pillar}>Learn.</span>
-            <span className={styles.pillarDot}>·</span>
-            <span className={styles.pillar}>Grow.</span>
-            <span className={styles.pillarDot}>·</span>
-            <span className={styles.pillar}>Succeed.</span>
+            <Image
+              src="/images/pillars-lgs.png"
+              alt="Learn. Grow. Succeed."
+              width={480}
+              height={180}
+              className={styles.pillarsImage}
+            />
           </div>
 
           {/* Intro paragraph */}
@@ -181,7 +188,13 @@ export default function HomePage() {
         <div className={`hp-container ${styles.footerInner}`}>
           <div className={styles.footerBrand}>
             <div className={styles.footerLogo}>
-              <span>🏠</span> Home Plus
+              <Image
+                src="/images/hpln-logo.png"
+                alt="Home Plus"
+                width={140}
+                height={44}
+                className={styles.footerLogoImg}
+              />
             </div>
             <p className={styles.footerTagline}>Learn. Grow. Succeed.</p>
           </div>

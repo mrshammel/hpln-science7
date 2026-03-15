@@ -55,8 +55,15 @@
 .logo {
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin-bottom: 28px;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.logoImage {
+  width: auto;
+  height: auto;
+  max-width: 320px;
+  object-fit: contain;
 }
 
 .logoIcon {
@@ -95,23 +102,15 @@
 .pillars {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 24px;
+  justify-content: center;
+  margin-bottom: 28px;
 }
 
-.pillar {
-  font-size: 1.3rem;
-  font-weight: 700;
-  background: var(--hp-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.pillarDot {
-  font-size: 1.4rem;
-  color: var(--hp-text3);
-  font-weight: 300;
+.pillarsImage {
+  width: auto;
+  height: auto;
+  max-width: 420px;
+  object-fit: contain;
 }
 
 /* Description */
@@ -291,13 +290,16 @@
 }
 
 .footerLogo {
-  font-size: 1.3rem;
-  font-weight: 800;
-  color: #f8fafc;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 6px;
+  margin-bottom: 10px;
+}
+
+.footerLogoImg {
+  width: auto;
+  height: auto;
+  max-width: 140px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+  opacity: 0.9;
 }
 
 .footerTagline {
@@ -382,15 +384,12 @@
     margin-bottom: 20px;
   }
 
-  .logoIcon {
-    width: 48px;
-    height: 48px;
-    font-size: 1.3rem;
-    border-radius: 14px;
+  .logoImage {
+    max-width: 240px;
   }
 
-  .logoText {
-    font-size: 1.3rem;
+  .pillarsImage {
+    max-width: 300px;
   }
 
   .heroTitle {
@@ -449,11 +448,11 @@
     font-size: 1.75rem;
   }
 
-  .pillar {
-    font-size: 1rem;
+  .logoImage {
+    max-width: 200px;
   }
 
-  .pillarDot {
-    font-size: 1.1rem;
+  .pillarsImage {
+    max-width: 260px;
   }
 }
