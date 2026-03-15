@@ -11,17 +11,25 @@ datasource db {
 
 // ============= USERS =============
 model User {
-  id         String   @id @default(cuid())
-  name       String
-  email      String   @unique
-  googleId   String?  @unique @map("google_id")
-  role       Role     @default(STUDENT)
-  gradeLevel Int?     @map("grade_level")
-  avatar     String?
-  createdAt  DateTime @default(now()) @map("created_at")
+  id          String    @id @default(cuid())
+  name        String
+  email       String    @unique
+  googleId    String?   @unique @map("google_id")
+  role        Role      @default(STUDENT)
+  gradeLevel  Int?      @map("grade_level")
+  avatar      String?
+  enrolledAt  DateTime? @map("enrolled_at")   // When student joined the program
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  // Teacher assignment
+  assignedTeacherId String? @map("assigned_teacher_id")
+  assignedTeacher   User?   @relation("TeacherStudents", fields: [assignedTeacherId], references: [id])
+  students          User[]  @relation("TeacherStudents")
 
   submissions Submission[]
   progress    StudentProgress[]
+  notes       TeacherNote[]     @relation("StudentNotes")
+  authoredNotes TeacherNote[]   @relation("AuthorNotes")
 
   @@map("users")
 }
@@ -54,8 +62,9 @@ model Unit {
   icon        String?
   order       Int     @default(0)
 
-  subject Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  lessons Lesson[]
+  subject       Subject        @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  lessons       Lesson[]
+  pacingTargets PacingTarget[]
 
   @@map("units")
 }
@@ -105,6 +114,7 @@ model Submission {
   response    Json?
   score       Float?
   maxScore    Float?   @map("max_score")
+  reviewed    Boolean  @default(false)
   submittedAt DateTime @default(now()) @map("submitted_at")
 
   student  User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
@@ -131,4 +141,33 @@ enum ProgressStatus {
   NOT_STARTED
   IN_PROGRESS
   COMPLETE
+}
+
+// ============= PACING =============
+model PacingTarget {
+  id              String   @id @default(cuid())
+  unitId          String   @map("unit_id")
+  expectedWeek    Int      @map("expected_week")   // Week of the school year this unit should be completed by
+  schoolYearStart DateTime @default(dbgenerated("'2025-09-01'::timestamp")) @map("school_year_start")
+  schoolYearEnd   DateTime @default(dbgenerated("'2026-06-01'::timestamp")) @map("school_year_end")
+
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@unique([unitId])
+  @@map("pacing_targets")
+}
+
+// ============= TEACHER NOTES =============
+model TeacherNote {
+  id        String   @id @default(cuid())
+  studentId String   @map("student_id")
+  teacherId String   @map("teacher_id")
+  tag       String   @default("General")
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  student User @relation("StudentNotes", fields: [studentId], references: [id], onDelete: Cascade)
+  teacher User @relation("AuthorNotes", fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@map("teacher_notes")
 }
