@@ -19,9 +19,9 @@ export default function HomePage() {
             />
 
             <h1 className={styles.heroTagline}>
-              Flexible learning with{" "}
+              Your child&apos;s learning,{" "}
               <span className={styles.heroTaglineAccent}>
-                guidance and support
+                guided and supported every step of the way
               </span>
             </h1>
 
