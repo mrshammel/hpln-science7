@@ -15,9 +15,9 @@ export default async function TeacherOverview({ searchParams }: PageProps) {
   const ctx = await resolveContext(params, teacherId);
   const q = buildContextQuery(ctx);
 
-  const students = await getStudentsWithPacing(teacherId, ctx.subjectId);
-  const metrics = await getOverviewMetrics(students, teacherId, ctx.subjectId);
-  const unitProgress = await getUnitProgress(students, teacherId, ctx.subjectId);
+  const students = await getStudentsWithPacing(teacherId, ctx);
+  const metrics = await getOverviewMetrics(students, teacherId, ctx);
+  const unitProgress = await getUnitProgress(students, teacherId, ctx);
 
   // Needs attention: significantly behind OR stalled
   const needsAttention = students
@@ -62,7 +62,6 @@ export default async function TeacherOverview({ searchParams }: PageProps) {
             needsAttention.map((s) => {
               const aStyle = getAcademicPacingStyle(s.pacing.academicStatus);
               const eStyle = getEngagementStyle(s.pacing.engagementStatus);
-              // Build plain-language reason
               const reasons: string[] = [];
               if (s.pacing.academicStatus === 'SIGNIFICANTLY_BEHIND')
                 reasons.push(`${Math.abs(s.pacing.daysBehindOrAhead)} days behind pace`);

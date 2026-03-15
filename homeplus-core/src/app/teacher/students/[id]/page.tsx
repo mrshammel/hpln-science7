@@ -35,7 +35,7 @@ export default async function StudentDetailPage({ params, searchParams }: PagePr
   const ctx = await resolveContext(sp, teacherId);
   const q = buildContextQuery(ctx);
 
-  const student = await getStudentById(id, teacherId, ctx.subjectId);
+  const student = await getStudentById(id, teacherId, ctx);
 
   if (!student) {
     return (
@@ -60,12 +60,12 @@ export default async function StudentDetailPage({ params, searchParams }: PagePr
     submissions,
     notes,
   ] = await Promise.all([
-    getStudentWrittenResponses(id, teacherId),
-    getStudentArtifacts(id, teacherId),
-    getStudentOutcomeMastery(id, teacherId),
-    getStudentUnitProgress(id, teacherId),
-    getLastAcademicEvent(id, teacherId),
-    getStudentSubmissions(id, teacherId),
+    getStudentWrittenResponses(id, teacherId, ctx),
+    getStudentArtifacts(id, teacherId, ctx),
+    getStudentOutcomeMastery(id, teacherId, ctx),
+    getStudentUnitProgress(id, teacherId, ctx),
+    getLastAcademicEvent(id, teacherId, ctx),
+    getStudentSubmissions(id, teacherId, ctx),
     getStudentNotes(id, teacherId),
   ]);
 

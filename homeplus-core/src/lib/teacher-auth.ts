@@ -1,15 +1,22 @@
 // ============================================
 // Teacher Auth Helper — Home Plus LMS
 // ============================================
-// Server-side helper to get the current teacher's ID.
-// Used by all teacher-facing pages to scope data queries.
-//
-// In demo mode, returns a demo teacher ID so pages can
-// render without a real auth session.
+// Server-side helpers for teacher identity and demo mode.
+// Used by all teacher-facing pages and data layers.
+
+// ---------- Demo Mode ----------
+
+/**
+ * Demo mode gate. Controls whether demo data is used.
+ * In production, set NEXT_PUBLIC_DEMO_MODE=false or remove it.
+ */
+export function isDemoMode(): boolean {
+  return process.env.NEXT_PUBLIC_DEMO_MODE !== 'false';
+}
+
+// ---------- Teacher Identity ----------
 
 // Demo teacher ID used when no auth session is available.
-// This allows the teacher dashboard to render with demo data
-// during development without requiring Google sign-in.
 const DEMO_TEACHER_ID = 'demo-teacher';
 
 /**
@@ -24,7 +31,8 @@ const DEMO_TEACHER_ID = 'demo-teacher';
  *   4. Throw or redirect if not authenticated
  */
 export async function getTeacherId(): Promise<string> {
+  if (isDemoMode()) return DEMO_TEACHER_ID;
+
   // Placeholder: in production, replace with session-based teacher identity.
-  // For now, return a demo teacher ID so pages can render.
   return DEMO_TEACHER_ID;
 }

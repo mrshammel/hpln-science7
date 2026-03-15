@@ -2,17 +2,20 @@
 // Teacher Data Layer — Home Plus LMS
 // ============================================
 // Server-side data fetching with dual-status pacing model.
-// All teacher-facing functions are teacher-scoped via teacherId.
-// Demo data is isolated behind an explicit USE_DEMO gate.
+// All teacher-facing functions are scoped by:
+//   - teacherId (authorization)
+//   - grade + subjectId (cohort context)
 //
 // Key design decisions:
 //   - All queries filter by assignedTeacherId
-//   - Total lessons = assigned-path count, not global catalog
+//   - Grade + subjectId scope progress, submissions, pacing, and reviews
+//   - Total lessons = assigned-path count for the selected grade+subject
 //   - lastAcademicActivityAt = max(latest submission, latest lesson completion)
 //   - getStudentById is a direct scoped query, not a full-list scan
-//   - Demo mode is explicit and centralized
+//   - isDemoMode() is env-driven, not hardcoded
 
 import { prisma } from '@/lib/db';
+import { isDemoMode } from '@/lib/teacher-auth';
 import {
   calculatePacing,
   getInterventionPriority,
@@ -20,16 +23,7 @@ import {
   type AcademicPacingStatus,
   type EngagementStatus,
 } from '@/lib/pacing';
-
-// ---------- Demo Mode ----------
-// Set USE_DEMO = true to use demo data (for development/preview).
-// In production, this should be false so real errors surface.
-
-const USE_DEMO = true; // Toggle to false when real data is available
-
-function isDemoMode(): boolean {
-  return USE_DEMO;
-}
+import type { GradeSubjectContext } from '@/lib/teacher-context';
 
 // ---------- Types ----------
 
@@ -95,6 +89,58 @@ export interface TeacherNoteData {
   createdAt: Date;
 }
 
+// ---------- Internal Prisma Result Types ----------
+
+interface PrismaProgressRecord {
+  status: string;
+  completedAt: Date | null;
+  lesson: { title: string; unit: { title: string } };
+}
+
+interface PrismaSubmissionRecord {
+  score: number | null;
+  maxScore: number | null;
+  submittedAt: Date;
+}
+
+interface PrismaSubmissionWithRelations {
+  id: string;
+  studentId: string;
+  score: number | null;
+  maxScore: number | null;
+  reviewed: boolean;
+  submittedAt: Date;
+  student: { name: string; avatar: string | null };
+  activity: { title: string; type: string };
+}
+
+interface PrismaNoteWithStudent {
+  id: string;
+  studentId: string;
+  tag: string;
+  content: string;
+  createdAt: Date;
+  student: { name: string; avatar: string | null };
+}
+
+interface PrismaUnitWithLessons {
+  id: string;
+  title: string;
+  icon: string | null;
+  lessons: Array<{ id: string }>;
+}
+
+interface PrismaStudentRecord {
+  id: string;
+  name: string;
+  email: string;
+  gradeLevel: number | null;
+  avatar: string | null;
+  enrolledAt: Date | null;
+  progress: PrismaProgressRecord[];
+  submissions: PrismaSubmissionRecord[];
+}
+
 // ---------- Helpers ----------
 
 /** Derive last meaningful academic activity from both submissions and lesson completions */
@@ -108,61 +154,53 @@ function deriveLastAcademicActivity(
   return latestSubmissionDate || latestCompletionDate || null;
 }
 
-/** Count assigned lessons for a student's grade/subject, not the global catalog */
-async function getAssignedLessonCount(gradeLevel: number | null, subjectId?: string): Promise<number> {
-  if (!gradeLevel) return 10; // Safe fallback
+/** Count assigned lessons for a specific grade + subject context */
+async function getAssignedLessonCount(ctx: GradeSubjectContext): Promise<number> {
+  if (ctx.subjectId.startsWith('demo-')) return 10;
   try {
     const count = await prisma.lesson.count({
       where: {
         unit: {
           subject: {
-            gradeLevel,
+            id: ctx.subjectId,
+            gradeLevel: ctx.grade,
             active: true,
-            ...(subjectId && !subjectId.startsWith('demo-') ? { id: subjectId } : {}),
           },
         },
       },
     });
-    return count || 10; // Fallback if no lessons configured
+    return count || 10;
   } catch {
     return 10;
   }
 }
 
-/** Build StudentWithPacing from a raw Prisma user record */
+/** Build Prisma where filters for subject-scoping progress and submissions */
+function buildSubjectFilters(ctx: GradeSubjectContext) {
+  const isReal = !ctx.subjectId.startsWith('demo-');
+  return {
+    progressWhere: isReal ? { lesson: { unit: { subjectId: ctx.subjectId } } } : {},
+    submissionWhere: isReal ? { activity: { lesson: { unit: { subjectId: ctx.subjectId } } } } : {},
+  };
+}
+
+/** Build StudentWithPacing from a typed Prisma student record */
 function buildStudentWithPacing(
-  student: {
-    id: string;
-    name: string;
-    email: string;
-    gradeLevel: number | null;
-    avatar: string | null;
-    enrolledAt: Date | null;
-    progress: Array<{
-      status: string;
-      completedAt: Date | null;
-      lesson: { title: string; unit: { title: string } };
-    }>;
-    submissions: Array<{
-      score: number | null;
-      maxScore: number | null;
-      submittedAt: Date;
-    }>;
-  },
+  student: PrismaStudentRecord,
   assignedLessonCount: number,
 ): StudentWithPacing {
   const completedLessons = student.progress.filter((p) => p.status === 'COMPLETE').length;
 
   // Last meaningful academic activity: max(latest submission, latest lesson completion)
   const latestSubmission = student.submissions.length > 0
-    ? student.submissions.reduce((latest, s) =>
+    ? student.submissions.reduce((latest: Date, s) =>
         s.submittedAt > latest ? s.submittedAt : latest, student.submissions[0].submittedAt)
     : null;
   const completedProgress = student.progress
     .filter((p) => p.status === 'COMPLETE' && p.completedAt)
     .map((p) => p.completedAt!);
   const latestCompletion = completedProgress.length > 0
-    ? completedProgress.reduce((latest, d) => d > latest ? d : latest, completedProgress[0])
+    ? completedProgress.reduce((latest: Date, d) => d > latest ? d : latest, completedProgress[0])
     : null;
   const lastAcademicActivityAt = deriveLastAcademicActivity(latestSubmission, latestCompletion);
 
@@ -171,7 +209,7 @@ function buildStudentWithPacing(
   const currentUnit = inProgress?.lesson?.unit?.title || null;
   const currentLesson = inProgress?.lesson?.title || null;
 
-  // Average score from all scored submissions
+  // Average score for subject context
   const scored = student.submissions.filter((sub) => sub.score !== null && sub.maxScore !== null);
   const avgScore = scored.length > 0
     ? scored.reduce((sum, sub) => sum + ((sub.score! / sub.maxScore!) * 100), 0) / scored.length
@@ -204,30 +242,27 @@ function buildStudentWithPacing(
 // ---------- Teacher-Scoped Data Fetching ----------
 
 /**
- * Get all students assigned to a specific teacher, with pacing.
- * Scoped to a subject context when subjectId is provided.
- * Falls back to demo data only when USE_DEMO is true.
+ * Get all students assigned to a specific teacher, scoped to grade+subject context.
  */
-export async function getStudentsWithPacing(teacherId: string, subjectId?: string): Promise<StudentWithPacing[]> {
+export async function getStudentsWithPacing(teacherId: string, ctx: GradeSubjectContext): Promise<StudentWithPacing[]> {
+  if (isDemoMode() && ctx.subjectId.startsWith('demo-')) return getDemoStudents();
+
   try {
-    // Subject filter for progress and submissions
-    const subjectFilter = subjectId && !subjectId.startsWith('demo-')
-      ? { unit: { subjectId } } : {};
-    const submissionSubjectFilter = subjectId && !subjectId.startsWith('demo-')
-      ? { activity: { lesson: { unit: { subjectId } } } } : {};
+    const { progressWhere, submissionWhere } = buildSubjectFilters(ctx);
 
     const students = await prisma.user.findMany({
       where: {
         role: 'STUDENT',
         assignedTeacherId: teacherId,
+        gradeLevel: ctx.grade,
       },
       include: {
         progress: {
-          where: { lesson: subjectFilter },
+          where: progressWhere,
           include: { lesson: { include: { unit: true } } },
         },
         submissions: {
-          where: submissionSubjectFilter,
+          where: submissionWhere,
           orderBy: { submittedAt: 'desc' },
         },
       },
@@ -236,11 +271,8 @@ export async function getStudentsWithPacing(teacherId: string, subjectId?: strin
     if (students.length === 0 && isDemoMode()) return getDemoStudents();
     if (students.length === 0) return [];
 
-    // Assigned-path lesson count (per student grade + subject)
-    const firstGrade = students[0]?.gradeLevel;
-    const assignedLessons = await getAssignedLessonCount(firstGrade, subjectId);
-
-    return students.map((s) => buildStudentWithPacing(s as any, assignedLessons));
+    const assignedLessons = await getAssignedLessonCount(ctx);
+    return students.map((s: PrismaStudentRecord) => buildStudentWithPacing(s as PrismaStudentRecord, assignedLessons));
   } catch (err) {
     if (isDemoMode()) return getDemoStudents();
     console.error('[teacher-data] getStudentsWithPacing failed:', err);
@@ -249,22 +281,21 @@ export async function getStudentsWithPacing(teacherId: string, subjectId?: strin
 }
 
 /**
- * Get a single student by ID — direct scoped query, not a full-list scan.
+ * Get a single student by ID — direct scoped query.
  * Verifies the student belongs to the teacher's scope.
- * Scoped to subject context when subjectId is provided.
  */
-export async function getStudentById(studentId: string, teacherId: string, subjectId?: string): Promise<StudentWithPacing | null> {
-  // Demo mode: look up from demo data
+export async function getStudentById(
+  studentId: string,
+  teacherId: string,
+  ctx: GradeSubjectContext,
+): Promise<StudentWithPacing | null> {
   if (studentId.startsWith('demo-') && isDemoMode()) {
     const demos = getDemoStudents();
     return demos.find((s) => s.id === studentId) || null;
   }
 
   try {
-    const subjectFilter = subjectId && !subjectId.startsWith('demo-')
-      ? { unit: { subjectId } } : {};
-    const submissionSubjectFilter = subjectId && !subjectId.startsWith('demo-')
-      ? { activity: { lesson: { unit: { subjectId } } } } : {};
+    const { progressWhere, submissionWhere } = buildSubjectFilters(ctx);
 
     const student = await prisma.user.findFirst({
       where: {
@@ -274,11 +305,11 @@ export async function getStudentById(studentId: string, teacherId: string, subje
       },
       include: {
         progress: {
-          where: { lesson: subjectFilter },
+          where: progressWhere,
           include: { lesson: { include: { unit: true } } },
         },
         submissions: {
-          where: submissionSubjectFilter,
+          where: submissionWhere,
           orderBy: { submittedAt: 'desc' },
         },
       },
@@ -286,8 +317,8 @@ export async function getStudentById(studentId: string, teacherId: string, subje
 
     if (!student) return null;
 
-    const assignedLessons = await getAssignedLessonCount(student.gradeLevel, subjectId);
-    return buildStudentWithPacing(student as any, assignedLessons);
+    const assignedLessons = await getAssignedLessonCount(ctx);
+    return buildStudentWithPacing(student as PrismaStudentRecord, assignedLessons);
   } catch (err) {
     console.error('[teacher-data] getStudentById failed:', err);
     return null;
@@ -298,7 +329,11 @@ export async function getStudentById(studentId: string, teacherId: string, subje
  * Overview metrics — computed from the teacher's already-fetched students.
  * Pending reviews scoped to teacher's students + subject context.
  */
-export async function getOverviewMetrics(students: StudentWithPacing[], teacherId: string, subjectId?: string): Promise<OverviewMetrics> {
+export async function getOverviewMetrics(
+  students: StudentWithPacing[],
+  teacherId: string,
+  ctx: GradeSubjectContext,
+): Promise<OverviewMetrics> {
   const totalStudents = students.length;
   const onPace = students.filter((s) => s.pacing.academicStatus === 'ON_PACE').length;
   const behind = students.filter((s) =>
@@ -317,18 +352,17 @@ export async function getOverviewMetrics(students: StudentWithPacing[], teacherI
   const avgScore = scored.length > 0
     ? scored.reduce((sum, s) => sum + s.avgScore!, 0) / scored.length : null;
 
-  // Scoped pending reviews: teacher's students + subject
+  // Scoped pending reviews: teacher's students + subject context
   let pendingReviews = 0;
   try {
     const studentIds = students.map((s) => s.id);
     if (studentIds.length > 0 && !studentIds[0].startsWith('demo-')) {
-      const subjectSubmFilter = subjectId && !subjectId.startsWith('demo-')
-        ? { activity: { lesson: { unit: { subjectId } } } } : {};
+      const { submissionWhere } = buildSubjectFilters(ctx);
       pendingReviews = await prisma.submission.count({
         where: {
           studentId: { in: studentIds },
           reviewed: false,
-          ...subjectSubmFilter,
+          ...submissionWhere,
         },
       });
     } else if (isDemoMode()) {
@@ -347,16 +381,17 @@ export function getStudentsByPriority(students: StudentWithPacing[]): StudentWit
 }
 
 /**
- * Recent submissions — scoped to teacher's students + subject.
+ * Recent submissions — scoped to teacher's students + subject context.
  */
-export async function getRecentSubmissions(teacherId: string, subjectId?: string): Promise<RecentSubmission[]> {
+export async function getRecentSubmissions(teacherId: string, ctx: GradeSubjectContext): Promise<RecentSubmission[]> {
+  if (isDemoMode() && ctx.subjectId.startsWith('demo-')) return getDemoSubmissions();
+
   try {
-    const subjectFilter = subjectId && !subjectId.startsWith('demo-')
-      ? { activity: { lesson: { unit: { subjectId } } } } : {};
+    const { submissionWhere } = buildSubjectFilters(ctx);
     const subs = await prisma.submission.findMany({
       where: {
-        student: { assignedTeacherId: teacherId },
-        ...subjectFilter,
+        student: { assignedTeacherId: teacherId, gradeLevel: ctx.grade },
+        ...submissionWhere,
       },
       orderBy: { submittedAt: 'desc' },
       take: 20,
@@ -367,13 +402,13 @@ export async function getRecentSubmissions(teacherId: string, subjectId?: string
     });
     if (subs.length === 0 && isDemoMode()) return getDemoSubmissions();
     if (subs.length === 0) return [];
-    return subs.map((s) => ({
+    return subs.map((s: PrismaSubmissionWithRelations) => ({
       id: s.id,
       studentId: s.studentId,
-      studentName: (s as any).student.name,
-      studentAvatar: (s as any).student.avatar,
-      activityTitle: (s as any).activity.title,
-      activityType: (s as any).activity.type,
+      studentName: s.student.name,
+      studentAvatar: s.student.avatar,
+      activityTitle: s.activity.title,
+      activityType: s.activity.type,
       score: s.score,
       maxScore: s.maxScore,
       reviewed: s.reviewed,
@@ -389,16 +424,22 @@ export async function getRecentSubmissions(teacherId: string, subjectId?: string
 /**
  * Get submissions for a specific student (teacher-scoped by student relationship).
  */
-export async function getStudentSubmissions(studentId: string, teacherId: string): Promise<RecentSubmission[]> {
+export async function getStudentSubmissions(
+  studentId: string,
+  teacherId: string,
+  ctx: GradeSubjectContext,
+): Promise<RecentSubmission[]> {
   if (studentId.startsWith('demo-') && isDemoMode()) {
     return getDemoSubmissions().filter((s) => s.studentId === studentId);
   }
 
   try {
+    const { submissionWhere } = buildSubjectFilters(ctx);
     const subs = await prisma.submission.findMany({
       where: {
         studentId,
         student: { assignedTeacherId: teacherId },
+        ...submissionWhere,
       },
       orderBy: { submittedAt: 'desc' },
       take: 10,
@@ -408,13 +449,13 @@ export async function getStudentSubmissions(studentId: string, teacherId: string
       },
     });
     if (subs.length === 0) return [];
-    return subs.map((s) => ({
+    return subs.map((s: PrismaSubmissionWithRelations) => ({
       id: s.id,
       studentId: s.studentId,
-      studentName: (s as any).student.name,
-      studentAvatar: (s as any).student.avatar,
-      activityTitle: (s as any).activity.title,
-      activityType: (s as any).activity.type,
+      studentName: s.student.name,
+      studentAvatar: s.student.avatar,
+      activityTitle: s.activity.title,
+      activityType: s.activity.type,
       score: s.score,
       maxScore: s.maxScore,
       reviewed: s.reviewed,
@@ -437,11 +478,11 @@ export async function getTeacherNotes(teacherId: string): Promise<TeacherNoteDat
       take: 50,
       include: { student: { select: { name: true, avatar: true } } },
     });
-    return notes.map((n) => ({
+    return notes.map((n: PrismaNoteWithStudent) => ({
       id: n.id,
       studentId: n.studentId,
-      studentName: (n as any).student.name,
-      studentAvatar: (n as any).student.avatar,
+      studentName: n.student.name,
+      studentAvatar: n.student.avatar,
       tag: n.tag,
       content: n.content,
       createdAt: n.createdAt,
@@ -462,11 +503,11 @@ export async function getStudentNotes(studentId: string, teacherId: string): Pro
       orderBy: { createdAt: 'desc' },
       include: { student: { select: { name: true, avatar: true } } },
     });
-    return notes.map((n) => ({
+    return notes.map((n: PrismaNoteWithStudent) => ({
       id: n.id,
       studentId: n.studentId,
-      studentName: (n as any).student.name,
-      studentAvatar: (n as any).student.avatar,
+      studentName: n.student.name,
+      studentAvatar: n.student.avatar,
       tag: n.tag,
       content: n.content,
       createdAt: n.createdAt,
@@ -479,37 +520,82 @@ export async function getStudentNotes(studentId: string, teacherId: string): Pro
 
 /**
  * Unit progress for the teacher's class — scoped to subject context.
+ * Shows real per-unit completion when data is available.
  */
-export async function getUnitProgress(students: StudentWithPacing[], teacherId: string, subjectId?: string): Promise<UnitProgress[]> {
+export async function getUnitProgress(
+  students: StudentWithPacing[],
+  teacherId: string,
+  ctx: GradeSubjectContext,
+): Promise<UnitProgress[]> {
   // Try real unit data first — scoped to selected subject
-  try {
-    const subjectFilter = subjectId && !subjectId.startsWith('demo-')
-      ? { subjectId } : { subject: { active: true } };
-    const units = await prisma.unit.findMany({
-      where: subjectFilter,
-      orderBy: { order: 'asc' },
-      select: { id: true, title: true, icon: true },
-    });
-
-    if (units.length > 0) {
-      return units.map((u) => {
-        const avgCompletion = students.length > 0
-          ? students.reduce((sum, s) => sum + s.pacing.actualProgress, 0) / students.length : 0;
-        const scored = students.filter((s) => s.avgScore !== null);
-        const avgScore = scored.length > 0
-          ? scored.reduce((sum, s) => sum + s.avgScore!, 0) / scored.length : null;
-        const stalledStudents = students.filter((s) => s.pacing.engagementStatus === 'STALLED').length;
-        return {
-          unitId: u.id, unitTitle: u.title, unitIcon: u.icon,
-          avgCompletion, avgScore, totalStudents: students.length, stalledStudents,
-        };
+  if (!ctx.subjectId.startsWith('demo-')) {
+    try {
+      const units = await prisma.unit.findMany({
+        where: { subjectId: ctx.subjectId },
+        orderBy: { order: 'asc' },
+        include: {
+          lessons: {
+            select: { id: true },
+          },
+        },
       });
+
+      if (units.length > 0) {
+        // Get completion data per unit for all students in the cohort
+        const studentIds = students.map((s) => s.id).filter((id) => !id.startsWith('demo-'));
+
+        return await Promise.all(units.map(async (u: PrismaUnitWithLessons) => {
+          const lessonIds = u.lessons.map((l: { id: string }) => l.id);
+          const totalLessonsInUnit = lessonIds.length;
+
+          let avgCompletion = 0;
+          let avgScore: number | null = null;
+
+          if (studentIds.length > 0 && totalLessonsInUnit > 0) {
+            // Count completed lessons per student for this unit
+            const completions = await prisma.studentProgress.count({
+              where: {
+                studentId: { in: studentIds },
+                lessonId: { in: lessonIds },
+                status: 'COMPLETE',
+              },
+            });
+            avgCompletion = (completions / (studentIds.length * totalLessonsInUnit)) * 100;
+
+            // Average score for submissions in this unit
+            const submissions = await prisma.submission.aggregate({
+              where: {
+                studentId: { in: studentIds },
+                activity: { lessonId: { in: lessonIds } },
+                score: { not: null },
+                maxScore: { not: null },
+              },
+              _avg: { score: true, maxScore: true },
+            });
+            if (submissions._avg.score !== null && submissions._avg.maxScore !== null && submissions._avg.maxScore > 0) {
+              avgScore = Math.round((submissions._avg.score / submissions._avg.maxScore) * 100);
+            }
+          }
+
+          const stalledStudents = students.filter((s) => s.pacing.engagementStatus === 'STALLED').length;
+
+          return {
+            unitId: u.id,
+            unitTitle: u.title,
+            unitIcon: u.icon,
+            avgCompletion: Math.round(avgCompletion),
+            avgScore,
+            totalStudents: students.length,
+            stalledStudents,
+          };
+        }));
+      }
+    } catch (err) {
+      console.error('[teacher-data] getUnitProgress real data failed:', err);
     }
-  } catch {
-    // Fall through to scaffolded data
   }
 
-  // Scaffolded unit data — Grade 7 Science (demo)
+  // Scaffolded unit data — Grade 7 Science (demo only)
   const scaffoldedUnits = [
     { id: 'a', title: 'Unit A — Ecosystems', icon: '🌿' },
     { id: 'b', title: 'Unit B — Plants', icon: '🌱' },
@@ -524,11 +610,11 @@ export async function getUnitProgress(students: StudentWithPacing[], teacherId: 
     const avgScore = scored.length > 0
       ? scored.reduce((sum, s) => sum + s.avgScore!, 0) / scored.length : null;
     const stalledStudents = students.filter((s) => s.pacing.engagementStatus === 'STALLED').length;
-    return { unitId: u.id, unitTitle: u.title, unitIcon: u.icon, avgCompletion, avgScore, totalStudents: students.length, stalledStudents };
+    return { unitId: u.id, unitTitle: u.title, unitIcon: u.icon, avgCompletion: Math.round(avgCompletion), avgScore: avgScore !== null ? Math.round(avgScore) : null, totalStudents: students.length, stalledStudents };
   });
 }
 
-// ---------- Demo Data (isolated, only used when USE_DEMO = true) ----------
+// ---------- Demo Data (isolated, only used when isDemoMode() = true) ----------
 
 function getDemoStudents(): StudentWithPacing[] {
   const data = [

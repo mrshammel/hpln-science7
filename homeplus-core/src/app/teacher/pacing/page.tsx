@@ -15,7 +15,7 @@ export default async function PacingPage({ searchParams }: PageProps) {
   const ctx = await resolveContext(params, teacherId);
   const q = buildContextQuery(ctx);
 
-  const students = await getStudentsWithPacing(teacherId, ctx.subjectId);
+  const students = await getStudentsWithPacing(teacherId, ctx);
   const sorted = getStudentsByPriority(students);
 
   const counts = {
@@ -43,7 +43,6 @@ export default async function PacingPage({ searchParams }: PageProps) {
       <div className={styles.dashCard}>
         <h3 className={styles.cardTitle}>⏱️ {ctx.subjectName} Pacing Detail</h3>
 
-        {/* Legend */}
         <div className={styles.pacingLegend}>
           <span className={styles.legendItem}>
             <span className={styles.legendBar} style={{ background: '#059669' }} /> Actual progress
@@ -80,7 +79,7 @@ export default async function PacingPage({ searchParams }: PageProps) {
                   const eStyle = getEngagementStyle(s.pacing.engagementStatus);
 
                   return (
-                    <tr key={s.id} className={styles.clickableRow} onClick={undefined}>
+                    <tr key={s.id} className={styles.clickableRow}>
                       <td>
                         <Link href={`/teacher/students/${s.id}${q}`} className={styles.rowLink}>
                           <div className={styles.studentName}>

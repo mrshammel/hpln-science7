@@ -15,11 +15,10 @@ export default async function StudentsPage({ searchParams }: PageProps) {
   const ctx = await resolveContext(params, teacherId);
   const q = buildContextQuery(ctx);
 
-  const students = await getStudentsWithPacing(teacherId, ctx.subjectId);
+  const students = await getStudentsWithPacing(teacherId, ctx);
 
   return (
     <>
-      {/* Search/Filter Controls */}
       <div className={styles.tableControls}>
         <input type="text" className={styles.searchInput} placeholder="🔍 Search students..." />
         <select className={styles.filterSelect}>
@@ -38,7 +37,6 @@ export default async function StudentsPage({ searchParams }: PageProps) {
         </select>
       </div>
 
-      {/* Student Table */}
       <div className={styles.dashCard}>
         {students.length === 0 ? (
           <div className={styles.emptyState}>

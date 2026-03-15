@@ -12,7 +12,7 @@ export default async function SubmissionsPage({ searchParams }: PageProps) {
   const teacherId = await getTeacherId();
   const ctx = await resolveContext(params, teacherId);
 
-  const submissions = await getRecentSubmissions(teacherId, ctx.subjectId);
+  const submissions = await getRecentSubmissions(teacherId, ctx);
   const pending = submissions.filter((s) => !s.reviewed);
   const reviewed = submissions.filter((s) => s.reviewed);
 

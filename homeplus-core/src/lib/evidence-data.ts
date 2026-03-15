@@ -2,27 +2,22 @@
 // Evidence of Learning Data Layer — Home Plus LMS
 // ============================================
 // Teacher-scoped data access for student evidence, artifacts, and mastery.
-// All functions accept (studentId, teacherId) for authorization.
-// Demo data is isolated behind USE_DEMO — production errors surface cleanly.
+// All functions accept (studentId, teacherId) for authorization,
+// plus GradeSubjectContext for subject-scoping where relevant.
 //
 // Key design decisions:
 //   - assertTeacherCanAccessStudent() centralizes authorization
 //   - Outcome mastery uses real evidence count (no take: 1 limit)
-//   - Grade level derived from student, not hardcoded
-//   - Unit progress scoped to student's assigned grade/subject
+//   - Grade + subject derived from context, not hardcoded
+//   - Unit progress scoped to selected subject context
 //   - Last academic event derived from max(submission, lesson completion)
 //   - Safe submission type mapping via toSubmissionType()
+//   - isDemoMode() from env var, not hardcoded
 
 import { prisma } from '@/lib/db';
+import { isDemoMode } from '@/lib/teacher-auth';
 import { truncateText } from '@/lib/helpers';
-
-// ---------- Demo Mode ----------
-
-const USE_DEMO = true; // Toggle false when real data is available
-
-function isDemoMode(): boolean {
-  return USE_DEMO;
-}
+import type { GradeSubjectContext } from '@/lib/teacher-context';
 
 // ---------- Types ----------
 
@@ -82,6 +77,44 @@ export interface LastAcademicEvent {
   date: Date;
 }
 
+// ---------- Internal Prisma Result Types ----------
+
+interface PrismaSubmissionWithActivity {
+  id: string;
+  submissionType: string | null;
+  writtenResponse: string | null;
+  fileUrl: string | null;
+  fileName: string | null;
+  score: number | null;
+  maxScore: number | null;
+  reviewed: boolean;
+  teacherFeedback: string | null;
+  submittedAt: Date;
+  activity: {
+    title: string;
+    type: string;
+    lesson: {
+      title: string;
+      unit: { title: string };
+    };
+  };
+}
+
+interface PrismaMasteryJudgment {
+  masteryLevel: string;
+  assessedAt: Date;
+  teacherNote: string | null;
+  submission: { activity: { title: string } } | null;
+}
+
+interface PrismaOutcomeWithJudgments {
+  id: string;
+  code: string;
+  description: string;
+  unitContext: string | null;
+  masteryJudgments: PrismaMasteryJudgment[];
+}
+
 // ---------- Style Helpers ----------
 
 export function getMasteryStyle(level: MasteryLevel): { color: string; bg: string; label: string } {
@@ -112,24 +145,20 @@ export function getSubmissionTypeLabel(type: SubmissionType): string {
 
 // ---------- Safety Helpers ----------
 
-/** Valid submission types — used for safe mapping from DB values */
 const VALID_SUBMISSION_TYPES: Set<string> = new Set([
   'QUIZ_RESPONSE', 'SHORT_ANSWER', 'PARAGRAPH_RESPONSE', 'ESSAY', 'REFLECTION',
   'UPLOADED_WORKSHEET', 'IMAGE_ARTIFACT', 'PROJECT_FILE', 'PORTFOLIO_EVIDENCE',
 ]);
 
-/** Safely map a database submission type to the SubmissionType union */
 function toSubmissionType(dbValue: string | null, fallback: SubmissionType = 'QUIZ_RESPONSE'): SubmissionType {
   if (dbValue && VALID_SUBMISSION_TYPES.has(dbValue)) return dbValue as SubmissionType;
   return fallback;
 }
 
-/** Valid mastery levels — used for safe mapping from DB values */
 const VALID_MASTERY_LEVELS: Set<string> = new Set([
   'NOT_YET_ASSESSED', 'EMERGING', 'APPROACHING', 'MEETING', 'EXCEEDING',
 ]);
 
-/** Safely map a database mastery level to the MasteryLevel union */
 function toMasteryLevel(dbValue: string | null): MasteryLevel {
   if (dbValue && VALID_MASTERY_LEVELS.has(dbValue)) return dbValue as MasteryLevel;
   return 'NOT_YET_ASSESSED';
@@ -137,11 +166,6 @@ function toMasteryLevel(dbValue: string | null): MasteryLevel {
 
 // ---------- Teacher Authorization ----------
 
-/**
- * Verify that a teacher is authorized to access a student's data.
- * Checks assignedTeacherId on the student record.
- * In demo mode, always returns true for demo-* IDs.
- */
 async function assertTeacherCanAccessStudent(studentId: string, teacherId: string): Promise<boolean> {
   if (studentId.startsWith('demo-') && isDemoMode()) return true;
 
@@ -160,25 +184,28 @@ async function assertTeacherCanAccessStudent(studentId: string, teacherId: strin
   }
 }
 
-/** Get a student's grade level for dynamic outcome/unit queries */
-async function getStudentGradeLevel(studentId: string): Promise<number | null> {
-  try {
-    const student = await prisma.user.findUnique({
-      where: { id: studentId },
-      select: { gradeLevel: true },
-    });
-    return student?.gradeLevel || null;
-  } catch {
-    return null;
-  }
+/** Build subject-scoping filter for Prisma queries */
+function buildSubjectFilter(ctx: GradeSubjectContext) {
+  if (ctx.subjectId.startsWith('demo-')) return {};
+  return { activity: { lesson: { unit: { subjectId: ctx.subjectId } } } };
+}
+
+/** Build unit-scoping filter for unit queries */
+function buildUnitSubjectFilter(ctx: GradeSubjectContext) {
+  if (ctx.subjectId.startsWith('demo-')) return { subject: { gradeLevel: ctx.grade, active: true } };
+  return { subjectId: ctx.subjectId };
 }
 
 // ---------- Teacher-Scoped Data Fetching ----------
 
 /**
- * Written responses — teacher-scoped.
+ * Written responses — teacher-scoped, subject-filtered.
  */
-export async function getStudentWrittenResponses(studentId: string, teacherId: string): Promise<WrittenResponse[]> {
+export async function getStudentWrittenResponses(
+  studentId: string,
+  teacherId: string,
+  ctx: GradeSubjectContext,
+): Promise<WrittenResponse[]> {
   if (studentId.startsWith('demo-') && isDemoMode()) {
     return getDemoWrittenResponsesById(studentId);
   }
@@ -187,20 +214,23 @@ export async function getStudentWrittenResponses(studentId: string, teacherId: s
   if (!authorized) return [];
 
   try {
+    const subjectFilter = buildSubjectFilter(ctx);
     const subs = await prisma.submission.findMany({
       where: {
         studentId,
         writtenResponse: { not: null },
+        ...subjectFilter,
       },
       orderBy: { submittedAt: 'desc' },
       include: { activity: { include: { lesson: { include: { unit: true } } } } },
     });
     if (subs.length === 0) return [];
-    return subs.map((s) => ({
+
+    return (subs as unknown as PrismaSubmissionWithActivity[]).map((s) => ({
       id: s.id,
-      title: (s as any).activity.title,
+      title: s.activity.title,
       submissionType: toSubmissionType(s.submissionType, 'PARAGRAPH_RESPONSE'),
-      unitLesson: `${(s as any).activity.lesson.unit.title} · ${(s as any).activity.lesson.title}`,
+      unitLesson: `${s.activity.lesson.unit.title} · ${s.activity.lesson.title}`,
       writtenResponse: s.writtenResponse || '',
       preview: truncateText(s.writtenResponse || '', 120),
       score: s.score,
@@ -216,9 +246,13 @@ export async function getStudentWrittenResponses(studentId: string, teacherId: s
 }
 
 /**
- * Uploaded artifacts — teacher-scoped.
+ * Uploaded artifacts — teacher-scoped, subject-filtered.
  */
-export async function getStudentArtifacts(studentId: string, teacherId: string): Promise<ArtifactSubmission[]> {
+export async function getStudentArtifacts(
+  studentId: string,
+  teacherId: string,
+  ctx: GradeSubjectContext,
+): Promise<ArtifactSubmission[]> {
   if (studentId.startsWith('demo-') && isDemoMode()) {
     return getDemoArtifactsById(studentId);
   }
@@ -227,20 +261,23 @@ export async function getStudentArtifacts(studentId: string, teacherId: string):
   if (!authorized) return [];
 
   try {
+    const subjectFilter = buildSubjectFilter(ctx);
     const subs = await prisma.submission.findMany({
       where: {
         studentId,
         fileUrl: { not: null },
+        ...subjectFilter,
       },
       orderBy: { submittedAt: 'desc' },
       include: { activity: { include: { lesson: { include: { unit: true } } } } },
     });
     if (subs.length === 0) return [];
-    return subs.map((s) => ({
+
+    return (subs as unknown as PrismaSubmissionWithActivity[]).map((s) => ({
       id: s.id,
-      title: (s as any).activity.title,
+      title: s.activity.title,
       submissionType: toSubmissionType(s.submissionType, 'UPLOADED_WORKSHEET'),
-      unitLesson: `${(s as any).activity.lesson.unit.title} · ${(s as any).activity.lesson.title}`,
+      unitLesson: `${s.activity.lesson.unit.title} · ${s.activity.lesson.title}`,
       fileName: s.fileName || 'file',
       fileUrl: s.fileUrl || '#',
       reviewed: s.reviewed,
@@ -253,12 +290,13 @@ export async function getStudentArtifacts(studentId: string, teacherId: string):
 }
 
 /**
- * Outcome mastery — teacher-scoped, grade-dynamic, real evidence count.
- * Uses two separate queries:
- *   1. All mastery judgments (no take: 1) for real evidence count
- *   2. Latest judgment for current mastery level
+ * Outcome mastery — teacher-scoped, grade+subject-dynamic, real evidence count.
  */
-export async function getStudentOutcomeMastery(studentId: string, teacherId: string): Promise<OutcomeMastery[]> {
+export async function getStudentOutcomeMastery(
+  studentId: string,
+  teacherId: string,
+  ctx: GradeSubjectContext,
+): Promise<OutcomeMastery[]> {
   if (studentId.startsWith('demo-') && isDemoMode()) {
     return getDemoOutcomeMasteryById(studentId);
   }
@@ -267,17 +305,16 @@ export async function getStudentOutcomeMastery(studentId: string, teacherId: str
   if (!authorized) return [];
 
   try {
-    // Derive grade from the student, not hardcoded
-    const gradeLevel = await getStudentGradeLevel(studentId);
-    if (!gradeLevel) return [];
-
+    // Use grade from context, not from a separate student lookup
     const outcomes = await prisma.learningOutcome.findMany({
-      where: { gradeLevel },
+      where: {
+        gradeLevel: ctx.grade,
+        // TODO: add subjectId filter when LearningOutcome model supports it
+      },
       include: {
         masteryJudgments: {
           where: { studentId },
           orderBy: { assessedAt: 'desc' },
-          // No take: 1 — we need real evidence count
           include: { submission: { select: { activity: { select: { title: true } } } } },
         },
       },
@@ -285,8 +322,8 @@ export async function getStudentOutcomeMastery(studentId: string, teacherId: str
     });
     if (outcomes.length === 0) return [];
 
-    return outcomes.map((o) => {
-      const allJudgments = (o as any).masteryJudgments || [];
+    return (outcomes as unknown as PrismaOutcomeWithJudgments[]).map((o) => {
+      const allJudgments = o.masteryJudgments || [];
       const latest = allJudgments[0] || null;
       return {
         outcomeId: o.id,
@@ -294,7 +331,7 @@ export async function getStudentOutcomeMastery(studentId: string, teacherId: str
         outcomeDescription: o.description,
         unitContext: o.unitContext,
         masteryLevel: toMasteryLevel(latest?.masteryLevel || null),
-        evidenceCount: allJudgments.length,  // Real count, not capped at 1
+        evidenceCount: allJudgments.length,
         latestEvidence: latest?.submission?.activity?.title || null,
         latestDate: latest?.assessedAt || null,
         teacherNote: latest?.teacherNote || null,
@@ -307,10 +344,14 @@ export async function getStudentOutcomeMastery(studentId: string, teacherId: str
 }
 
 /**
- * Unit progress — teacher-scoped, assigned-path only.
- * Scoped to the student's grade + active subjects, not the global catalog.
+ * Unit progress — teacher-scoped, subject-filtered.
+ * Shows real per-unit completion with subject context.
  */
-export async function getStudentUnitProgress(studentId: string, teacherId: string): Promise<StudentUnitProgress[]> {
+export async function getStudentUnitProgress(
+  studentId: string,
+  teacherId: string,
+  ctx: GradeSubjectContext,
+): Promise<StudentUnitProgress[]> {
   if (studentId.startsWith('demo-') && isDemoMode()) {
     return getDemoUnitProgressById(studentId);
   }
@@ -319,13 +360,10 @@ export async function getStudentUnitProgress(studentId: string, teacherId: strin
   if (!authorized) return [];
 
   try {
-    // Derive grade from the student for assigned-path scoping
-    const gradeLevel = await getStudentGradeLevel(studentId);
+    const unitFilter = buildUnitSubjectFilter(ctx);
 
     const units = await prisma.unit.findMany({
-      where: gradeLevel
-        ? { subject: { gradeLevel, active: true } }
-        : { subject: { active: true } },
+      where: unitFilter,
       include: {
         lessons: {
           include: {
@@ -365,11 +403,15 @@ export async function getStudentUnitProgress(studentId: string, teacherId: strin
 }
 
 /**
- * Last academic event — teacher-scoped, from all meaningful activity.
+ * Last academic event — teacher-scoped, subject-filtered.
  * Checks both submissions and lesson completions, matching the pacing engine's
  * definition of meaningful academic activity.
  */
-export async function getLastAcademicEvent(studentId: string, teacherId: string): Promise<LastAcademicEvent | null> {
+export async function getLastAcademicEvent(
+  studentId: string,
+  teacherId: string,
+  ctx: GradeSubjectContext,
+): Promise<LastAcademicEvent | null> {
   if (studentId.startsWith('demo-') && isDemoMode()) {
     return getDemoLastEventById(studentId);
   }
@@ -378,21 +420,28 @@ export async function getLastAcademicEvent(studentId: string, teacherId: string)
   if (!authorized) return null;
 
   try {
-    // Source 1: latest submission
+    const subjectFilter = buildSubjectFilter(ctx);
+    const lessonSubjectFilter = buildUnitSubjectFilter(ctx);
+
+    // Source 1: latest submission in subject context
     const latestSub = await prisma.submission.findFirst({
-      where: { studentId },
+      where: { studentId, ...subjectFilter },
       orderBy: { submittedAt: 'desc' },
       include: { activity: { select: { title: true, type: true } } },
     });
 
-    // Source 2: latest lesson completion
+    // Source 2: latest lesson completion in subject context
     const latestCompletion = await prisma.studentProgress.findFirst({
-      where: { studentId, status: 'COMPLETE', completedAt: { not: null } },
+      where: {
+        studentId,
+        status: 'COMPLETE',
+        completedAt: { not: null },
+        lesson: { unit: lessonSubjectFilter },
+      },
       orderBy: { completedAt: 'desc' },
       include: { lesson: { select: { title: true } } },
     });
 
-    // Pick the most recent of the two
     const subDate = latestSub?.submittedAt || null;
     const compDate = latestCompletion?.completedAt || null;
 
@@ -400,32 +449,23 @@ export async function getLastAcademicEvent(studentId: string, teacherId: string)
       QUIZ: 'Quiz', ASSIGNMENT: 'Assignment', REFLECTION: 'Reflection', ACTIVITY: 'Activity',
     };
 
+    type SubWithActivity = typeof latestSub & { activity: { title: string; type: string } };
+    type CompWithLesson = typeof latestCompletion & { lesson: { title: string } };
+
     if (subDate && compDate) {
       if (subDate >= compDate) {
-        return {
-          title: (latestSub as any).activity.title,
-          type: activityTypeLabels[(latestSub as any).activity.type] || (latestSub as any).activity.type,
-          date: subDate,
-        };
+        const sub = latestSub as SubWithActivity;
+        return { title: sub.activity.title, type: activityTypeLabels[sub.activity.type] || sub.activity.type, date: subDate };
       } else {
-        return {
-          title: (latestCompletion as any).lesson.title,
-          type: 'Lesson Completion',
-          date: compDate,
-        };
+        const comp = latestCompletion as CompWithLesson;
+        return { title: comp.lesson.title, type: 'Lesson Completion', date: compDate };
       }
     } else if (subDate) {
-      return {
-        title: (latestSub as any).activity.title,
-        type: activityTypeLabels[(latestSub as any).activity.type] || (latestSub as any).activity.type,
-        date: subDate,
-      };
+      const sub = latestSub as SubWithActivity;
+      return { title: sub.activity.title, type: activityTypeLabels[sub.activity.type] || sub.activity.type, date: subDate };
     } else if (compDate) {
-      return {
-        title: (latestCompletion as any).lesson.title,
-        type: 'Lesson Completion',
-        date: compDate,
-      };
+      const comp = latestCompletion as CompWithLesson;
+      return { title: comp.lesson.title, type: 'Lesson Completion', date: compDate };
     }
 
     return null;
@@ -435,22 +475,22 @@ export async function getLastAcademicEvent(studentId: string, teacherId: string)
   }
 }
 
-// ---------- Demo Data (isolated, only used when USE_DEMO = true) ----------
+// ---------- Demo Data (isolated, only used when isDemoMode() = true) ----------
 
 const demoWrittenResponses: Record<string, WrittenResponse[]> = {
-  'demo-0': [ // Ava Chen
+  'demo-0': [
     { id: 'wr-a1', title: 'Thermal Conductors vs Insulators', submissionType: 'PARAGRAPH_RESPONSE', unitLesson: 'Unit C · Lesson 2', writtenResponse: 'Conductors allow heat to pass through them easily, like metals. Insulators resist heat flow, like wood and plastic. A metal spoon in hot soup gets warm quickly because metal is a good conductor. A wooden spoon stays cool because wood is an insulator. This is why pot handles are often made of plastic or wood.', preview: '', score: 9, maxScore: 10, reviewed: true, teacherFeedback: 'Excellent real-world examples!', submittedAt: new Date('2026-03-13') },
     { id: 'wr-a2', title: 'Predator-Prey Population Analysis', submissionType: 'ESSAY', unitLesson: 'Unit A · Lesson 3', writtenResponse: 'When we looked at the lynx and hare population data, I noticed that the predator population always lags behind the prey population. When hares are plentiful, lynx populations grow because there is plenty of food. But as more lynx eat more hares, the hare population shrinks. Then lynx start to decline because of food scarcity. It takes time for both populations to recover, which is why the graph shows repeating cycles.', preview: '', score: 14, maxScore: 15, reviewed: true, teacherFeedback: null, submittedAt: new Date('2026-03-10') },
   ],
-  'demo-1': [ // Liam Patel
+  'demo-1': [
     { id: 'wr-l1', title: 'Ecosystem Food Web Explanation', submissionType: 'PARAGRAPH_RESPONSE', unitLesson: 'Unit A · Lesson 1', writtenResponse: 'A food web shows how energy flows through an ecosystem. Unlike a food chain that shows a single path, a food web shows all the interconnected feeding relationships. Producers like plants are at the base because they make their own energy through photosynthesis. Primary consumers eat the producers, and secondary consumers eat the primary consumers. Decomposers break down dead matter and return nutrients to the soil, completing the cycle.', preview: '', score: 8, maxScore: 10, reviewed: true, teacherFeedback: 'Great explanation of energy flow! Consider adding an example.', submittedAt: new Date('2026-03-12') },
     { id: 'wr-l2', title: 'Plant Adaptation Reflection', submissionType: 'REFLECTION', unitLesson: 'Unit B · Lesson 2', writtenResponse: 'I learned that plants have amazing ways to survive. Cacti store water in their stems and have spines instead of leaves to reduce water loss. I never realized that the shape of a leaf could help a plant survive in different environments.', preview: '', score: 9, maxScore: 10, reviewed: true, teacherFeedback: 'Wonderful reflection! You connected your learning to real examples.', submittedAt: new Date('2026-03-10') },
     { id: 'wr-l3', title: 'Predator-Prey Relationship', submissionType: 'SHORT_ANSWER', unitLesson: 'Unit A · Lesson 2', writtenResponse: 'When the prey population decreases, predators have less food and their population also decreases. Then the prey can recover because there are fewer predators.', preview: '', score: 5, maxScore: 5, reviewed: true, teacherFeedback: null, submittedAt: new Date('2026-03-08') },
   ],
-  'demo-2': [ // Emma Rodriguez
+  'demo-2': [
     { id: 'wr-e1', title: 'Heat Transfer Comparison', submissionType: 'ESSAY', unitLesson: 'Unit C · Lesson 1', writtenResponse: 'Conduction, convection, and radiation are the three methods of heat transfer. Conduction happens when heat moves through direct contact between particles, like when a metal spoon gets hot in soup. Convection occurs in fluids when warmer particles rise and cooler particles sink, creating a current. This is why the top floor of a building is usually warmer. Radiation transfers heat through electromagnetic waves without needing a medium. The sun warms the Earth through radiation across space.', preview: '', score: null, maxScore: 15, reviewed: false, teacherFeedback: null, submittedAt: new Date('2026-03-08') },
   ],
-  'demo-3': [ // Noah Thompson
+  'demo-3': [
     { id: 'wr-n1', title: 'Food Chain Description', submissionType: 'SHORT_ANSWER', unitLesson: 'Unit A · Lesson 1', writtenResponse: 'A food chain shows one path of energy from a producer to a consumer. Grass is eaten by a rabbit which is eaten by a fox.', preview: '', score: 3, maxScore: 5, reviewed: true, teacherFeedback: 'Try to include more detail about energy transfer.', submittedAt: new Date('2026-02-28') },
   ],
 };
