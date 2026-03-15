@@ -56,6 +56,7 @@ export interface UnitProgress {
 
 export interface RecentSubmission {
   id: string;
+  studentId: string;
   studentName: string;
   studentAvatar: string | null;
   activityTitle: string;
@@ -68,6 +69,7 @@ export interface RecentSubmission {
 
 export interface TeacherNoteData {
   id: string;
+  studentId: string;
   studentName: string;
   studentAvatar: string | null;
   tag: string;
@@ -131,16 +133,16 @@ export async function getStudentsWithPacing(): Promise<StudentWithPacing[]> {
 
     const allLessons = await prisma.lesson.count();
 
-    return students.map((s) => {
-      const completedLessons = s.progress.filter((p) => p.status === 'COMPLETE').length;
+    return students.map((s: any) => {
+      const completedLessons = s.progress.filter((p: any) => p.status === 'COMPLETE').length;
       const lastSub = s.submissions[0];
       const lastAcademicActivityAt = lastSub?.submittedAt || null;
-      const inProgress = s.progress.find((p) => p.status === 'IN_PROGRESS');
+      const inProgress = s.progress.find((p: any) => p.status === 'IN_PROGRESS');
       const currentUnit = inProgress?.lesson?.unit?.title || null;
       const currentLesson = inProgress?.lesson?.title || null;
-      const scored = s.submissions.filter((sub) => sub.score !== null && sub.maxScore !== null);
+      const scored = s.submissions.filter((sub: any) => sub.score !== null && sub.maxScore !== null);
       const avgScore = scored.length > 0
-        ? scored.reduce((sum, sub) => sum + ((sub.score! / sub.maxScore!) * 100), 0) / scored.length
+        ? scored.reduce((sum: number, sub: any) => sum + ((sub.score! / sub.maxScore!) * 100), 0) / scored.length
         : null;
 
       const pacing = calculatePacing({
@@ -207,21 +209,46 @@ export async function getRecentSubmissions(): Promise<RecentSubmission[]> {
       },
     });
     if (subs.length === 0) return getDemoSubmissions();
-    return subs.map((s) => ({
-      id: s.id, studentName: s.student.name, studentAvatar: s.student.avatar,
+    return subs.map((s: any) => ({
+      id: s.id, studentId: s.studentId, studentName: s.student.name, studentAvatar: s.student.avatar,
       activityTitle: s.activity.title, activityType: s.activity.type,
       score: s.score, maxScore: s.maxScore, reviewed: s.reviewed, submittedAt: s.submittedAt,
     }));
   } catch { return getDemoSubmissions(); }
 }
 
+/** Get submissions for a specific student by ID */
+export async function getStudentSubmissions(studentId: string): Promise<RecentSubmission[]> {
+  try {
+    const subs = await prisma.submission.findMany({
+      where: { studentId },
+      orderBy: { submittedAt: 'desc' }, take: 10,
+      include: {
+        student: { select: { name: true, avatar: true } },
+        activity: { select: { title: true, type: true } },
+      },
+    });
+    if (subs.length === 0) {
+      // Fall back to filtering demo data by ID
+      return getDemoSubmissions().filter((s) => s.studentId === studentId);
+    }
+    return subs.map((s: any) => ({
+      id: s.id, studentId: s.studentId, studentName: s.student.name, studentAvatar: s.student.avatar,
+      activityTitle: s.activity.title, activityType: s.activity.type,
+      score: s.score, maxScore: s.maxScore, reviewed: s.reviewed, submittedAt: s.submittedAt,
+    }));
+  } catch {
+    return getDemoSubmissions().filter((s) => s.studentId === studentId);
+  }
+}
+
 function getDemoSubmissions(): RecentSubmission[] {
   return [
-    { id: 'd1', studentName: 'Ava Chen', studentAvatar: null, activityTitle: 'Ecosystem Basics Quiz', activityType: 'QUIZ', score: 9, maxScore: 10, reviewed: true, submittedAt: new Date('2026-03-14T10:30:00') },
-    { id: 'd2', studentName: 'Sophia Kim', studentAvatar: null, activityTitle: 'Heat Transfer Lab', activityType: 'ASSIGNMENT', score: null, maxScore: 20, reviewed: false, submittedAt: new Date('2026-03-14T09:15:00') },
-    { id: 'd3', studentName: 'Jackson Lee', studentAvatar: null, activityTitle: 'Plant Growth Reflection', activityType: 'REFLECTION', score: null, maxScore: 10, reviewed: false, submittedAt: new Date('2026-03-13T14:00:00') },
-    { id: 'd4', studentName: 'Liam Patel', studentAvatar: null, activityTitle: 'Food Web Drawing', activityType: 'ASSIGNMENT', score: 17, maxScore: 20, reviewed: true, submittedAt: new Date('2026-03-12T11:45:00') },
-    { id: 'd5', studentName: 'Emma Rodriguez', studentAvatar: null, activityTitle: 'Producers & Consumers Quiz', activityType: 'QUIZ', score: 8, maxScore: 10, reviewed: true, submittedAt: new Date('2026-03-11T13:20:00') },
+    { id: 'd1', studentId: 'demo-0', studentName: 'Ava Chen', studentAvatar: null, activityTitle: 'Ecosystem Basics Quiz', activityType: 'QUIZ', score: 9, maxScore: 10, reviewed: true, submittedAt: new Date('2026-03-14T10:30:00') },
+    { id: 'd2', studentId: 'demo-4', studentName: 'Sophia Kim', studentAvatar: null, activityTitle: 'Heat Transfer Lab', activityType: 'ASSIGNMENT', score: null, maxScore: 20, reviewed: false, submittedAt: new Date('2026-03-14T09:15:00') },
+    { id: 'd3', studentId: 'demo-5', studentName: 'Jackson Lee', studentAvatar: null, activityTitle: 'Plant Growth Reflection', activityType: 'REFLECTION', score: null, maxScore: 10, reviewed: false, submittedAt: new Date('2026-03-13T14:00:00') },
+    { id: 'd4', studentId: 'demo-1', studentName: 'Liam Patel', studentAvatar: null, activityTitle: 'Food Web Drawing', activityType: 'ASSIGNMENT', score: 17, maxScore: 20, reviewed: true, submittedAt: new Date('2026-03-12T11:45:00') },
+    { id: 'd5', studentId: 'demo-2', studentName: 'Emma Rodriguez', studentAvatar: null, activityTitle: 'Producers & Consumers Quiz', activityType: 'QUIZ', score: 8, maxScore: 10, reviewed: true, submittedAt: new Date('2026-03-11T13:20:00') },
   ];
 }
 
@@ -231,8 +258,23 @@ export async function getTeacherNotes(): Promise<TeacherNoteData[]> {
       orderBy: { createdAt: 'desc' }, take: 50,
       include: { student: { select: { name: true, avatar: true } } },
     });
-    return notes.map((n) => ({
-      id: n.id, studentName: n.student.name, studentAvatar: n.student.avatar,
+    return notes.map((n: any) => ({
+      id: n.id, studentId: n.studentId, studentName: n.student.name, studentAvatar: n.student.avatar,
+      tag: n.tag, content: n.content, createdAt: n.createdAt,
+    }));
+  } catch { return []; }
+}
+
+/** Get notes for a specific student by ID */
+export async function getStudentNotes(studentId: string): Promise<TeacherNoteData[]> {
+  try {
+    const notes = await prisma.teacherNote.findMany({
+      where: { studentId },
+      orderBy: { createdAt: 'desc' },
+      include: { student: { select: { name: true, avatar: true } } },
+    });
+    return notes.map((n: any) => ({
+      id: n.id, studentId: n.studentId, studentName: n.student.name, studentAvatar: n.student.avatar,
       tag: n.tag, content: n.content, createdAt: n.createdAt,
     }));
   } catch { return []; }
@@ -256,3 +298,4 @@ export function getUnitProgress(students: StudentWithPacing[]): UnitProgress[] {
     return { unitId: u.id, unitTitle: u.title, unitIcon: u.icon, avgCompletion, avgScore, totalStudents: students.length, stalledStudents };
   });
 }
+
