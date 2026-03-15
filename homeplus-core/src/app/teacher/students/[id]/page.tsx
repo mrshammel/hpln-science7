@@ -17,19 +17,25 @@ import {
 } from '@/lib/evidence-data';
 import { getInitials, getEngagementLabel, formatDate, formatShortDate } from '@/lib/helpers';
 import { getTeacherId } from '@/lib/teacher-auth';
+import { resolveContext, buildContextQuery } from '@/lib/teacher-context';
 
 // ---------- Types ----------
 
 interface PageProps {
   params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 // ---------- Page Component ----------
 
-export default async function StudentDetailPage({ params }: PageProps) {
+export default async function StudentDetailPage({ params, searchParams }: PageProps) {
   const { id } = await params;
+  const sp = await searchParams;
   const teacherId = await getTeacherId();
-  const student = await getStudentById(id, teacherId);
+  const ctx = await resolveContext(sp, teacherId);
+  const q = buildContextQuery(ctx);
+
+  const student = await getStudentById(id, teacherId, ctx.subjectId);
 
   if (!student) {
     return (
@@ -37,13 +43,13 @@ export default async function StudentDetailPage({ params }: PageProps) {
         <div className={styles.emptyIcon}>❌</div>
         <div className={styles.emptyTitle}>Student not found</div>
         <div className={styles.emptyDesc}>
-          <Link href="/teacher/students" style={{ color: 'var(--hp-primary)' }}>← Back to student list</Link>
+          <Link href={`/teacher/students${q}`} style={{ color: 'var(--hp-primary)' }}>← Back to student list</Link>
         </div>
       </div>
     );
   }
 
-  // ---------- Parallel Data Fetching (all by student ID) ----------
+  // ---------- Parallel Data Fetching (all by student ID + subject) ----------
 
   const [
     writtenResponses,

@@ -3,12 +3,21 @@ import styles from './teacher.module.css';
 import { getStudentsWithPacing, getOverviewMetrics, getUnitProgress } from '@/lib/teacher-data';
 import { getAcademicPacingStyle, getEngagementStyle, formatDaysSinceActive } from '@/lib/pacing';
 import { getTeacherId } from '@/lib/teacher-auth';
+import { resolveContext, buildContextQuery } from '@/lib/teacher-context';
 
-export default async function TeacherOverview() {
+interface PageProps {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+export default async function TeacherOverview({ searchParams }: PageProps) {
+  const params = await searchParams;
   const teacherId = await getTeacherId();
-  const students = await getStudentsWithPacing(teacherId);
-  const metrics = await getOverviewMetrics(students, teacherId);
-  const unitProgress = await getUnitProgress(students, teacherId);
+  const ctx = await resolveContext(params, teacherId);
+  const q = buildContextQuery(ctx);
+
+  const students = await getStudentsWithPacing(teacherId, ctx.subjectId);
+  const metrics = await getOverviewMetrics(students, teacherId, ctx.subjectId);
+  const unitProgress = await getUnitProgress(students, teacherId, ctx.subjectId);
 
   // Needs attention: significantly behind OR stalled
   const needsAttention = students
@@ -33,7 +42,7 @@ export default async function TeacherOverview() {
         <MetricCard icon="🚀" label="Ahead" value={metrics.ahead} bg="#dbeafe" />
         <MetricCard icon="🚨" label="Needs Attention" value={metrics.needsAttention} bg="#fee2e2" />
         <MetricCard icon="📊" label="Avg Progress" value={`${Math.round(metrics.avgProgress)}%`} bg="#ede9fe" />
-        <MetricCard icon="🏆" label="Avg Score" value={metrics.avgScore ? `${Math.round(metrics.avgScore)}%` : '—'} bg="#fef3c7" />
+        <MetricCard icon="🏆" label={`${ctx.subjectName} Avg`} value={metrics.avgScore ? `${Math.round(metrics.avgScore)}%` : '—'} bg="#fef3c7" />
         <MetricCard icon="⏸️" label="Stalled" value={metrics.stalledCount} bg="#f3f4f6" />
         <MetricCard icon="📝" label="Pending Reviews" value={metrics.pendingReviews} bg="#fce7f3" />
       </div>
@@ -61,7 +70,7 @@ export default async function TeacherOverview() {
                 reasons.push(formatDaysSinceActive(s.pacing.daysSinceActive));
 
               return (
-                <Link key={s.id} href={`/teacher/students/${s.id}`} className={styles.attentionItem} style={{ textDecoration: 'none' }}>
+                <Link key={s.id} href={`/teacher/students/${s.id}${q}`} className={styles.attentionItem} style={{ textDecoration: 'none' }}>
                   <div className={styles.attentionAvatar}>
                     {s.name.split(' ').map((n) => n[0]).join('')}
                   </div>
@@ -103,7 +112,7 @@ export default async function TeacherOverview() {
                 else if (s.pacing.academicStatus === 'AHEAD') reason = `${s.pacing.daysBehindOrAhead} days ahead of pace`;
                 else if (s.avgScore && s.avgScore >= 85) reason = `Strong performance — ${Math.round(s.avgScore)}% avg`;
                 return (
-                  <Link key={s.id} href={`/teacher/students/${s.id}`} className={styles.celebrateItem} style={{ textDecoration: 'none', color: 'inherit' }}>
+                  <Link key={s.id} href={`/teacher/students/${s.id}${q}`} className={styles.celebrateItem} style={{ textDecoration: 'none', color: 'inherit' }}>
                     <span className={styles.celebrateEmoji}>
                       {s.pacing.academicStatus === 'COMPLETE' ? '🎉' : s.pacing.academicStatus === 'AHEAD' ? '🚀' : '⭐'}
                     </span>
@@ -119,7 +128,7 @@ export default async function TeacherOverview() {
 
           {/* Unit Progress */}
           <div className={styles.dashCard}>
-            <h3 className={styles.cardTitle}>📊 Class Progress by Unit</h3>
+            <h3 className={styles.cardTitle}>📊 {ctx.subjectName} Progress by Unit</h3>
             {unitProgress.map((u) => (
               <div key={u.unitId} className={styles.unitProgressItem}>
                 <div className={styles.unitProgressHeader}>

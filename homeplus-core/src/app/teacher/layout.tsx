@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import styles from './teacher.module.css';
 
 const NAV_ITEMS = [
@@ -14,9 +14,23 @@ const NAV_ITEMS = [
   { href: '/teacher/notes', icon: '📋', label: 'Notes' },
 ];
 
+const SUBJECT_OPTIONS = [
+  { slug: 'ela', label: 'ELA', icon: '📖' },
+  { slug: 'math', label: 'Math', icon: '➗' },
+  { slug: 'science', label: 'Science', icon: '🔬' },
+  { slug: 'social-studies', label: 'Social Studies', icon: '🌍' },
+];
+
+const GRADE_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+
 export default function TeacherLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Current context from URL
+  const currentGrade = searchParams.get('grade') || '7';
+  const currentSubject = searchParams.get('subject') || 'science';
 
   const today = new Date().toLocaleDateString('en-CA', {
     weekday: 'long',
@@ -25,6 +39,9 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
     day: 'numeric',
   });
 
+  // Build context query for nav links
+  const contextQuery = `?grade=${currentGrade}&subject=${currentSubject}`;
+
   // Determine page title from nav
   const currentNav = NAV_ITEMS.find((item) =>
     item.href === '/teacher'
@@ -32,6 +49,10 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
       : pathname.startsWith(item.href)
   );
   const pageTitle = currentNav?.label || 'Dashboard';
+
+  // Active subject display
+  const activeSubjectOption = SUBJECT_OPTIONS.find((s) => s.slug === currentSubject);
+  const contextLabel = `Grade ${currentGrade} · ${activeSubjectOption?.label || currentSubject}`;
 
   return (
     <div className={styles.dashLayout}>
@@ -63,7 +84,7 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={`${item.href}${contextQuery}`}
                 className={`${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
                 onClick={() => setSidebarOpen(false)}
               >
@@ -97,6 +118,38 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
           </div>
           <div className={styles.topbarRight}>
             <button className={styles.signOutBtn}>Sign Out</button>
+          </div>
+        </div>
+
+        {/* Context Selector Bar */}
+        <div className={styles.contextBar}>
+          <div className={styles.contextLeft}>
+            <span className={styles.contextIcon}>{activeSubjectOption?.icon || '📚'}</span>
+            <span className={styles.contextLabel}>{contextLabel}</span>
+          </div>
+          <div className={styles.contextSelectors}>
+            <select
+              className={styles.contextSelect}
+              value={currentGrade}
+              onChange={(e) => {
+                window.location.href = `${pathname}?grade=${e.target.value}&subject=${currentSubject}`;
+              }}
+            >
+              {GRADE_OPTIONS.map((g) => (
+                <option key={g} value={g}>Grade {g}</option>
+              ))}
+            </select>
+            <select
+              className={styles.contextSelect}
+              value={currentSubject}
+              onChange={(e) => {
+                window.location.href = `${pathname}?grade=${currentGrade}&subject=${e.target.value}`;
+              }}
+            >
+              {SUBJECT_OPTIONS.map((s) => (
+                <option key={s.slug} value={s.slug}>{s.icon} {s.label}</option>
+              ))}
+            </select>
           </div>
         </div>
 

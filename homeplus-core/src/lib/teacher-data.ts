@@ -109,7 +109,7 @@ function deriveLastAcademicActivity(
 }
 
 /** Count assigned lessons for a student's grade/subject, not the global catalog */
-async function getAssignedLessonCount(gradeLevel: number | null): Promise<number> {
+async function getAssignedLessonCount(gradeLevel: number | null, subjectId?: string): Promise<number> {
   if (!gradeLevel) return 10; // Safe fallback
   try {
     const count = await prisma.lesson.count({
@@ -118,6 +118,7 @@ async function getAssignedLessonCount(gradeLevel: number | null): Promise<number
           subject: {
             gradeLevel,
             active: true,
+            ...(subjectId && !subjectId.startsWith('demo-') ? { id: subjectId } : {}),
           },
         },
       },
@@ -204,10 +205,17 @@ function buildStudentWithPacing(
 
 /**
  * Get all students assigned to a specific teacher, with pacing.
+ * Scoped to a subject context when subjectId is provided.
  * Falls back to demo data only when USE_DEMO is true.
  */
-export async function getStudentsWithPacing(teacherId: string): Promise<StudentWithPacing[]> {
+export async function getStudentsWithPacing(teacherId: string, subjectId?: string): Promise<StudentWithPacing[]> {
   try {
+    // Subject filter for progress and submissions
+    const subjectFilter = subjectId && !subjectId.startsWith('demo-')
+      ? { unit: { subjectId } } : {};
+    const submissionSubjectFilter = subjectId && !subjectId.startsWith('demo-')
+      ? { activity: { lesson: { unit: { subjectId } } } } : {};
+
     const students = await prisma.user.findMany({
       where: {
         role: 'STUDENT',
@@ -215,9 +223,11 @@ export async function getStudentsWithPacing(teacherId: string): Promise<StudentW
       },
       include: {
         progress: {
+          where: { lesson: subjectFilter },
           include: { lesson: { include: { unit: true } } },
         },
         submissions: {
+          where: submissionSubjectFilter,
           orderBy: { submittedAt: 'desc' },
         },
       },
@@ -226,9 +236,9 @@ export async function getStudentsWithPacing(teacherId: string): Promise<StudentW
     if (students.length === 0 && isDemoMode()) return getDemoStudents();
     if (students.length === 0) return [];
 
-    // Assigned-path lesson count (per student grade, not global catalog)
+    // Assigned-path lesson count (per student grade + subject)
     const firstGrade = students[0]?.gradeLevel;
-    const assignedLessons = await getAssignedLessonCount(firstGrade);
+    const assignedLessons = await getAssignedLessonCount(firstGrade, subjectId);
 
     return students.map((s) => buildStudentWithPacing(s as any, assignedLessons));
   } catch (err) {
@@ -241,8 +251,9 @@ export async function getStudentsWithPacing(teacherId: string): Promise<StudentW
 /**
  * Get a single student by ID — direct scoped query, not a full-list scan.
  * Verifies the student belongs to the teacher's scope.
+ * Scoped to subject context when subjectId is provided.
  */
-export async function getStudentById(studentId: string, teacherId: string): Promise<StudentWithPacing | null> {
+export async function getStudentById(studentId: string, teacherId: string, subjectId?: string): Promise<StudentWithPacing | null> {
   // Demo mode: look up from demo data
   if (studentId.startsWith('demo-') && isDemoMode()) {
     const demos = getDemoStudents();
@@ -250,6 +261,11 @@ export async function getStudentById(studentId: string, teacherId: string): Prom
   }
 
   try {
+    const subjectFilter = subjectId && !subjectId.startsWith('demo-')
+      ? { unit: { subjectId } } : {};
+    const submissionSubjectFilter = subjectId && !subjectId.startsWith('demo-')
+      ? { activity: { lesson: { unit: { subjectId } } } } : {};
+
     const student = await prisma.user.findFirst({
       where: {
         id: studentId,
@@ -258,9 +274,11 @@ export async function getStudentById(studentId: string, teacherId: string): Prom
       },
       include: {
         progress: {
+          where: { lesson: subjectFilter },
           include: { lesson: { include: { unit: true } } },
         },
         submissions: {
+          where: submissionSubjectFilter,
           orderBy: { submittedAt: 'desc' },
         },
       },
@@ -268,7 +286,7 @@ export async function getStudentById(studentId: string, teacherId: string): Prom
 
     if (!student) return null;
 
-    const assignedLessons = await getAssignedLessonCount(student.gradeLevel);
+    const assignedLessons = await getAssignedLessonCount(student.gradeLevel, subjectId);
     return buildStudentWithPacing(student as any, assignedLessons);
   } catch (err) {
     console.error('[teacher-data] getStudentById failed:', err);
@@ -278,9 +296,9 @@ export async function getStudentById(studentId: string, teacherId: string): Prom
 
 /**
  * Overview metrics — computed from the teacher's already-fetched students.
- * Pending reviews are scoped to the teacher's students only.
+ * Pending reviews scoped to teacher's students + subject context.
  */
-export async function getOverviewMetrics(students: StudentWithPacing[], teacherId: string): Promise<OverviewMetrics> {
+export async function getOverviewMetrics(students: StudentWithPacing[], teacherId: string, subjectId?: string): Promise<OverviewMetrics> {
   const totalStudents = students.length;
   const onPace = students.filter((s) => s.pacing.academicStatus === 'ON_PACE').length;
   const behind = students.filter((s) =>
@@ -299,15 +317,18 @@ export async function getOverviewMetrics(students: StudentWithPacing[], teacherI
   const avgScore = scored.length > 0
     ? scored.reduce((sum, s) => sum + s.avgScore!, 0) / scored.length : null;
 
-  // Scoped pending reviews: only this teacher's students
+  // Scoped pending reviews: teacher's students + subject
   let pendingReviews = 0;
   try {
     const studentIds = students.map((s) => s.id);
     if (studentIds.length > 0 && !studentIds[0].startsWith('demo-')) {
+      const subjectSubmFilter = subjectId && !subjectId.startsWith('demo-')
+        ? { activity: { lesson: { unit: { subjectId } } } } : {};
       pendingReviews = await prisma.submission.count({
         where: {
           studentId: { in: studentIds },
           reviewed: false,
+          ...subjectSubmFilter,
         },
       });
     } else if (isDemoMode()) {
@@ -326,13 +347,16 @@ export function getStudentsByPriority(students: StudentWithPacing[]): StudentWit
 }
 
 /**
- * Recent submissions — scoped to teacher's students.
+ * Recent submissions — scoped to teacher's students + subject.
  */
-export async function getRecentSubmissions(teacherId: string): Promise<RecentSubmission[]> {
+export async function getRecentSubmissions(teacherId: string, subjectId?: string): Promise<RecentSubmission[]> {
   try {
+    const subjectFilter = subjectId && !subjectId.startsWith('demo-')
+      ? { activity: { lesson: { unit: { subjectId } } } } : {};
     const subs = await prisma.submission.findMany({
       where: {
         student: { assignedTeacherId: teacherId },
+        ...subjectFilter,
       },
       orderBy: { submittedAt: 'desc' },
       take: 20,
@@ -454,13 +478,15 @@ export async function getStudentNotes(studentId: string, teacherId: string): Pro
 }
 
 /**
- * Unit progress for the teacher's class — uses real unit data when available.
+ * Unit progress for the teacher's class — scoped to subject context.
  */
-export async function getUnitProgress(students: StudentWithPacing[], teacherId: string): Promise<UnitProgress[]> {
-  // Try real unit data first
+export async function getUnitProgress(students: StudentWithPacing[], teacherId: string, subjectId?: string): Promise<UnitProgress[]> {
+  // Try real unit data first — scoped to selected subject
   try {
+    const subjectFilter = subjectId && !subjectId.startsWith('demo-')
+      ? { subjectId } : { subject: { active: true } };
     const units = await prisma.unit.findMany({
-      where: { subject: { active: true } },
+      where: subjectFilter,
       orderBy: { order: 'asc' },
       select: { id: true, title: true, icon: true },
     });
@@ -483,7 +509,7 @@ export async function getUnitProgress(students: StudentWithPacing[], teacherId: 
     // Fall through to scaffolded data
   }
 
-  // Scaffolded unit data (clearly marked as temporary)
+  // Scaffolded unit data — Grade 7 Science (demo)
   const scaffoldedUnits = [
     { id: 'a', title: 'Unit A — Ecosystems', icon: '🌿' },
     { id: 'b', title: 'Unit B — Plants', icon: '🌱' },

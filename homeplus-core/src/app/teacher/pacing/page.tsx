@@ -3,10 +3,19 @@ import styles from '../teacher.module.css';
 import { getStudentsWithPacing, getStudentsByPriority } from '@/lib/teacher-data';
 import { getAcademicPacingStyle, getEngagementStyle, formatDaysOffset, formatDaysSinceActive } from '@/lib/pacing';
 import { getTeacherId } from '@/lib/teacher-auth';
+import { resolveContext, buildContextQuery } from '@/lib/teacher-context';
 
-export default async function PacingPage() {
+interface PageProps {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+export default async function PacingPage({ searchParams }: PageProps) {
+  const params = await searchParams;
   const teacherId = await getTeacherId();
-  const students = await getStudentsWithPacing(teacherId);
+  const ctx = await resolveContext(params, teacherId);
+  const q = buildContextQuery(ctx);
+
+  const students = await getStudentsWithPacing(teacherId, ctx.subjectId);
   const sorted = getStudentsByPriority(students);
 
   const counts = {
@@ -32,7 +41,7 @@ export default async function PacingPage() {
 
       {/* Pacing Table */}
       <div className={styles.dashCard}>
-        <h3 className={styles.cardTitle}>⏱️ Student Pacing Detail</h3>
+        <h3 className={styles.cardTitle}>⏱️ {ctx.subjectName} Pacing Detail</h3>
 
         {/* Legend */}
         <div className={styles.pacingLegend}>
@@ -73,7 +82,7 @@ export default async function PacingPage() {
                   return (
                     <tr key={s.id} className={styles.clickableRow} onClick={undefined}>
                       <td>
-                        <Link href={`/teacher/students/${s.id}`} className={styles.rowLink}>
+                        <Link href={`/teacher/students/${s.id}${q}`} className={styles.rowLink}>
                           <div className={styles.studentName}>
                             <div className={styles.tableAvatar}>
                               {s.name.split(' ').map((n) => n[0]).join('')}
@@ -83,21 +92,21 @@ export default async function PacingPage() {
                         </Link>
                       </td>
                       <td>
-                        <Link href={`/teacher/students/${s.id}`} className={styles.rowLink}>
+                        <Link href={`/teacher/students/${s.id}${q}`} className={styles.rowLink}>
                           <span className={styles.pacingBadge} style={{ background: aStyle.bg, color: aStyle.color }}>
                             {aStyle.icon} {s.pacing.academicLabel}
                           </span>
                         </Link>
                       </td>
                       <td>
-                        <Link href={`/teacher/students/${s.id}`} className={styles.rowLink}>
+                        <Link href={`/teacher/students/${s.id}${q}`} className={styles.rowLink}>
                           <span className={styles.pacingBadge} style={{ background: eStyle.bg, color: eStyle.color }}>
                             {eStyle.icon} {s.pacing.engagementStatus === 'STALLED' ? 'Stalled' : 'Active'}
                           </span>
                         </Link>
                       </td>
                       <td>
-                        <Link href={`/teacher/students/${s.id}`} className={styles.rowLink}>
+                        <Link href={`/teacher/students/${s.id}${q}`} className={styles.rowLink}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <div className={styles.progressBarWrap} style={{ width: 100 }}>
                               <div className={styles.progressBarFill} style={{ width: `${Math.min(100, s.pacing.actualProgress)}%`, background: aStyle.color }} />
@@ -110,14 +119,14 @@ export default async function PacingPage() {
                         </Link>
                       </td>
                       <td>
-                        <Link href={`/teacher/students/${s.id}`} className={styles.rowLink}>
+                        <Link href={`/teacher/students/${s.id}${q}`} className={styles.rowLink}>
                           <span style={{ fontSize: '0.82rem', color: '#64748b' }}>
                             {Math.round(s.pacing.expectedProgress)}%
                           </span>
                         </Link>
                       </td>
                       <td>
-                        <Link href={`/teacher/students/${s.id}`} className={styles.rowLink}>
+                        <Link href={`/teacher/students/${s.id}${q}`} className={styles.rowLink}>
                           <span style={{
                             fontWeight: 700,
                             color: s.pacing.isGracePeriod ? '#7c3aed' : s.pacing.daysBehindOrAhead >= 0 ? '#059669' : '#dc2626',
@@ -128,14 +137,14 @@ export default async function PacingPage() {
                         </Link>
                       </td>
                       <td>
-                        <Link href={`/teacher/students/${s.id}`} className={styles.rowLink}>
+                        <Link href={`/teacher/students/${s.id}${q}`} className={styles.rowLink}>
                           <span style={{ fontSize: '0.82rem', color: s.pacing.engagementStatus === 'STALLED' ? '#dc2626' : '#64748b' }}>
                             {s.pacing.daysSinceActive !== null ? `${s.pacing.daysSinceActive}d` : '—'}
                           </span>
                         </Link>
                       </td>
                       <td>
-                        <Link href={`/teacher/students/${s.id}`} className={styles.rowLink}>
+                        <Link href={`/teacher/students/${s.id}${q}`} className={styles.rowLink}>
                           <span style={{ fontSize: '0.82rem' }}>{s.currentUnit || '—'}</span>
                         </Link>
                       </td>

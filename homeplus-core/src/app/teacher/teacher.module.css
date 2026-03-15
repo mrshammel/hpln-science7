@@ -140,6 +140,64 @@
   z-index: 50;
 }
 
+/* ===== CONTEXT SELECTOR BAR ===== */
+.contextBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 28px;
+  background: linear-gradient(135deg, #eff6ff, #f0fdf4);
+  border-bottom: 1px solid var(--hp-border);
+  gap: 16px;
+}
+
+.contextLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.contextIcon {
+  font-size: 1.3rem;
+}
+
+.contextLabel {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--hp-text);
+  letter-spacing: -0.01em;
+}
+
+.contextSelectors {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.contextSelect {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--hp-border);
+  background: var(--hp-surface);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--hp-text);
+  cursor: pointer;
+  font-family: inherit;
+  min-width: 100px;
+  transition: border-color 0.15s;
+}
+
+.contextSelect:hover {
+  border-color: #2563eb;
+}
+
+.contextSelect:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
 .topbarLeft {
   display: flex;
   align-items: center;

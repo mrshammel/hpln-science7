@@ -1,10 +1,18 @@
 import styles from '../teacher.module.css';
 import { getRecentSubmissions } from '@/lib/teacher-data';
 import { getTeacherId } from '@/lib/teacher-auth';
+import { resolveContext } from '@/lib/teacher-context';
 
-export default async function SubmissionsPage() {
+interface PageProps {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+export default async function SubmissionsPage({ searchParams }: PageProps) {
+  const params = await searchParams;
   const teacherId = await getTeacherId();
-  const submissions = await getRecentSubmissions(teacherId);
+  const ctx = await resolveContext(params, teacherId);
+
+  const submissions = await getRecentSubmissions(teacherId, ctx.subjectId);
   const pending = submissions.filter((s) => !s.reviewed);
   const reviewed = submissions.filter((s) => s.reviewed);
 
@@ -13,7 +21,7 @@ export default async function SubmissionsPage() {
       {/* Pending Reviews */}
       <div className={styles.dashCard} style={{ marginBottom: 24 }}>
         <h3 className={styles.cardTitle}>
-          📋 Pending Review
+          📋 Pending Review — {ctx.subjectName}
           {pending.length > 0 && (
             <span className={styles.navBadge} style={{ marginLeft: 8 }}>{pending.length}</span>
           )}
@@ -23,7 +31,7 @@ export default async function SubmissionsPage() {
           <div className={styles.emptyState}>
             <div className={styles.emptyIcon}>✅</div>
             <div className={styles.emptyTitle}>All caught up!</div>
-            <div className={styles.emptyDesc}>No submissions waiting for your review.</div>
+            <div className={styles.emptyDesc}>No {ctx.subjectName} submissions waiting for your review.</div>
           </div>
         ) : (
           pending.map((sub) => (
@@ -56,13 +64,13 @@ export default async function SubmissionsPage() {
 
       {/* Recently Reviewed */}
       <div className={styles.dashCard}>
-        <h3 className={styles.cardTitle}>📝 Recent Submissions</h3>
+        <h3 className={styles.cardTitle}>📝 Recent {ctx.subjectName} Submissions</h3>
 
         {reviewed.length === 0 ? (
           <div className={styles.emptyState}>
             <div className={styles.emptyIcon}>📝</div>
             <div className={styles.emptyTitle}>No submissions yet</div>
-            <div className={styles.emptyDesc}>Student submissions will appear here as they complete activities.</div>
+            <div className={styles.emptyDesc}>Student {ctx.subjectName} submissions will appear here as they complete activities.</div>
           </div>
         ) : (
           reviewed.map((sub) => (

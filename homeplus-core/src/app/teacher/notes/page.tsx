@@ -2,7 +2,12 @@ import styles from '../teacher.module.css';
 import { getTeacherNotes } from '@/lib/teacher-data';
 import { getTeacherId } from '@/lib/teacher-auth';
 
-export default async function NotesPage() {
+interface PageProps {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+export default async function NotesPage({ searchParams }: PageProps) {
+  const _params = await searchParams; // Accept context for URL consistency
   const teacherId = await getTeacherId();
   const notes = await getTeacherNotes(teacherId);
 

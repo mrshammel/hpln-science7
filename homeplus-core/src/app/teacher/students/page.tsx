@@ -3,10 +3,19 @@ import styles from '../teacher.module.css';
 import { getStudentsWithPacing } from '@/lib/teacher-data';
 import { getAcademicPacingStyle, getEngagementStyle } from '@/lib/pacing';
 import { getTeacherId } from '@/lib/teacher-auth';
+import { resolveContext, buildContextQuery } from '@/lib/teacher-context';
 
-export default async function StudentsPage() {
+interface PageProps {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+export default async function StudentsPage({ searchParams }: PageProps) {
+  const params = await searchParams;
   const teacherId = await getTeacherId();
-  const students = await getStudentsWithPacing(teacherId);
+  const ctx = await resolveContext(params, teacherId);
+  const q = buildContextQuery(ctx);
+
+  const students = await getStudentsWithPacing(teacherId, ctx.subjectId);
 
   return (
     <>
@@ -27,14 +36,6 @@ export default async function StudentsPage() {
           <option value="ACTIVE">Active</option>
           <option value="STALLED">Stalled</option>
         </select>
-        <select className={styles.filterSelect}>
-          <option value="">All Units</option>
-          <option value="A">Unit A — Ecosystems</option>
-          <option value="B">Unit B — Plants</option>
-          <option value="C">Unit C — Heat</option>
-          <option value="D">Unit D — Structures</option>
-          <option value="E">Unit E — Earth</option>
-        </select>
       </div>
 
       {/* Student Table */}
@@ -54,7 +55,7 @@ export default async function StudentsPage() {
                   <th>Grade</th>
                   <th>Current Unit</th>
                   <th>Progress</th>
-                  <th>Avg Score</th>
+                  <th>{ctx.subjectName} Avg</th>
                   <th>Days Since Active</th>
                   <th>Pacing</th>
                   <th>Engagement</th>
@@ -68,7 +69,7 @@ export default async function StudentsPage() {
                   return (
                     <tr key={s.id} className={styles.clickableRow}>
                       <td>
-                        <Link href={`/teacher/students/${s.id}`} className={styles.rowLink}>
+                        <Link href={`/teacher/students/${s.id}${q}`} className={styles.rowLink}>
                           <div className={styles.studentName}>
                             <div className={styles.tableAvatar}>
                               {s.name.split(' ').map((n) => n[0]).join('')}
@@ -78,17 +79,17 @@ export default async function StudentsPage() {
                         </Link>
                       </td>
                       <td>
-                        <Link href={`/teacher/students/${s.id}`} className={styles.rowLink}>
+                        <Link href={`/teacher/students/${s.id}${q}`} className={styles.rowLink}>
                           <span style={{ fontSize: '0.85rem' }}>{s.gradeLevel || '—'}</span>
                         </Link>
                       </td>
                       <td>
-                        <Link href={`/teacher/students/${s.id}`} className={styles.rowLink}>
+                        <Link href={`/teacher/students/${s.id}${q}`} className={styles.rowLink}>
                           <span style={{ fontSize: '0.85rem' }}>{s.currentUnit || '—'}</span>
                         </Link>
                       </td>
                       <td>
-                        <Link href={`/teacher/students/${s.id}`} className={styles.rowLink}>
+                        <Link href={`/teacher/students/${s.id}${q}`} className={styles.rowLink}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <div className={styles.progressBarWrap} style={{ width: 80 }}>
                               <div className={styles.progressBarFill} style={{ width: `${Math.min(100, s.pacing.actualProgress)}%`, background: aStyle.color }} />
@@ -100,28 +101,28 @@ export default async function StudentsPage() {
                         </Link>
                       </td>
                       <td>
-                        <Link href={`/teacher/students/${s.id}`} className={styles.rowLink}>
+                        <Link href={`/teacher/students/${s.id}${q}`} className={styles.rowLink}>
                           <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>
                             {s.avgScore !== null ? `${Math.round(s.avgScore)}%` : '—'}
                           </span>
                         </Link>
                       </td>
                       <td>
-                        <Link href={`/teacher/students/${s.id}`} className={styles.rowLink}>
+                        <Link href={`/teacher/students/${s.id}${q}`} className={styles.rowLink}>
                           <span style={{ fontSize: '0.82rem', color: s.pacing.engagementStatus === 'STALLED' ? '#dc2626' : '#64748b' }}>
                             {s.pacing.daysSinceActive !== null ? `${s.pacing.daysSinceActive}d` : '—'}
                           </span>
                         </Link>
                       </td>
                       <td>
-                        <Link href={`/teacher/students/${s.id}`} className={styles.rowLink}>
+                        <Link href={`/teacher/students/${s.id}${q}`} className={styles.rowLink}>
                           <span className={styles.pacingBadge} style={{ background: aStyle.bg, color: aStyle.color }}>
                             {aStyle.icon} {s.pacing.academicLabel}
                           </span>
                         </Link>
                       </td>
                       <td>
-                        <Link href={`/teacher/students/${s.id}`} className={styles.rowLink}>
+                        <Link href={`/teacher/students/${s.id}${q}`} className={styles.rowLink}>
                           <span className={styles.pacingBadge} style={{ background: eStyle.bg, color: eStyle.color }}>
                             {eStyle.icon} {s.pacing.engagementStatus === 'STALLED' ? 'Stalled' : 'Active'}
                           </span>
