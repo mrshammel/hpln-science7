@@ -16,16 +16,12 @@ export function getInitials(name: string): string {
     .slice(0, 2);
 }
 
-/** Teacher-friendly engagement label */
+/** Teacher-friendly engagement label — matches pacing engine wording */
 export function getEngagementLabel(status: EngagementStatus, daysSinceActive: number | null): string {
-  if (status === 'STALLED') {
-    if (daysSinceActive === null) return 'No academic activity recorded';
-    return `No academic activity in ${daysSinceActive} day${daysSinceActive !== 1 ? 's' : ''}`;
-  }
   if (daysSinceActive === null) return 'No academic activity yet';
   if (daysSinceActive === 0) return 'Active today';
-  if (daysSinceActive === 1) return 'Active yesterday';
-  return `Active ${daysSinceActive} days ago`;
+  const unit = daysSinceActive === 1 ? 'day' : 'days';
+  return `${daysSinceActive} ${unit} since academic activity`;
 }
 
 /** Format a date for teacher display (e.g. "March 10, 2026") */

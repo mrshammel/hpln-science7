@@ -8,6 +8,8 @@
 // Enrollment-aware: effective_start = max(Sept 1, enrollment_date)
 // Activity = meaningful academic work (lesson/quiz/assignment completion),
 //            NOT sign-in or passive page views.
+//
+// Future-ready: structured for assigned-path and weighted-completion pacing.
 
 // ---------- Status Types (separate dimensions) ----------
 
@@ -28,38 +30,72 @@ export interface PacingResult {
   academicStatus: AcademicPacingStatus;
   engagementStatus: EngagementStatus;
 
-  // Labels (plain-language)
+  // Labels (plain-language, teacher-friendly)
   academicLabel: string;
   engagementLabel: string;
-  pacingSummary: string;        // e.g. "8 days behind expected pace"
+  pacingSummary: string;          // e.g. "52 days behind expected pace"
 
   // Progress data
-  expectedProgress: number;     // 0–100%
-  actualProgress: number;       // 0–100%
+  expectedProgress: number;       // 0–100, clamped
+  actualProgress: number;         // 0–100, clamped
   completedLessons: number;
   totalLessons: number;
-  daysBehindOrAhead: number;    // Negative = behind, positive = ahead
+  daysBehindOrAhead: number;      // Negative = behind, positive = ahead
 
   // Activity data
   lastAcademicActivityAt: Date | null;
-  daysSinceActive: number | null;
+  daysSinceActive: number | null; // null = never active, ≥ 0
 
   // Grace period
   isGracePeriod: boolean;
+  daysSinceEnrollment: number;
 }
 
 // ---------- Configuration ----------
+// All thresholds in one place for easy tuning.
 
 export const PACING_CONFIG = {
-  gracePeriodDays: 7,           // Onboarding window before pacing alerts
-  stalledThresholdDays: 5,      // Days without academic activity = stalled
-  schoolYearStartMonth: 8,      // September (0-indexed)
+  // School year boundaries
+  schoolYearStartMonth: 8,        // September (0-indexed)
   schoolYearStartDay: 1,
-  schoolYearEndMonth: 5,        // June (0-indexed)
+  schoolYearEndMonth: 5,          // June (0-indexed)
   schoolYearEndDay: 1,
+
+  // Onboarding: days since enrollment before pacing alerts activate
+  gracePeriodDays: 7,
+
+  // Engagement: days without academic activity before marked stalled
+  stalledThresholdDays: 5,
+
+  // Academic pacing thresholds (ratio of actual/expected, as %)
+  // These define the pacing band boundaries:
+  //   Ahead:                ratio > aheadThreshold
+  //   On Pace:              onPaceFloor ≤ ratio ≤ aheadThreshold
+  //   Slightly Behind:      slightlyBehindFloor ≤ ratio < onPaceFloor
+  //   Significantly Behind: ratio < slightlyBehindFloor
+  aheadThreshold: 110,
+  onPaceFloor: 90,
+  slightlyBehindFloor: 70,
+
+  // Intervention priority weights (lower = more urgent)
+  // Engagement multiplier widens the gap between STALLED and ACTIVE
+  interventionWeights: {
+    academic: {
+      SIGNIFICANTLY_BEHIND: 0,
+      SLIGHTLY_BEHIND: 10,
+      NEWLY_ENROLLED: 20,
+      ON_PACE: 30,
+      AHEAD: 40,
+      COMPLETE: 50,
+    } as Record<AcademicPacingStatus, number>,
+    engagement: {
+      STALLED: 0,
+      ACTIVE: 5,
+    } as Record<EngagementStatus, number>,
+  },
 } as const;
 
-// ---------- Helpers ----------
+// ---------- Date Helpers ----------
 
 function getSchoolYearStart(now: Date): Date {
   const year = now.getMonth() >= PACING_CONFIG.schoolYearStartMonth
@@ -77,6 +113,11 @@ function getSchoolYearEnd(now: Date): Date {
 
 function daysBetween(a: Date, b: Date): number {
   return Math.floor((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+/** Clamp a number between min and max */
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
 }
 
 // ---------- Core Calculation ----------
@@ -97,25 +138,36 @@ export function calculatePacing(params: {
 
   // Effective start = max(school_year_start, enrollment_date)
   const effectiveStart = enrolledAt > schoolYearStart ? enrolledAt : schoolYearStart;
-  const totalDays = daysBetween(effectiveStart, schoolYearEnd);
+  const totalDays = Math.max(1, daysBetween(effectiveStart, schoolYearEnd));
   const elapsedDays = daysBetween(effectiveStart, now);
 
-  // Actual progress
+  // Days since enrollment (for grace period — based on actual enrollment, not elapsed instructional days)
+  const daysSinceEnrollment = daysBetween(enrolledAt, now);
+
+  // Actual progress: 0–100, clamped
   const actualProgress = totalLessons > 0
-    ? Math.min(100, (completedLessons / totalLessons) * 100)
+    ? clamp((completedLessons / totalLessons) * 100, 0, 100)
     : 0;
 
-  // Days since last meaningful academic activity
-  const daysSinceActive = lastAcademicActivityAt
-    ? daysBetween(lastAcademicActivityAt, now)
-    : null;
+  // Days since last meaningful academic activity: null = never, ≥ 0
+  let daysSinceActive: number | null = null;
+  if (lastAcademicActivityAt) {
+    const raw = daysBetween(lastAcademicActivityAt, now);
+    daysSinceActive = Math.max(0, raw); // Clamp: future dates → 0
+  }
 
-  // Expected progress based on student's instructional window
-  const expectedProgress = totalDays > 0
-    ? Math.min(100, (elapsedDays / totalDays) * 100)
-    : 0;
+  // Expected progress: 0–100, clamped
+  // Before effective start → 0, after school year end → 100
+  let expectedProgress: number;
+  if (elapsedDays <= 0) {
+    expectedProgress = 0;
+  } else if (elapsedDays >= totalDays) {
+    expectedProgress = 100;
+  } else {
+    expectedProgress = clamp((elapsedDays / totalDays) * 100, 0, 100);
+  }
 
-  // Expected lessons and day difference
+  // Days behind/ahead (lesson-based)
   const expectedLessons = (expectedProgress / 100) * totalLessons;
   const lessonDiff = completedLessons - expectedLessons;
   const lessonsPerDay = totalDays > 0 ? totalLessons / totalDays : 0;
@@ -127,15 +179,10 @@ export function calculatePacing(params: {
       ? 'STALLED'
       : 'ACTIVE';
 
-  const engagementLabel = engagementStatus === 'STALLED'
-    ? `${daysSinceActive} days since last academic activity`
-    : daysSinceActive === 0
-      ? 'Active today'
-      : daysSinceActive !== null
-        ? `Active ${daysSinceActive}d ago`
-        : 'No academic activity yet';
+  const engagementLabel = formatEngagementLabel(engagementStatus, daysSinceActive);
 
   // ===== ACADEMIC PACING STATUS (independent of engagement) =====
+  // Grace period: based explicitly on days since enrollment
   let academicStatus: AcademicPacingStatus;
   let academicLabel: string;
   let pacingSummary: string;
@@ -145,25 +192,27 @@ export function calculatePacing(params: {
     academicStatus = 'COMPLETE';
     academicLabel = 'Complete';
     pacingSummary = 'All lessons completed';
-  } else if (elapsedDays <= PACING_CONFIG.gracePeriodDays) {
+  } else if (daysSinceEnrollment <= PACING_CONFIG.gracePeriodDays) {
     academicStatus = 'NEWLY_ENROLLED';
     academicLabel = 'Newly Enrolled';
     pacingSummary = 'Onboarding — pacing alerts paused';
     isGracePeriod = true;
   } else {
+    // Pacing ratio: actual vs expected, as percentage
     const pacingRatio = expectedProgress > 0
       ? (actualProgress / expectedProgress) * 100
       : (actualProgress > 0 ? 200 : 100);
 
-    if (pacingRatio > 110) {
+    if (pacingRatio > PACING_CONFIG.aheadThreshold) {
       academicStatus = 'AHEAD';
       academicLabel = 'Ahead';
-      pacingSummary = `${Math.abs(daysBehindOrAhead)} days ahead of expected pace`;
-    } else if (pacingRatio >= 90) {
+      const absDays = Math.abs(daysBehindOrAhead);
+      pacingSummary = absDays > 0 ? `${absDays} days ahead of expected pace` : 'Ahead of expected pace';
+    } else if (pacingRatio >= PACING_CONFIG.onPaceFloor) {
       academicStatus = 'ON_PACE';
       academicLabel = 'On Pace';
       pacingSummary = 'Progressing at expected pace';
-    } else if (pacingRatio >= 70) {
+    } else if (pacingRatio >= PACING_CONFIG.slightlyBehindFloor) {
       academicStatus = 'SLIGHTLY_BEHIND';
       academicLabel = 'Slightly Behind';
       pacingSummary = `${Math.abs(daysBehindOrAhead)} days behind expected pace`;
@@ -188,6 +237,7 @@ export function calculatePacing(params: {
     lastAcademicActivityAt,
     daysSinceActive,
     isGracePeriod,
+    daysSinceEnrollment,
   };
 }
 
@@ -217,38 +267,49 @@ export function getEngagementStyle(status: EngagementStatus): {
   return styles[status];
 }
 
-// ---------- Intervention Priority ----------
+// ---------- Formatting Helpers ----------
 
-/** Sorting order: most urgent intervention first */
-export function getInterventionPriority(r: PacingResult): number {
-  // Combine academic urgency + engagement concern
-  const academicWeight: Record<AcademicPacingStatus, number> = {
-    SIGNIFICANTLY_BEHIND: 0,
-    SLIGHTLY_BEHIND: 2,
-    NEWLY_ENROLLED: 4,
-    ON_PACE: 6,
-    AHEAD: 8,
-    COMPLETE: 10,
-  };
-  const engagementWeight: Record<EngagementStatus, number> = {
-    STALLED: 0,
-    ACTIVE: 1,
-  };
-  return academicWeight[r.academicStatus] + engagementWeight[r.engagementStatus];
+/** Teacher-friendly engagement label. Centralized — all pages use this. */
+function formatEngagementLabel(status: EngagementStatus, daysSinceActive: number | null): string {
+  if (daysSinceActive === null) return 'No academic activity yet';
+  if (daysSinceActive === 0) return 'Active today';
+  if (status === 'STALLED') {
+    return `${daysSinceActive} day${daysSinceActive !== 1 ? 's' : ''} since academic activity`;
+  }
+  return `${daysSinceActive} day${daysSinceActive !== 1 ? 's' : ''} since academic activity`;
 }
 
-/** Format "days since active" for teacher display */
+/** Format "days since active" for table columns / short display. */
 export function formatDaysSinceActive(daysSinceActive: number | null): string {
   if (daysSinceActive === null) return 'No academic activity yet';
   if (daysSinceActive === 0) return 'Active today';
-  if (daysSinceActive === 1) return '1 day ago';
-  return `${daysSinceActive} days ago`;
+  if (daysSinceActive === 1) return '1 day since activity';
+  return `${daysSinceActive} days since activity`;
 }
 
-/** Format days behind/ahead for teacher display */
+/** Format pacing offset for teacher display. Uses absolute values + direction words. */
 export function formatDaysOffset(days: number, isGrace: boolean): string {
-  if (isGrace) return '—';
+  if (isGrace) return 'Onboarding';
   if (days === 0) return 'On pace';
-  if (days > 0) return `+${days}d ahead`;
-  return `${days}d behind`;
+  const absDays = Math.abs(days);
+  const unit = absDays === 1 ? 'day' : 'days';
+  if (days > 0) return `${absDays} ${unit} ahead`;
+  return `${absDays} ${unit} behind`;
+}
+
+// ---------- Intervention Priority ----------
+
+/**
+ * Intervention priority sorting: lower = more urgent.
+ *
+ * Uses wider weight gaps so engagement (STALLED vs ACTIVE) has
+ * meaningful impact on ordering:
+ *   - SIG_BEHIND + STALLED (0)  sorts above  SIG_BEHIND + ACTIVE (5)
+ *   - SLIGHTLY_BEHIND + STALLED (10)  sorts above  SLIGHTLY_BEHIND + ACTIVE (15)
+ *   - SIG_BEHIND + ACTIVE (5)  still sorts above  SLIGHTLY_BEHIND + STALLED (10)
+ */
+export function getInterventionPriority(r: PacingResult): number {
+  const aWeight = PACING_CONFIG.interventionWeights.academic[r.academicStatus];
+  const eWeight = PACING_CONFIG.interventionWeights.engagement[r.engagementStatus];
+  return aWeight + eWeight;
 }
