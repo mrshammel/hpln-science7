@@ -649,6 +649,107 @@
   z-index: 1;
 }
 
+/* Register CTA button */
+.ctaRegister {
+  background: #ffffff;
+  color: #1e3a5f;
+  box-shadow: 0 4px 14px rgba(255, 255, 255, 0.15);
+}
+.ctaRegister:hover {
+  background: #f0f4ff;
+  box-shadow: 0 6px 22px rgba(255, 255, 255, 0.22);
+  transform: translateY(-2px);
+}
+
+/* ===========================
+   CONTACT SECTION
+   =========================== */
+.contact {
+  padding: 60px 0;
+  background: linear-gradient(170deg, #f8fafb 0%, #f0f4ff 50%, #eef8f0 100%);
+  scroll-margin-top: 80px;
+}
+
+.contactInner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: center;
+}
+
+.contactText {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.contactTitle {
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: var(--hp-text);
+  letter-spacing: -0.02em;
+}
+
+.contactDesc {
+  font-size: 0.95rem;
+  color: var(--hp-text2);
+  line-height: 1.75;
+  max-width: 420px;
+}
+
+.contactCard {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 32px 28px;
+  box-shadow: 0 4px 16px -4px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.contactOrg {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--hp-primary);
+  margin-bottom: 2px;
+}
+
+.contactName {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--hp-text);
+  margin-bottom: 8px;
+}
+
+.contactDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.contactLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.94rem;
+  color: var(--hp-text2);
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #e8ecf1;
+  transition: all 0.2s ease;
+}
+
+.contactLink:hover {
+  background: #eef3ff;
+  border-color: var(--hp-primary);
+  color: var(--hp-primary);
+}
+
 /* ===========================
    FOOTER
    =========================== */
@@ -772,6 +873,26 @@
     grid-template-columns: 1fr;
     padding: 0 32px;
   }
+
+  .contactInner {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    text-align: center;
+  }
+
+  .contactDesc {
+    max-width: 100%;
+  }
+
+  .ctaBannerActions {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .ctaBannerActions .ctaBtn {
+    width: 100%;
+    max-width: 300px;
+  }
 }
 
 /* ===========================
@@ -880,6 +1001,18 @@
 
   .footerInner {
     padding: 0 20px;
+  }
+
+  .contact {
+    padding: 44px 0;
+  }
+
+  .contactTitle {
+    font-size: 1.4rem;
+  }
+
+  .contactCard {
+    padding: 24px 20px;
   }
 
   .footerLinks {

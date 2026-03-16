@@ -27,7 +27,7 @@ export default function HomePage() {
           <nav className={styles.headerNav}>
             <a href="#about" className={styles.navLink}>About</a>
             <a href="#how-it-works" className={styles.navLink}>How It Works</a>
-            <a href="#apply" className={styles.navLink}>Apply</a>
+            <a href="https://www.myprps.com/home-plus-forms-and-registration" className={styles.navLink} target="_blank" rel="noopener noreferrer">Register</a>
             <div className={styles.navDivider} />
             <a
               href="/api/auth/signin/google?callbackUrl=/dashboard"
@@ -60,7 +60,7 @@ export default function HomePage() {
           <div className={styles.mobileNav}>
             <a href="#about" className={styles.mobileNavLink} onClick={() => setMobileNavOpen(false)}>About</a>
             <a href="#how-it-works" className={styles.mobileNavLink} onClick={() => setMobileNavOpen(false)}>How It Works</a>
-            <a href="#apply" className={styles.mobileNavLink} onClick={() => setMobileNavOpen(false)}>Apply</a>
+            <a href="https://www.myprps.com/home-plus-forms-and-registration" className={styles.mobileNavLink} target="_blank" rel="noopener noreferrer" onClick={() => setMobileNavOpen(false)}>Register ↗</a>
             <div className={styles.mobileNavDivider} />
             <a
               href="/api/auth/signin/google?callbackUrl=/dashboard"
@@ -248,17 +248,25 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ===== APPLICATION CTA ===== */}
-      <section className={styles.ctaBanner} id="apply">
+      {/* ===== REGISTER CTA ===== */}
+      <section className={styles.ctaBanner} id="register">
         <div className={styles.sectionContainer}>
           <h2 className={styles.ctaBannerTitle}>
             Ready to join Home Plus?
           </h2>
           <p className={styles.ctaBannerDesc}>
-            Sign in to access your courses, track your progress, and start your
-            learning journey with Home Plus today.
+            Register through Prairie Rose Public Schools to get started, or
+            sign in if you&apos;re already enrolled.
           </p>
           <div className={styles.ctaBannerActions}>
+            <a
+              href="https://www.myprps.com/home-plus-forms-and-registration"
+              className={`${styles.ctaBtn} ${styles.ctaRegister}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              📋 Register with PRPS
+            </a>
             <a
               href="/api/auth/signin/google?callbackUrl=/dashboard"
               className={`${styles.ctaBtn} ${styles.ctaStudent}`}
@@ -271,6 +279,34 @@ export default function HomePage() {
             >
               👩‍🏫 Teacher Sign In
             </a>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== CONTACT SECTION ===== */}
+      <section className={styles.contact} id="contact">
+        <div className={styles.sectionContainer}>
+          <div className={styles.contactInner}>
+            <div className={styles.contactText}>
+              <h2 className={styles.contactTitle}>Let&apos;s Talk...</h2>
+              <p className={styles.contactDesc}>
+                If you are interested in having a conversation about your home
+                education, shared responsibility, or at-home learning
+                opportunities, please contact:
+              </p>
+            </div>
+            <div className={styles.contactCard}>
+              <div className={styles.contactOrg}>Home Plus Learning Network</div>
+              <div className={styles.contactName}>Jenn LaDouceur</div>
+              <div className={styles.contactDetails}>
+                <a href="tel:403-526-3186" className={styles.contactLink}>
+                  📞 403-526-3186
+                </a>
+                <a href="mailto:jennladouceur@prrd8.ca" className={styles.contactLink}>
+                  ✉️ jennladouceur@prrd8.ca
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -296,11 +332,12 @@ export default function HomePage() {
               <h4>Platform</h4>
               <a href="/api/auth/signin/google?callbackUrl=/dashboard">Student Sign In</a>
               <a href="/api/auth/signin/google?callbackUrl=/teacher">Teacher Sign In</a>
+              <a href="https://www.myprps.com/home-plus-forms-and-registration" target="_blank" rel="noopener noreferrer">Register</a>
             </div>
             <div className={styles.footerCol}>
-              <h4>Support</h4>
-              <a href="mailto:support@homeplus.ca">Contact Us</a>
-              <a href="#">Help Center</a>
+              <h4>Contact</h4>
+              <a href="tel:403-526-3186">403-526-3186</a>
+              <a href="mailto:jennladouceur@prrd8.ca">jennladouceur@prrd8.ca</a>
             </div>
             <div className={styles.footerCol}>
               <h4>Legal</h4>
