@@ -49,7 +49,7 @@
 
 .headerLogo {
   width: auto;
-  height: 40px;
+  height: 48px;
   object-fit: contain;
 }
 
@@ -189,7 +189,7 @@
 .hero {
   position: relative;
   background: linear-gradient(165deg, #eef3ff 0%, #e6f4ea 35%, #fdf8ef 65%, #f0f4ff 100%);
-  padding: 60px 0 0;
+  padding: 36px 0 0;
   overflow: hidden;
 }
 
@@ -208,7 +208,7 @@
 /* Centered logo banner */
 .heroBanner {
   text-align: center;
-  padding: 0 40px 20px;
+  padding: 0 40px 12px;
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -227,17 +227,16 @@
   margin: 0 auto;
   padding: 0 40px;
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
-  gap: 40px;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 36px;
   align-items: center;
-  min-height: 420px;
 }
 
 /* Hero Left */
 .heroLeft {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 14px;
 }
 
 .heroBadge {
@@ -335,7 +334,7 @@
 
 .pillarsImage {
   width: 100%;
-  max-width: 380px;
+  max-width: 320px;
   height: auto;
   object-fit: contain;
   filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.03));
@@ -738,7 +737,7 @@
   }
 
   .hero {
-    padding: 32px 0 0;
+    padding: 24px 0 0;
   }
 
   .heroBannerLogo {
@@ -746,7 +745,7 @@
   }
 
   .heroBanner {
-    padding: 0 32px 16px;
+    padding: 0 32px 10px;
   }
 
   .featureGrid {
@@ -807,7 +806,7 @@
   }
 
   .hero {
-    padding: 24px 0 0;
+    padding: 16px 0 0;
   }
 
   .heroBannerLogo {
@@ -815,7 +814,7 @@
   }
 
   .heroBanner {
-    padding: 0 20px 12px;
+    padding: 0 20px 8px;
   }
 
   .howItWorks,
@@ -883,7 +882,7 @@
   }
 
   .heroBannerLogo {
-    max-width: 210px;
+    max-width: 200px;
   }
 
   .pillarsImage {

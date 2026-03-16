@@ -85,8 +85,8 @@ export default function HomePage() {
           <Image
             src="/images/hpln-logo.png"
             alt="Home Plus Online Learning"
-            width={480}
-            height={150}
+            width={440}
+            height={138}
             className={styles.heroBannerLogo}
             priority
           />
