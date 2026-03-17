@@ -79,13 +79,13 @@ export default function HomePage() {
             ) : !isLoading ? (
               <>
                 <button
-                  onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
+                  onClick={() => signIn('demo', { role: 'STUDENT', callbackUrl: '/dashboard' })}
                   className={styles.navSignIn}
                 >
                   Student Sign In
                 </button>
                 <button
-                  onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
+                  onClick={() => signIn('demo', { role: 'TEACHER', callbackUrl: '/dashboard' })}
                   className={styles.navSignInTeacher}
                 >
                   Teacher Sign In

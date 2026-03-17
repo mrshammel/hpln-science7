@@ -1,5 +1,6 @@
 import NextAuth, { type NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
+import CredentialsProvider from 'next-auth/providers/credentials';
 import { prisma } from '@/lib/db';
 
 export const authOptions: NextAuthOptions = {
@@ -7,6 +8,25 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
+
+    // Demo sign-in — allows teacher/student access without Google OAuth
+    CredentialsProvider({
+      id: 'demo',
+      name: 'Demo',
+      credentials: {
+        role: { label: 'Role', type: 'text' },
+      },
+      async authorize(credentials) {
+        const role = credentials?.role;
+        if (role === 'TEACHER') {
+          return { id: 'teacher-1', name: 'Mrs. Shammel', email: 'shammel@hpln.ca', image: null };
+        }
+        if (role === 'STUDENT') {
+          return { id: 'student-1', name: 'Ava Chen', email: 'ava.chen@student.hpln.ca', image: null };
+        }
+        return null;
+      },
     }),
   ],
 
