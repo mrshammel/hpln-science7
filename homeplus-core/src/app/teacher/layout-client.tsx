@@ -4,6 +4,7 @@ import { useState, useMemo, type ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
+import { signOut } from 'next-auth/react';
 import styles from './teacher.module.css';
 import type { AvailableContext } from '@/lib/teacher-context';
 
@@ -15,6 +16,7 @@ const NAV_ITEMS = [
   { href: '/teacher/pacing', icon: '⏱️', label: 'Pacing' },
   { href: '/teacher/submissions', icon: '📝', label: 'Submissions' },
   { href: '/teacher/notes', icon: '📋', label: 'Notes' },
+  { href: '/teacher/courses', icon: '📚', label: 'Course Builder' },
 ];
 
 // ---------- Props ----------
@@ -22,11 +24,12 @@ const NAV_ITEMS = [
 interface TeacherLayoutClientProps {
   children: ReactNode;
   assignedContexts: AvailableContext[];
+  pendingReviewCount?: number;
 }
 
 // ---------- Layout Component ----------
 
-export default function TeacherLayoutClient({ children, assignedContexts }: TeacherLayoutClientProps) {
+export default function TeacherLayoutClient({ children, assignedContexts, pendingReviewCount = 0 }: TeacherLayoutClientProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -129,6 +132,9 @@ export default function TeacherLayoutClient({ children, assignedContexts }: Teac
               >
                 <span className={styles.navIcon}>{item.icon}</span>
                 {item.label}
+                {item.href === '/teacher/submissions' && pendingReviewCount > 0 && (
+                  <span className={styles.navBadge}>{pendingReviewCount}</span>
+                )}
               </Link>
             );
           })}
@@ -156,7 +162,12 @@ export default function TeacherLayoutClient({ children, assignedContexts }: Teac
             <span className={styles.topbarDate}>{today}</span>
           </div>
           <div className={styles.topbarRight}>
-            <button className={styles.signOutBtn}>Sign Out</button>
+            <button
+              className={styles.signOutBtn}
+              onClick={() => signOut({ callbackUrl: '/' })}
+            >
+              Sign Out
+            </button>
           </div>
         </div>
 

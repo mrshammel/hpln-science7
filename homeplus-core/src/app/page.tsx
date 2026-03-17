@@ -2,10 +2,25 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { useSession, signIn, signOut } from "next-auth/react";
 import styles from "./page.module.css";
 
 export default function HomePage() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const { data: session, status } = useSession();
+
+  // Auth state helpers
+  const isLoading = status === "loading";
+  const isSignedIn = status === "authenticated" && !!session?.user;
+  const userName = session?.user?.name || "";
+  const userImage = session?.user?.image || null;
+  const userRole = (session?.user as any)?.role as string | undefined;
+  const isTeacher = userRole === "TEACHER" || userRole === "ADMIN";
+
+  // Personalized hero copy for signed-in users
+  const heroGreeting = isTeacher
+    ? "Welcome back — review progress and activity"
+    : "Welcome back — continue your learning";
 
   return (
     <div className={styles.page}>
@@ -29,18 +44,54 @@ export default function HomePage() {
             <a href="#how-it-works" className={styles.navLink}>How It Works</a>
             <a href="https://www.myprps.com/home-plus-forms-and-registration" className={styles.navLink} target="_blank" rel="noopener noreferrer">Register</a>
             <div className={styles.navDivider} />
-            <a
-              href="/api/auth/signin/google?callbackUrl=/dashboard"
-              className={styles.navSignIn}
-            >
-              Student Sign In
-            </a>
-            <a
-              href="/api/auth/signin/google?callbackUrl=/teacher"
-              className={styles.navSignInTeacher}
-            >
-              Teacher Sign In
-            </a>
+
+            {/* Auth-aware CTAs */}
+            {!isLoading && isSignedIn ? (
+              <>
+                <a href="/dashboard" className={styles.navSignIn}>
+                  Go to Dashboard →
+                </a>
+                {userImage ? (
+                  <button
+                    onClick={() => signOut({ callbackUrl: "/" })}
+                    className={styles.avatarBtn}
+                    aria-label={`Sign out ${userName}`}
+                    title={`Signed in as ${userName}\nClick to sign out`}
+                  >
+                    <Image
+                      src={userImage}
+                      alt={userName}
+                      width={32}
+                      height={32}
+                      className={styles.avatarImg}
+                    />
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => signOut({ callbackUrl: "/" })}
+                    className={styles.navSignOutSmall}
+                    title="Sign out"
+                  >
+                    Sign Out
+                  </button>
+                )}
+              </>
+            ) : !isLoading ? (
+              <>
+                <button
+                  onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
+                  className={styles.navSignIn}
+                >
+                  Student Sign In
+                </button>
+                <button
+                  onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
+                  className={styles.navSignInTeacher}
+                >
+                  Teacher Sign In
+                </button>
+              </>
+            ) : null}
           </nav>
 
           {/* Mobile hamburger */}
@@ -62,18 +113,39 @@ export default function HomePage() {
             <a href="#how-it-works" className={styles.mobileNavLink} onClick={() => setMobileNavOpen(false)}>How It Works</a>
             <a href="https://www.myprps.com/home-plus-forms-and-registration" className={styles.mobileNavLink} target="_blank" rel="noopener noreferrer" onClick={() => setMobileNavOpen(false)}>Register ↗</a>
             <div className={styles.mobileNavDivider} />
-            <a
-              href="/api/auth/signin/google?callbackUrl=/dashboard"
-              className={`${styles.ctaBtn} ${styles.ctaStudent} ${styles.mobileNavBtn}`}
-            >
-              🎒 Student Sign In
-            </a>
-            <a
-              href="/api/auth/signin/google?callbackUrl=/teacher"
-              className={`${styles.ctaBtn} ${styles.ctaTeacher} ${styles.mobileNavBtn}`}
-            >
-              👩‍🏫 Teacher Sign In
-            </a>
+
+            {/* Mobile auth-aware CTAs */}
+            {isLoading ? null : isSignedIn ? (
+              <>
+                <a
+                  href="/dashboard"
+                  className={`${styles.ctaBtn} ${styles.ctaStudent} ${styles.mobileNavBtn}`}
+                >
+                  📊 Go to Dashboard
+                </a>
+                <button
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                  className={`${styles.ctaBtn} ${styles.ctaTeacher} ${styles.mobileNavBtn}`}
+                >
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => { signIn('google', { callbackUrl: '/dashboard' }); setMobileNavOpen(false); }}
+                  className={`${styles.ctaBtn} ${styles.ctaStudent} ${styles.mobileNavBtn}`}
+                >
+                  🎒 Student Sign In
+                </button>
+                <button
+                  onClick={() => { signIn('google', { callbackUrl: '/dashboard' }); setMobileNavOpen(false); }}
+                  className={`${styles.ctaBtn} ${styles.ctaTeacher} ${styles.mobileNavBtn}`}
+                >
+                  👩‍🏫 Teacher Sign In
+                </button>
+              </>
+            )}
           </div>
         )}
       </header>
@@ -106,34 +178,58 @@ export default function HomePage() {
               Alberta Curriculum · Grades 1–9
             </div>
 
-            <h1 className={`${styles.heroTagline} animate-in delay-1`}>
-              Structured learning at home,{" "}
-              <span className={styles.heroTaglineAccent}>
-                supported every step of the way
-              </span>
-            </h1>
-
-            <p className={`${styles.heroDesc} animate-in delay-2`}>
-              Home Plus is a flexible, asynchronous learning program that
-              supports students in building strong academic skills through
-              guided independent learning at home — offering families greater
-              choice with clear direction and teacher support.
-            </p>
-
-            <div className={`${styles.heroCta} animate-in delay-2`}>
-              <a
-                href="/api/auth/signin/google?callbackUrl=/dashboard"
-                className={`${styles.ctaBtn} ${styles.ctaStudent}`}
-              >
-                🎒 Student Sign In
-              </a>
-              <a
-                href="/api/auth/signin/google?callbackUrl=/teacher"
-                className={`${styles.ctaBtn} ${styles.ctaTeacher}`}
-              >
-                👩‍🏫 Teacher Sign In
-              </a>
-            </div>
+            {/* Auth-aware hero heading */}
+            {isSignedIn ? (
+              <>
+                <h1 className={`${styles.heroTagline} animate-in delay-1`}>
+                  {heroGreeting},{" "}
+                  <span className={styles.heroTaglineAccent}>
+                    {userName.split(" ")[0] || ""}
+                  </span>
+                </h1>
+                <p className={`${styles.heroDesc} animate-in delay-2`}>
+                  Pick up where you left off — your learning journey continues
+                  with clear direction and teacher support.
+                </p>
+                <div className={`${styles.heroCta} animate-in delay-2`}>
+                  <a
+                    href="/dashboard"
+                    className={`${styles.ctaBtn} ${styles.ctaStudent}`}
+                  >
+                    📊 Go to Dashboard
+                  </a>
+                </div>
+              </>
+            ) : (
+              <>
+                <h1 className={`${styles.heroTagline} animate-in delay-1`}>
+                  Structured learning at home,{" "}
+                  <span className={styles.heroTaglineAccent}>
+                    supported every step of the way
+                  </span>
+                </h1>
+                <p className={`${styles.heroDesc} animate-in delay-2`}>
+                  Home Plus is a flexible, asynchronous learning program that
+                  supports students in building strong academic skills through
+                  guided independent learning at home — offering families greater
+                  choice with clear direction and teacher support.
+                </p>
+                <div className={`${styles.heroCta} animate-in delay-2`}>
+                  <button
+                    onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
+                    className={`${styles.ctaBtn} ${styles.ctaStudent}`}
+                  >
+                    🎒 Student Sign In
+                  </button>
+                  <button
+                    onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
+                    className={`${styles.ctaBtn} ${styles.ctaTeacher}`}
+                  >
+                    👩‍🏫 Teacher Sign In
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -267,18 +363,29 @@ export default function HomePage() {
             >
               📋 Register with PRPS
             </a>
-            <a
-              href="/api/auth/signin/google?callbackUrl=/dashboard"
-              className={`${styles.ctaBtn} ${styles.ctaStudent}`}
-            >
-              🎒 Student Sign In
-            </a>
-            <a
-              href="/api/auth/signin/google?callbackUrl=/teacher"
-              className={`${styles.ctaBtn} ${styles.ctaTeacher}`}
-            >
-              👩‍🏫 Teacher Sign In
-            </a>
+            {isSignedIn ? (
+              <a
+                href="/dashboard"
+                className={`${styles.ctaBtn} ${styles.ctaStudent}`}
+              >
+                📊 Go to Dashboard
+              </a>
+            ) : (
+              <>
+                <button
+                  onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
+                  className={`${styles.ctaBtn} ${styles.ctaStudent}`}
+                >
+                  🎒 Student Sign In
+                </button>
+                <button
+                  onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
+                  className={`${styles.ctaBtn} ${styles.ctaTeacher}`}
+                >
+                  👩‍🏫 Teacher Sign In
+                </button>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -330,8 +437,14 @@ export default function HomePage() {
           <div className={styles.footerLinks}>
             <div className={styles.footerCol}>
               <h4>Platform</h4>
-              <a href="/api/auth/signin/google?callbackUrl=/dashboard">Student Sign In</a>
-              <a href="/api/auth/signin/google?callbackUrl=/teacher">Teacher Sign In</a>
+              {isSignedIn ? (
+                <a href="/dashboard">Go to Dashboard</a>
+              ) : (
+                <>
+                  <button onClick={() => signIn('google', { callbackUrl: '/dashboard' })} className={styles.footerSignInBtn}>Student Sign In</button>
+                  <button onClick={() => signIn('google', { callbackUrl: '/dashboard' })} className={styles.footerSignInBtn}>Teacher Sign In</button>
+                </>
+              )}
               <a href="https://www.myprps.com/home-plus-forms-and-registration" target="_blank" rel="noopener noreferrer">Register</a>
             </div>
             <div className={styles.footerCol}>

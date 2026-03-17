@@ -2,16 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { isEligibleForAiFeedback } from '@/lib/ai-feedback';
 
 /**
  * POST /api/submissions
- * Submit an activity response and score.
+ * Submit an activity response. For written work (SHORT_ANSWER, PARAGRAPH_RESPONSE,
+ * ESSAY, REFLECTION), triggers asynchronous AI feedback generation.
  *
  * Body: {
  *   activityId: string,
- *   score: number,
- *   maxScore: number,
- *   response?: any   // optional JSON (answers, text, etc.)
+ *   score?: number,
+ *   maxScore?: number,
+ *   response?: any,
+ *   writtenResponse?: string,
+ *   submissionType?: string,
+ *   fileName?: string,
+ *   fileUrl?: string,
  * }
  */
 export async function POST(req: NextRequest) {
@@ -30,11 +36,20 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { activityId, score, maxScore, response } = body;
+    const {
+      activityId,
+      score,
+      maxScore,
+      response,
+      writtenResponse,
+      submissionType,
+      fileName,
+      fileUrl,
+    } = body;
 
-    if (!activityId || score === undefined || maxScore === undefined) {
+    if (!activityId) {
       return NextResponse.json(
-        { error: 'Missing required fields: activityId, score, maxScore' },
+        { error: 'Missing required field: activityId' },
         { status: 400 }
       );
     }
@@ -50,14 +65,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Activity not found' }, { status: 404 });
     }
 
+    // Determine submission type
+    const resolvedType = submissionType || 'QUIZ_RESPONSE';
+
+    // Determine if this is eligible for AI feedback
+    const hasWrittenWork = !!writtenResponse && writtenResponse.trim().length > 0;
+    const eligibleForAi = hasWrittenWork && isEligibleForAiFeedback(resolvedType);
+
     // Create submission
     const submission = await prisma.submission.create({
       data: {
         studentId: user.id,
         activityId,
-        score: parseFloat(score),
-        maxScore: parseFloat(maxScore),
+        score: score !== undefined ? parseFloat(score) : null,
+        maxScore: maxScore !== undefined ? parseFloat(maxScore) : null,
         response: response || null,
+        writtenResponse: writtenResponse || null,
+        submissionType: resolvedType as 'QUIZ_RESPONSE',
+        fileName: fileName || null,
+        fileUrl: fileUrl || null,
+        // Set AI status to PENDING for eligible types
+        aiStatus: eligibleForAi ? 'PENDING' : 'NONE',
       },
     });
 
@@ -86,9 +114,27 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Trigger async AI feedback generation (fire-and-forget)
+    if (eligibleForAi) {
+      const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3001';
+      fetch(`${baseUrl}/api/ai/generate-feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ submissionId: submission.id }),
+      }).catch((err) => {
+        console.error('[Submissions] AI trigger failed:', err);
+        // Non-blocking — the status will stay PENDING and eventually be
+        // marked FAILED by a future check or manual re-trigger.
+      });
+    }
+
     return NextResponse.json({
-      submission,
+      submission: {
+        id: submission.id,
+        aiStatus: eligibleForAi ? 'PENDING' : 'NONE',
+      },
       message: 'Submission recorded successfully',
+      aiEligible: eligibleForAi,
     });
   } catch (error) {
     console.error('[API /submissions POST] Error:', error);

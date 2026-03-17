@@ -17,7 +17,10 @@ import {
 } from '@/lib/evidence-data';
 import { getInitials, getEngagementLabel, formatDate, formatShortDate } from '@/lib/helpers';
 import { getTeacherId } from '@/lib/teacher-auth';
-import { resolveContext, buildContextQuery } from '@/lib/teacher-context';
+import { resolveContext, buildContextQuery} from '@/lib/teacher-context';
+import { prisma } from '@/lib/db';
+import { isDemoMode } from '@/lib/teacher-auth';
+import StudentActions from './StudentActions';
 
 // ---------- Types ----------
 
@@ -68,6 +71,34 @@ export default async function StudentDetailPage({ params, searchParams }: PagePr
     getStudentSubmissions(id, teacherId, ctx),
     getStudentNotes(id, teacherId),
   ]);
+
+  // Fetch unit overrides for this student
+  let unitOverrideRecords: { unitId: string; overrideState: string; note: string | null }[] = [];
+  if (!id.startsWith('demo-') || !isDemoMode()) {
+    try {
+      unitOverrideRecords = await (prisma as any).studentUnitAccess.findMany({
+        where: { studentId: id },
+        select: { unitId: true, overrideState: true, note: true },
+      });
+    } catch {
+      // Model may not exist yet after migration
+    }
+  }
+  const overrideMap = new Map(unitOverrideRecords.map((o) => [o.unitId, { state: o.overrideState, note: o.note }]));
+
+  // Build unitOverrides array for StudentActions
+  const unitOverridesForActions = unitProgress.map((u) => {
+    const ov = overrideMap.get(u.unitId);
+    return {
+      unitId: u.unitId,
+      unitTitle: u.unitTitle,
+      unitIcon: u.unitIcon,
+      unitOrder: 0,
+      currentOverride: ov?.state && ov.state !== 'NONE' ? ov.state : null,
+      currentNote: ov?.note || null,
+      completionPct: u.completionPct,
+    };
+  });
 
   // ---------- Derived Values ----------
 
@@ -134,8 +165,9 @@ export default async function StudentDetailPage({ params, searchParams }: PagePr
           </div>
         </div>
         <div className={styles.studentHeaderActions}>
-          <button className={styles.smallBtn}>Add Note</button>
-          <button className={styles.smallBtn}>Review Work</button>
+          <Link href={`/teacher/submissions${q}`} className={styles.smallBtn} style={{ textDecoration: 'none' }}>
+            Review Work
+          </Link>
         </div>
       </div>
 
@@ -217,29 +249,35 @@ export default async function StudentDetailPage({ params, searchParams }: PagePr
               <EmptySection icon="📝" text="No written responses recorded yet." />
             ) : (
               writtenResponses.map((r) => (
-                <div key={r.id} className={styles.evidenceCard}>
-                  <div className={styles.evidenceHeader}>
-                    <div>
-                      <div className={styles.evidenceTitle}>{r.title}</div>
-                      <div className={styles.evidenceMeta}>
-                        <span className={styles.evidenceTypeBadge}>{getSubmissionTypeLabel(r.submissionType)}</span>
-                        {r.unitLesson} · {formatShortDate(r.submittedAt)}
+                <Link
+                  key={r.id}
+                  href={`/teacher/submissions/${r.id}${q}`}
+                  className={styles.evidenceCardClickable}
+                >
+                  <div className={styles.evidenceCard}>
+                    <div className={styles.evidenceHeader}>
+                      <div>
+                        <div className={styles.evidenceTitle}>{r.title}</div>
+                        <div className={styles.evidenceMeta}>
+                          <span className={styles.evidenceTypeBadge}>{getSubmissionTypeLabel(r.submissionType)}</span>
+                          {r.unitLesson} · {formatShortDate(r.submittedAt)}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        {r.score !== null && r.maxScore !== null && (
+                          <span className={styles.evidenceScore}>{r.score}/{r.maxScore}</span>
+                        )}
+                        <ReviewBadge reviewed={r.reviewed} />
                       </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      {r.score !== null && r.maxScore !== null && (
-                        <span className={styles.evidenceScore}>{r.score}/{r.maxScore}</span>
-                      )}
-                      <ReviewBadge reviewed={r.reviewed} />
-                    </div>
+                    <div className={styles.evidencePreview}>{r.preview}</div>
+                    {r.teacherFeedback && (
+                      <div className={styles.teacherFeedback}>
+                        <strong>Teacher:</strong> {r.teacherFeedback}
+                      </div>
+                    )}
                   </div>
-                  <div className={styles.evidencePreview}>{r.preview}</div>
-                  {r.teacherFeedback && (
-                    <div className={styles.teacherFeedback}>
-                      <strong>Teacher:</strong> {r.teacherFeedback}
-                    </div>
-                  )}
-                </div>
+                </Link>
               ))
             )}
           </div>
@@ -251,19 +289,25 @@ export default async function StudentDetailPage({ params, searchParams }: PagePr
               <EmptySection icon="📎" text="No artifacts uploaded yet." />
             ) : (
               artifacts.map((a) => (
-                <div key={a.id} className={styles.artifactItem}>
-                  <div className={styles.artifactIcon}>
-                    {a.submissionType === 'IMAGE_ARTIFACT' ? '🖼️'
-                      : a.submissionType === 'UPLOADED_WORKSHEET' ? '📄' : '📁'}
-                  </div>
-                  <div className={styles.artifactInfo}>
-                    <div className={styles.artifactName}>{a.title}</div>
-                    <div className={styles.artifactMeta}>
-                      {getSubmissionTypeLabel(a.submissionType)} · {a.fileName} · {a.unitLesson} · {formatShortDate(a.submittedAt)}
+                <Link
+                  key={a.id}
+                  href={`/teacher/submissions/${a.id}${q}`}
+                  className={styles.evidenceCardClickable}
+                >
+                  <div className={styles.artifactItem}>
+                    <div className={styles.artifactIcon}>
+                      {a.submissionType === 'IMAGE_ARTIFACT' ? '🖼️'
+                        : a.submissionType === 'UPLOADED_WORKSHEET' ? '📄' : '📁'}
                     </div>
+                    <div className={styles.artifactInfo}>
+                      <div className={styles.artifactName}>{a.title}</div>
+                      <div className={styles.artifactMeta}>
+                        {getSubmissionTypeLabel(a.submissionType)} · {a.fileName} · {a.unitLesson} · {formatShortDate(a.submittedAt)}
+                      </div>
+                    </div>
+                    <ReviewBadge reviewed={a.reviewed} />
                   </div>
-                  <ReviewBadge reviewed={a.reviewed} />
-                </div>
+                </Link>
               ))
             )}
           </div>
@@ -273,10 +317,27 @@ export default async function StudentDetailPage({ params, searchParams }: PagePr
             <h3 className={styles.cardTitle}>📚 Progress by Unit</h3>
             {unitProgress.map((u) => {
               const color = u.completionPct >= 70 ? '#059669' : u.completionPct >= 40 ? '#d97706' : '#dc2626';
+              const ov = overrideMap.get(u.unitId);
+              const hasOverride = ov && ov.state !== 'NONE';
               return (
                 <div key={u.unitId} className={styles.unitProgressItem}>
                   <div className={styles.unitProgressHeader}>
-                    <span className={styles.unitProgressTitle}>{u.unitIcon} {u.unitTitle}</span>
+                    <span className={styles.unitProgressTitle}>
+                      {u.unitIcon} {u.unitTitle}
+                      {hasOverride && (
+                        <span
+                          className={styles.pacingBadge}
+                          style={{
+                            marginLeft: 8,
+                            fontSize: '0.7rem',
+                            background: ov.state === 'COMPLETED' || ov.state === 'EXEMPT' ? '#d1fae5' : '#dbeafe',
+                            color: ov.state === 'COMPLETED' || ov.state === 'EXEMPT' ? '#059669' : '#2563eb',
+                          }}
+                        >
+                          {ov.state === 'UNLOCKED' ? '🔓 Unlocked' : ov.state === 'COMPLETED' ? '✅ Completed (override)' : ov.state === 'EXEMPT' ? '⏭️ Exempt' : ov.state}
+                        </span>
+                      )}
+                    </span>
                     <span className={styles.unitProgressPct}>
                       {u.completedLessons}/{u.totalLessons} lessons · {u.completionPct}%
                       {u.avgScore !== null && <span style={{ color: '#64748b', marginLeft: 8 }}>({u.avgScore}% avg)</span>}
@@ -285,6 +346,11 @@ export default async function StudentDetailPage({ params, searchParams }: PagePr
                   <div className={styles.progressBarWrap}>
                     <div className={styles.progressBarFill} style={{ width: `${Math.min(100, u.completionPct)}%`, background: color }} />
                   </div>
+                  {hasOverride && ov.note && (
+                    <div style={{ fontSize: '0.75rem', color: '#94a3b8', fontStyle: 'italic', marginTop: 2 }}>
+                      Note: {ov.note}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -306,7 +372,7 @@ export default async function StudentDetailPage({ params, searchParams }: PagePr
           )}
 
           {/* ===== 6. OUTCOMES MASTERY ===== */}
-          <div className={styles.dashCard} style={{ marginBottom: 24 }}>
+          <div className={styles.dashCard} style={{ marginBottom: 24 }} id="outcomes-mastery">
             <h3 className={styles.cardTitle}>🎯 Outcomes Mastery</h3>
             <div style={{ overflowX: 'auto' }}>
               <table className={styles.dataTable}>
@@ -365,18 +431,24 @@ export default async function StudentDetailPage({ params, searchParams }: PagePr
               submissions.map((sub) => {
                 const typeLabel = sub.activityType.charAt(0) + sub.activityType.slice(1).toLowerCase();
                 return (
-                  <div key={sub.id} className={styles.submissionItem}>
-                    <div className={styles.submissionInfo}>
-                      <div className={styles.submissionStudent}>{sub.activityTitle}</div>
-                      <div className={styles.submissionActivity}>
-                        {typeLabel} · {formatShortDate(sub.submittedAt)}
+                  <Link
+                    key={sub.id}
+                    href={`/teacher/submissions/${sub.id}${q}`}
+                    className={styles.evidenceCardClickable}
+                  >
+                    <div className={styles.submissionItem}>
+                      <div className={styles.submissionInfo}>
+                        <div className={styles.submissionStudent}>{sub.activityTitle}</div>
+                        <div className={styles.submissionActivity}>
+                          {typeLabel} · {formatShortDate(sub.submittedAt)}
+                        </div>
                       </div>
+                      {sub.score !== null && sub.maxScore !== null && (
+                        <div className={styles.submissionScore}>{sub.score}/{sub.maxScore}</div>
+                      )}
+                      <ReviewBadge reviewed={sub.reviewed} />
                     </div>
-                    {sub.score !== null && sub.maxScore !== null && (
-                      <div className={styles.submissionScore}>{sub.score}/{sub.maxScore}</div>
-                    )}
-                    <ReviewBadge reviewed={sub.reviewed} />
-                  </div>
+                  </Link>
                 );
               })
             )}
@@ -384,10 +456,7 @@ export default async function StudentDetailPage({ params, searchParams }: PagePr
 
           {/* ===== 7. TEACHER NOTES ===== */}
           <div className={styles.dashCard} style={{ marginBottom: 24 }}>
-            <h3 className={styles.cardTitle}>
-              📋 Teacher Notes
-              <button className={styles.smallBtn} style={{ marginLeft: 'auto' }}>+ Add</button>
-            </h3>
+            <h3 className={styles.cardTitle}>📋 Teacher Notes</h3>
             {notes.length === 0 ? (
               <EmptySection icon="📋" text="No notes for this student yet." />
             ) : (
@@ -404,19 +473,15 @@ export default async function StudentDetailPage({ params, searchParams }: PagePr
             )}
           </div>
 
-          {/* Quick Actions */}
+          {/* Quick Actions — Real workflows */}
           <div className={styles.dashCard}>
             <h3 className={styles.cardTitle}>⚡ Quick Actions</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <button className={styles.smallBtn} style={{ padding: '10px 16px', fontSize: '0.88rem' }}>📋 Add Note</button>
-              <button className={styles.smallBtn} style={{ padding: '10px 16px', fontSize: '0.88rem' }}>📝 Review Pending Work</button>
-              <button className={styles.smallBtn} style={{ padding: '10px 16px', fontSize: '0.88rem' }}>🎯 Assess Outcomes</button>
-              <Link href="/teacher/students" className={styles.smallBtn} style={{
-                padding: '10px 16px', fontSize: '0.88rem', textDecoration: 'none', textAlign: 'center',
-              }}>
-                ← Return to Students
-              </Link>
-            </div>
+            <StudentActions
+              studentId={student.id}
+              studentName={student.name}
+              contextQuery={q}
+              unitOverrides={unitOverridesForActions}
+            />
           </div>
         </div>
       </div>

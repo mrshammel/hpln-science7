@@ -1,7 +1,8 @@
+import Link from 'next/link';
 import styles from '../teacher.module.css';
 import { getRecentSubmissions } from '@/lib/teacher-data';
 import { getTeacherId } from '@/lib/teacher-auth';
-import { resolveContext } from '@/lib/teacher-context';
+import { resolveContext, buildContextQuery } from '@/lib/teacher-context';
 
 interface PageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -11,6 +12,7 @@ export default async function SubmissionsPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const teacherId = await getTeacherId();
   const ctx = await resolveContext(params, teacherId);
+  const q = buildContextQuery(ctx);
 
   const submissions = await getRecentSubmissions(teacherId, ctx);
   const pending = submissions.filter((s) => !s.reviewed);
@@ -35,29 +37,35 @@ export default async function SubmissionsPage({ searchParams }: PageProps) {
           </div>
         ) : (
           pending.map((sub) => (
-            <div key={sub.id} className={styles.submissionItem}>
-              <div className={styles.attentionAvatar}>
-                {sub.studentName.split(' ').map((n) => n[0]).join('')}
-              </div>
-              <div className={styles.submissionInfo}>
-                <div className={styles.submissionStudent}>{sub.studentName}</div>
-                <div className={styles.submissionActivity}>
-                  {sub.activityTitle} · {sub.activityType.charAt(0) + sub.activityType.slice(1).toLowerCase()}
+            <Link
+              key={sub.id}
+              href={`/teacher/submissions/${sub.id}${q}`}
+              className={styles.evidenceCardClickable}
+            >
+              <div className={styles.submissionItem}>
+                <div className={styles.attentionAvatar}>
+                  {sub.studentName.split(' ').map((n) => n[0]).join('')}
                 </div>
+                <div className={styles.submissionInfo}>
+                  <div className={styles.submissionStudent}>{sub.studentName}</div>
+                  <div className={styles.submissionActivity}>
+                    {sub.activityTitle} · {sub.activityType.charAt(0) + sub.activityType.slice(1).toLowerCase()}
+                  </div>
+                </div>
+                <span className={`${styles.reviewBadge} ${styles.reviewPending}`}>
+                  Needs Review
+                </span>
+                <div className={styles.submissionDate}>
+                  {new Date(sub.submittedAt).toLocaleDateString('en-CA', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                  })}
+                </div>
+                <span className={styles.smallBtn}>Review →</span>
               </div>
-              <span className={`${styles.reviewBadge} ${styles.reviewPending}`}>
-                Needs Review
-              </span>
-              <div className={styles.submissionDate}>
-                {new Date(sub.submittedAt).toLocaleDateString('en-CA', {
-                  month: 'short',
-                  day: 'numeric',
-                  hour: 'numeric',
-                  minute: '2-digit',
-                })}
-              </div>
-              <button className={styles.smallBtn}>Review</button>
-            </div>
+            </Link>
           ))
         )}
       </div>
@@ -74,31 +82,37 @@ export default async function SubmissionsPage({ searchParams }: PageProps) {
           </div>
         ) : (
           reviewed.map((sub) => (
-            <div key={sub.id} className={styles.submissionItem}>
-              <div className={styles.attentionAvatar}>
-                {sub.studentName.split(' ').map((n) => n[0]).join('')}
-              </div>
-              <div className={styles.submissionInfo}>
-                <div className={styles.submissionStudent}>{sub.studentName}</div>
-                <div className={styles.submissionActivity}>
-                  {sub.activityTitle} · {sub.activityType.charAt(0) + sub.activityType.slice(1).toLowerCase()}
+            <Link
+              key={sub.id}
+              href={`/teacher/submissions/${sub.id}${q}`}
+              className={styles.evidenceCardClickable}
+            >
+              <div className={styles.submissionItem}>
+                <div className={styles.attentionAvatar}>
+                  {sub.studentName.split(' ').map((n) => n[0]).join('')}
+                </div>
+                <div className={styles.submissionInfo}>
+                  <div className={styles.submissionStudent}>{sub.studentName}</div>
+                  <div className={styles.submissionActivity}>
+                    {sub.activityTitle} · {sub.activityType.charAt(0) + sub.activityType.slice(1).toLowerCase()}
+                  </div>
+                </div>
+                {sub.score !== null && sub.maxScore !== null && (
+                  <div className={styles.submissionScore}>
+                    {sub.score}/{sub.maxScore}
+                  </div>
+                )}
+                <span className={`${styles.reviewBadge} ${styles.reviewDone}`}>
+                  Reviewed
+                </span>
+                <div className={styles.submissionDate}>
+                  {new Date(sub.submittedAt).toLocaleDateString('en-CA', {
+                    month: 'short',
+                    day: 'numeric',
+                  })}
                 </div>
               </div>
-              {sub.score !== null && sub.maxScore !== null && (
-                <div className={styles.submissionScore}>
-                  {sub.score}/{sub.maxScore}
-                </div>
-              )}
-              <span className={`${styles.reviewBadge} ${styles.reviewDone}`}>
-                Reviewed
-              </span>
-              <div className={styles.submissionDate}>
-                {new Date(sub.submittedAt).toLocaleDateString('en-CA', {
-                  month: 'short',
-                  day: 'numeric',
-                })}
-              </div>
-            </div>
+            </Link>
           ))
         )}
       </div>

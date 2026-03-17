@@ -478,6 +478,52 @@ export async function getLastAcademicEvent(
   }
 }
 
+// ---------- Outcomes Lookup ----------
+
+export interface OutcomeOption {
+  id: string;
+  code: string;
+  description: string;
+  unitContext: string | null;
+}
+
+/**
+ * Get all learning outcomes for a grade+subject context.
+ * Used by mastery assessment controls to populate outcome selectors.
+ */
+export async function getOutcomesForContext(ctx: GradeSubjectContext): Promise<OutcomeOption[]> {
+  if (isDemoMode()) {
+    return getDemoOutcomeOptions();
+  }
+
+  try {
+    const outcomes = await prisma.learningOutcome.findMany({
+      where: {
+        gradeLevel: ctx.grade,
+        subjectArea: ctx.subjectName,
+      },
+      orderBy: { code: 'asc' },
+      select: { id: true, code: true, description: true, unitContext: true },
+    });
+    return outcomes;
+  } catch (err) {
+    console.error('[evidence-data] getOutcomesForContext failed:', err);
+    return [];
+  }
+}
+
+function getDemoOutcomeOptions(): OutcomeOption[] {
+  return [
+    { id: 'o1', code: 'SCI.7.A.1', description: 'Investigate and describe relationships between organisms in an ecosystem', unitContext: 'Unit A — Ecosystems' },
+    { id: 'o2', code: 'SCI.7.A.2', description: 'Identify examples of predator-prey and symbiotic relationships', unitContext: 'Unit A — Ecosystems' },
+    { id: 'o3', code: 'SCI.7.B.1', description: 'Describe the conditions and processes needed for plant growth', unitContext: 'Unit B — Plants' },
+    { id: 'o4', code: 'SCI.7.B.2', description: 'Examine plant adaptations to different environments', unitContext: 'Unit B — Plants' },
+    { id: 'o5', code: 'SCI.7.C.1', description: 'Describe heat as a form of energy and identify methods of heat transfer', unitContext: 'Unit C — Heat' },
+    { id: 'o6', code: 'SCI.7.D.1', description: 'Describe structures that are built to withstand loads and forces', unitContext: 'Unit D — Structures' },
+    { id: 'o7', code: 'SCI.7.E.1', description: 'Investigate the structure of the Earth and its landforms', unitContext: 'Unit E — Earth' },
+  ];
+}
+
 // ---------- Demo Data (isolated, only used when isDemoMode() = true) ----------
 
 const demoWrittenResponses: Record<string, WrittenResponse[]> = {

@@ -1,8 +1,13 @@
 // ============================================
 // Teacher Auth Helper — Home Plus LMS
 // ============================================
-// Server-side helpers for teacher identity and demo mode.
+// Server-side helpers for teacher identity.
 // Used by all teacher-facing pages and data layers.
+// Uses real NextAuth sessions — no hardcoded IDs.
+
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { redirect } from 'next/navigation';
 
 // ---------- Demo Mode ----------
 
@@ -16,23 +21,50 @@ export function isDemoMode(): boolean {
 
 // ---------- Teacher Identity ----------
 
-// Demo teacher ID used when no auth session is available.
-const DEMO_TEACHER_ID = 'demo-teacher';
-
 /**
  * Get the current teacher's ID from the server-side session.
- * Falls back to a demo teacher ID when no session is available.
- *
- * TODO: Replace with real NextAuth getServerSession() when auth is wired up.
- * The real implementation should:
- *   1. Call getServerSession(authOptions)
- *   2. Verify the user has role TEACHER
- *   3. Return the teacher's user ID
- *   4. Throw or redirect if not authenticated
+ * Verifies the user has TEACHER or ADMIN role.
+ * Redirects non-teachers to /dashboard.
  */
 export async function getTeacherId(): Promise<string> {
-  if (isDemoMode()) return DEMO_TEACHER_ID;
+  const session = await getServerSession(authOptions);
 
-  // Placeholder: in production, replace with session-based teacher identity.
-  return DEMO_TEACHER_ID;
+  if (!session?.user) {
+    // Not authenticated at all — redirect to homepage
+    redirect('/');
+  }
+
+  const role = (session.user as any).role as string | undefined;
+  const userId = (session.user as any).id as string | undefined;
+
+  if (!userId) {
+    redirect('/');
+  }
+
+  // Allow TEACHER and ADMIN roles
+  if (role === 'TEACHER' || role === 'ADMIN') {
+    return userId;
+  }
+
+  // Authenticated but not a teacher — send to verification page
+  redirect('/teacher-verify');
+}
+
+/**
+ * Get the current teacher's ID without redirecting.
+ * Returns null if not authenticated or not a teacher.
+ * Useful for API routes where we want to return 401 instead of redirecting.
+ */
+export async function getTeacherIdOrNull(): Promise<string | null> {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user) return null;
+
+  const role = (session.user as any).role as string | undefined;
+  const userId = (session.user as any).id as string | undefined;
+
+  if (!userId) return null;
+  if (role !== 'TEACHER' && role !== 'ADMIN') return null;
+
+  return userId;
 }

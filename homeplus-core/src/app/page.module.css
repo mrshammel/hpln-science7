@@ -93,6 +93,9 @@
   border: 1.5px solid var(--hp-primary);
   border-radius: 9px;
   transition: all 0.2s ease;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
 }
 
 .navSignIn:hover {
@@ -110,6 +113,8 @@
   border: 1.5px solid var(--hp-accent);
   border-radius: 9px;
   transition: all 0.2s ease;
+  cursor: pointer;
+  font-family: inherit;
 }
 
 .navSignInTeacher:hover {
@@ -810,6 +815,22 @@
 
 .footerCol a:hover { color: #ffffff; }
 
+.footerSignInBtn {
+  display: block;
+  font-size: 0.86rem;
+  color: #94a3b8;
+  margin-bottom: 8px;
+  transition: color 0.2s;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+
+.footerSignInBtn:hover { color: #ffffff; }
+
 .footerBottom {
   grid-column: 1 / -1;
   border-top: 1px solid #1e293b;
@@ -818,6 +839,61 @@
   text-align: center;
   font-size: 0.78rem;
   color: #475569;
+}
+
+/* ===========================
+   AUTH-AWARE HEADER ELEMENTS
+   =========================== */
+.avatarBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid #e2e8f0;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.avatarBtn:hover {
+  border-color: var(--hp-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.avatarBtn:focus-visible {
+  outline: 2px solid var(--hp-primary);
+  outline-offset: 2px;
+}
+
+.avatarImg {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.navSignOutSmall {
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--hp-text2);
+  background: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.navSignOutSmall:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #dc2626;
 }
 
 /* ===========================

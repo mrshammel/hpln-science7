@@ -664,3 +664,242 @@ function getDemoSubmissions(): RecentSubmission[] {
     { id: 'd5', studentId: 'demo-2', studentName: 'Emma Rodriguez', studentAvatar: null, activityTitle: 'Producers & Consumers Quiz', activityType: 'QUIZ', score: 8, maxScore: 10, reviewed: true, submittedAt: new Date('2026-03-11T13:20:00') },
   ];
 }
+
+// ---------- Submission Detail (for review page) ----------
+
+export interface SubmissionDetail {
+  id: string;
+  studentId: string;
+  studentName: string;
+  studentAvatar: string | null;
+  studentGradeLevel: number | null;
+  activityTitle: string;
+  activityType: string;
+  submissionType: string;
+  unitTitle: string;
+  lessonTitle: string;
+  writtenResponse: string | null;
+  fileUrl: string | null;
+  fileName: string | null;
+  score: number | null;
+  maxScore: number | null;
+  reviewed: boolean;
+  reviewedAt: Date | null;
+  reviewedBy: string | null;
+  teacherFeedback: string | null;
+  submittedAt: Date;
+  // AI feedback fields
+  aiStatus: string;
+  aiFeedback: string | null;
+  aiStrengths: string | null;
+  aiAreasForImprovement: string | null;
+  aiNextSteps: string | null;
+  aiProvisionalScore: number | null;
+  aiPerformanceLevel: string | null;
+  aiGeneratedAt: Date | null;
+  finalizedByTeacher: boolean;
+}
+
+/**
+ * Get a single submission by ID with full detail for the review page.
+ * Verifies the submission belongs to a student assigned to this teacher.
+ */
+export async function getSubmissionById(
+  submissionId: string,
+  teacherId: string,
+  ctx: GradeSubjectContext,
+): Promise<SubmissionDetail | null> {
+  // Demo mode: check demo submissions
+  if (submissionId.startsWith('d') && isDemoMode()) {
+    return getDemoSubmissionDetail(submissionId);
+  }
+
+  try {
+    const { submissionWhere } = buildSubjectFilters(ctx);
+    const sub = await prisma.submission.findFirst({
+      where: {
+        id: submissionId,
+        student: { assignedTeacherId: teacherId, gradeLevel: ctx.grade },
+        ...submissionWhere,
+      },
+      include: {
+        student: { select: { name: true, avatar: true, gradeLevel: true } },
+        activity: {
+          include: {
+            lesson: { include: { unit: { select: { title: true } } } },
+          },
+        },
+      },
+    });
+
+    if (!sub) return null;
+
+    // Type assertion needed because Prisma client typings may lag behind schema changes
+    const subAny = sub as Record<string, unknown>;
+
+    return {
+      id: sub.id,
+      studentId: sub.studentId,
+      studentName: sub.student.name,
+      studentAvatar: sub.student.avatar,
+      studentGradeLevel: sub.student.gradeLevel,
+      activityTitle: sub.activity.title,
+      activityType: sub.activity.type,
+      submissionType: sub.submissionType || 'QUIZ_RESPONSE',
+      unitTitle: sub.activity.lesson.unit.title,
+      lessonTitle: sub.activity.lesson.title,
+      writtenResponse: sub.writtenResponse,
+      fileUrl: sub.fileUrl,
+      fileName: sub.fileName,
+      score: sub.score,
+      maxScore: sub.maxScore,
+      reviewed: sub.reviewed,
+      reviewedAt: (subAny.reviewedAt as Date) || null,
+      reviewedBy: (subAny.reviewedBy as string) || null,
+      teacherFeedback: sub.teacherFeedback,
+      submittedAt: sub.submittedAt,
+      // AI feedback fields
+      aiStatus: (subAny.aiStatus as string) || 'NONE',
+      aiFeedback: (subAny.aiFeedback as string) || null,
+      aiStrengths: (subAny.aiStrengths as string) || null,
+      aiAreasForImprovement: (subAny.aiAreasForImprovement as string) || null,
+      aiNextSteps: (subAny.aiNextSteps as string) || null,
+      aiProvisionalScore: (subAny.aiProvisionalScore as number) || null,
+      aiPerformanceLevel: (subAny.aiPerformanceLevel as string) || null,
+      aiGeneratedAt: (subAny.aiGeneratedAt as Date) || null,
+      finalizedByTeacher: (subAny.finalizedByTeacher as boolean) || false,
+    };
+  } catch (err) {
+    console.error('[teacher-data] getSubmissionById failed:', err);
+    return null;
+  }
+}
+
+/**
+ * Get unreviewed submissions for the review queue.
+ * Scoped to teacher's students + subject context.
+ */
+export async function getUnreviewedSubmissions(
+  teacherId: string,
+  ctx: GradeSubjectContext,
+): Promise<RecentSubmission[]> {
+  if (isDemoMode() && ctx.subjectId.startsWith('demo-')) {
+    return getDemoSubmissions().filter((s) => !s.reviewed);
+  }
+
+  try {
+    const { submissionWhere } = buildSubjectFilters(ctx);
+    const subs = await prisma.submission.findMany({
+      where: {
+        student: { assignedTeacherId: teacherId, gradeLevel: ctx.grade },
+        reviewed: false,
+        ...submissionWhere,
+      },
+      orderBy: { submittedAt: 'desc' },
+      take: 50,
+      include: {
+        student: { select: { name: true, avatar: true } },
+        activity: { select: { title: true, type: true } },
+      },
+    });
+    if (subs.length === 0 && isDemoMode()) {
+      return getDemoSubmissions().filter((s) => !s.reviewed);
+    }
+    if (subs.length === 0) return [];
+    return subs.map((s: PrismaSubmissionWithRelations) => ({
+      id: s.id,
+      studentId: s.studentId,
+      studentName: s.student.name,
+      studentAvatar: s.student.avatar,
+      activityTitle: s.activity.title,
+      activityType: s.activity.type,
+      score: s.score,
+      maxScore: s.maxScore,
+      reviewed: s.reviewed,
+      submittedAt: s.submittedAt,
+    }));
+  } catch (err) {
+    if (isDemoMode()) return getDemoSubmissions().filter((s) => !s.reviewed);
+    console.error('[teacher-data] getUnreviewedSubmissions failed:', err);
+    return [];
+  }
+}
+
+// ---------- Demo Submission Detail ----------
+
+function getDemoSubmissionDetail(id: string): SubmissionDetail | null {
+  const aiNone = {
+    aiStatus: 'NONE' as const, aiFeedback: null, aiStrengths: null, aiAreasForImprovement: null,
+    aiNextSteps: null, aiProvisionalScore: null, aiPerformanceLevel: null, aiGeneratedAt: null,
+    finalizedByTeacher: false,
+  };
+
+  const details: Record<string, SubmissionDetail> = {
+    d1: {
+      id: 'd1', studentId: 'demo-0', studentName: 'Ava Chen', studentAvatar: null, studentGradeLevel: 7,
+      activityTitle: 'Ecosystem Basics Quiz', activityType: 'QUIZ', submissionType: 'QUIZ_RESPONSE',
+      unitTitle: 'Unit A — Ecosystems', lessonTitle: 'Lesson 1 — Food Webs',
+      writtenResponse: null, fileUrl: null, fileName: null,
+      score: 9, maxScore: 10, reviewed: true, reviewedAt: new Date('2026-03-14T14:00:00'), reviewedBy: 'demo-teacher',
+      teacherFeedback: 'Excellent understanding of ecosystem relationships. One point missed on decomposer classification.',
+      submittedAt: new Date('2026-03-14T10:30:00'),
+      ...aiNone, finalizedByTeacher: true,
+    },
+    d2: {
+      id: 'd2', studentId: 'demo-4', studentName: 'Sophia Kim', studentAvatar: null, studentGradeLevel: 7,
+      activityTitle: 'Heat Transfer Lab', activityType: 'ASSIGNMENT', submissionType: 'PARAGRAPH_RESPONSE',
+      unitTitle: 'Unit C — Heat', lessonTitle: 'Lesson 2 — Conductors and Insulators',
+      writtenResponse: `In our experiment, we tested five materials to see which ones conducted heat the fastest. We placed each material on a hot plate set to 60°C and measured the temperature at the opposite end every 30 seconds for 5 minutes.\n\nResults:\n- Aluminum: reached 52°C fastest (by 2 minutes)\n- Steel: reached 48°C by 3 minutes\n- Glass: reached 38°C by 5 minutes\n- Wood: only reached 28°C\n- Styrofoam: stayed at 22°C\n\nThis shows that metals are good conductors because the particles are close together and transfer kinetic energy quickly through collisions. Non-metals like wood and styrofoam are insulators because their particles are more spread out and don't transfer energy as efficiently.\n\nOne thing I found interesting is that aluminum conducted heat faster than steel, even though they are both metals. I think this is because aluminum has lower density and its electrons move more freely.`,
+      fileUrl: null, fileName: null,
+      score: null, maxScore: 20, reviewed: false, reviewedAt: null, reviewedBy: null,
+      teacherFeedback: null,
+      submittedAt: new Date('2026-03-14T09:15:00'),
+      aiStatus: 'COMPLETE',
+      aiFeedback: 'This is a strong lab report that demonstrates solid understanding of heat transfer concepts. The experimental setup is well described, results are clearly organized, and the conclusion connects observations to particle theory.',
+      aiStrengths: 'Clear organization of experimental results with specific temperature data. Strong connection between observations and scientific theory about particle movement. Thoughtful observation about the difference between aluminum and steel conductivity.',
+      aiAreasForImprovement: 'Consider adding a hypothesis before the results to strengthen the scientific method structure. The explanation of why aluminum conducts faster than steel could be expanded with thermal conductivity values.',
+      aiNextSteps: 'Try adding a labeled diagram showing how particles transfer energy differently in conductors vs insulators. This would help connect your written explanation to a visual model.',
+      aiProvisionalScore: 17, aiPerformanceLevel: 'MEETING',
+      aiGeneratedAt: new Date('2026-03-14T09:16:00'), finalizedByTeacher: false,
+    },
+    d3: {
+      id: 'd3', studentId: 'demo-5', studentName: 'Jackson Lee', studentAvatar: null, studentGradeLevel: 7,
+      activityTitle: 'Plant Growth Reflection', activityType: 'REFLECTION', submissionType: 'REFLECTION',
+      unitTitle: 'Unit B — Plants', lessonTitle: 'Lesson 3 — Factors Affecting Growth',
+      writtenResponse: `Before this unit, I thought plants only needed water and sunlight to grow. Now I understand that they also need carbon dioxide, minerals from the soil, and the right temperature.\n\nThe experiment we did where we grew plants in different light conditions was really cool. The plant in complete darkness turned yellow and grew really tall and thin (etiolated), while the one in full light was shorter but had much greener and thicker leaves. This taught me that light doesn't just give energy — it actually changes how the plant develops.\n\nI want to learn more about how plants in the arctic survive with so little light for part of the year.`,
+      fileUrl: null, fileName: null,
+      score: null, maxScore: 10, reviewed: false, reviewedAt: null, reviewedBy: null,
+      teacherFeedback: null,
+      submittedAt: new Date('2026-03-13T14:00:00'),
+      aiStatus: 'COMPLETE',
+      aiFeedback: 'A thoughtful reflection that shows genuine learning. You clearly describe how your understanding changed and connect your observations from the experiment to broader plant biology concepts.',
+      aiStrengths: 'Honest reflection about how your thinking changed — this shows real learning. Great use of the scientific term "etiolated". Your curiosity about arctic plants shows you are thinking beyond the lesson.',
+      aiAreasForImprovement: 'Consider explaining WHY the plant in darkness grew tall and thin — what was it reaching for? Also, try connecting the role of minerals and CO₂ to specific plant processes like photosynthesis.',
+      aiNextSteps: 'Research one arctic plant adaptation and write a paragraph comparing it to the plants you grew in class.',
+      aiProvisionalScore: 8, aiPerformanceLevel: 'MEETING',
+      aiGeneratedAt: new Date('2026-03-13T14:01:00'), finalizedByTeacher: false,
+    },
+    d4: {
+      id: 'd4', studentId: 'demo-1', studentName: 'Liam Patel', studentAvatar: null, studentGradeLevel: 7,
+      activityTitle: 'Food Web Drawing', activityType: 'ASSIGNMENT', submissionType: 'IMAGE_ARTIFACT',
+      unitTitle: 'Unit A — Ecosystems', lessonTitle: 'Lesson 1 — Food Webs',
+      writtenResponse: null, fileUrl: '#', fileName: 'food_web_diagram.png',
+      score: 17, maxScore: 20, reviewed: true, reviewedAt: new Date('2026-03-12T15:00:00'), reviewedBy: 'demo-teacher',
+      teacherFeedback: 'Great diagram showing multiple interconnected chains. Consider adding decomposers to complete the cycle.',
+      submittedAt: new Date('2026-03-12T11:45:00'),
+      ...aiNone, finalizedByTeacher: true,
+    },
+    d5: {
+      id: 'd5', studentId: 'demo-2', studentName: 'Emma Rodriguez', studentAvatar: null, studentGradeLevel: 7,
+      activityTitle: 'Producers & Consumers Quiz', activityType: 'QUIZ', submissionType: 'QUIZ_RESPONSE',
+      unitTitle: 'Unit A — Ecosystems', lessonTitle: 'Lesson 2 — Energy Flow',
+      writtenResponse: null, fileUrl: null, fileName: null,
+      score: 8, maxScore: 10, reviewed: true, reviewedAt: new Date('2026-03-11T16:00:00'), reviewedBy: 'demo-teacher',
+      teacherFeedback: 'Solid understanding. Missed the tertiary consumer question — review the food chain levels.',
+      submittedAt: new Date('2026-03-11T13:20:00'),
+      ...aiNone, finalizedByTeacher: true,
+    },
+  };
+  return details[id] || null;
+}
+

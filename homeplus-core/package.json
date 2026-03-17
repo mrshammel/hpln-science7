@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3001",
-    "build": "next build",
+    "build": "prisma generate && next build",
+    "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint",
     "db:migrate": "npx prisma migrate dev",
@@ -13,10 +14,10 @@
     "db:push": "npx prisma db push"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@prisma/adapter-pg": "^7.5.0",
     "@prisma/client": "^7.5.0",
     "@supabase/supabase-js": "^2.99.1",
-    "dotenv": "^17.3.1",
     "next": "16.1.6",
     "next-auth": "^4.24.13",
     "pg": "^8.20.0",
@@ -29,6 +30,7 @@
     "@types/pg": "^8.18.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.3.1",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "tsx": "^4.21.0",

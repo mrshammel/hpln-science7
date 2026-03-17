@@ -52,22 +52,28 @@ export const authOptions: NextAuthOptions = {
       }
     },
 
-    async session({ session }) {
-      if (session.user?.email) {
+    async jwt({ token, user }) {
+      // On initial sign-in, fetch role from DB and embed in token
+      if (user?.email) {
         const dbUser = await prisma.user.findUnique({
-          where: { email: session.user.email },
-          select: {
-            id: true,
-            role: true,
-            gradeLevel: true,
-          },
+          where: { email: user.email },
+          select: { id: true, role: true, gradeLevel: true },
         });
-
         if (dbUser) {
-          (session.user as any).id = dbUser.id;
-          (session.user as any).role = dbUser.role;
-          (session.user as any).gradeLevel = dbUser.gradeLevel;
+          token.id = dbUser.id;
+          token.role = dbUser.role;
+          token.gradeLevel = dbUser.gradeLevel;
         }
+      }
+      return token;
+    },
+
+    async session({ session, token }) {
+      // Pass role/id from token to session (no extra DB query)
+      if (session.user) {
+        (session.user as any).id = token.id;
+        (session.user as any).role = token.role;
+        (session.user as any).gradeLevel = token.gradeLevel;
       }
       return session;
     },
