@@ -31,7 +31,7 @@ async function main() {
       learningGoal: 'Identify the living and non-living components of an ecosystem and explain how they interact.',
       successCriteria: 'I can name examples of biotic and abiotic factors and describe at least one way they depend on each other.',
       materials: 'Science notebook, coloured pencils',
-      reflectionPrompt: 'Think about an ecosystem near your home. What biotic and abiotic factors can you identify? How do they depend on each other?',
+      reflectionPrompt: 'Return to your warm-up prediction about the pond ecosystem. Now that you know about biotic and abiotic factors, revise your prediction using the correct vocabulary.',
       warmUpConfig: {
         type: 'prediction',
         prompt: 'Look at the image below. What do you think would happen to this pond ecosystem if all the sunlight was blocked for a month?',
@@ -132,6 +132,40 @@ async function main() {
     },
   ];
 
+  // ─── 3b. LEARN Micro-Check ───
+  const learnMicroCheck = [
+    {
+      id: 'eco-learn-mc1',
+      section: 'LEARN' as const,
+      blockType: 'MICRO_CHECK' as const,
+      order: 5,
+      content: {
+        question: 'A student visits a lake and sees fish, lily pads, rocks, and warm sunshine. Which TWO items are abiotic factors?',
+        options: [
+          { label: 'Fish and lily pads', value: 'a' },
+          { label: 'Rocks and sunshine', value: 'b', correct: true },
+          { label: 'Lily pads and rocks', value: 'c' },
+          { label: 'Fish and sunshine', value: 'd' },
+        ],
+        explanation: 'Rocks and sunshine are non-living (abiotic). Fish and lily pads are living (biotic). Remember: biotic = alive, abiotic = never alive.',
+      },
+    },
+    {
+      id: 'eco-learn-bridge',
+      section: 'LEARN' as const,
+      blockType: 'TEXT' as const,
+      order: 6,
+      content: {
+        html: `
+          <h3>👀 Looking Ahead</h3>
+          <p>Now you know <em>what</em> makes up an ecosystem — biotic and abiotic factors that interact.</p>
+          <p>But here's a bigger question: <strong>How does energy move through an ecosystem?</strong> Where does the energy that keeps animals alive actually come from?</p>
+          <p>In the next lesson, you'll trace the path of energy from the sun all the way through food chains — and discover why every ecosystem needs <em>producers</em>, <em>consumers</em>, and <em>decomposers</em>.</p>
+        `,
+      },
+    },
+  ];
+
   // ─── 4. PRACTICE Section Blocks ───
   const practiceBlocks = [
     {
@@ -191,15 +225,15 @@ async function main() {
       blockType: 'CONSTRUCTED_RESPONSE' as const,
       order: 1,
       content: {
-        prompt: 'Think about an ecosystem near your home (backyard, park, pond, garden). List at least 3 biotic factors and 3 abiotic factors you would find there. Then explain one way they depend on each other.',
-        minLength: 50,
-        rubricHint: 'Your answer should name specific biotic and abiotic factors and describe at least one interaction between them.',
+        prompt: 'Return to your warm-up prediction about the pond ecosystem with no sunlight.\n\n1. Was your original prediction correct? What would you change about it now?\n2. Using the abiotic-biotic interaction table from this lesson, explain the SPECIFIC chain of effects that losing sunlight would cause. Name at least 2 abiotic factors and 2 biotic factors from the table.\n3. Why is the "ripple effect" idea important for understanding how ecosystems work?\n\nUse at least 3 vocabulary terms from this lesson (ecosystem, biotic, abiotic, habitat, community).',
+        minLength: 60,
+        rubricHint: 'References their warm-up prediction and whether it was correct. Uses the specific abiotic-biotic interaction table from the lesson. Names specific factors. Uses vocabulary accurately. Explains ripple effect with concrete examples from the lesson.',
       },
     },
   ];
 
   // ─── 6. Insert all blocks ───
-  const allBlocks = [...learnBlocks, ...practiceBlocks, ...reflectBlocks];
+  const allBlocks = [...learnBlocks, ...learnMicroCheck, ...practiceBlocks, ...reflectBlocks];
   for (const block of allBlocks) {
     await prisma.lessonBlock.create({
       data: {

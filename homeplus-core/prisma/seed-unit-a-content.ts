@@ -93,7 +93,16 @@ async function seedLesson2() {
           <p><strong>Producers</strong> are organisms that make their own food using energy from the sun through a process called <strong>photosynthesis</strong>. They are the foundation of every food chain.</p>
           <p><strong>Examples:</strong> grasses, trees, algae, phytoplankton, moss</p>
           <p>Without producers, no other organisms could survive — they are the starting point for all energy in an ecosystem.</p>
-
+        `,
+      },
+    },
+    {
+      id: 'l2-learn-2b',
+      section: 'LEARN' as const,
+      blockType: 'TEXT' as const,
+      order: 3,
+      content: {
+        html: `
           <h3>🦌 Consumers</h3>
           <p><strong>Consumers</strong> cannot make their own food. They must eat other organisms to get energy.</p>
           <p>Consumers are classified by <em>what</em> they eat:</p>
@@ -103,11 +112,20 @@ async function seedLesson2() {
             <li><strong>Tertiary consumers</strong> — eat secondary consumers (e.g. a hawk eating a fox)</li>
             <li><strong>Omnivores</strong> — eat both plants and animals (e.g. bears, humans)</li>
           </ul>
-
+        `,
+      },
+    },
+    {
+      id: 'l2-learn-2c',
+      section: 'LEARN' as const,
+      blockType: 'TEXT' as const,
+      order: 4,
+      content: {
+        html: `
           <h3>🍂 Decomposers</h3>
           <p><strong>Decomposers</strong> break down dead organisms and waste, returning nutrients to the soil. Without them, dead material would pile up and nutrients would never be recycled.</p>
           <p><strong>Examples:</strong> mushrooms, bacteria, earthworms, mold</p>
-          <p><strong>Key idea:</strong> Decomposers complete the cycle — they connect death back to new life by making nutrients available for producers.</p>
+          <p><strong>Key idea:</strong> Decomposers complete the cycle — they connect death back to new life by making nutrients available for producers to use again.</p>
         `,
       },
     },
@@ -115,7 +133,7 @@ async function seedLesson2() {
       id: 'l2-learn-3',
       section: 'LEARN' as const,
       blockType: 'VOCABULARY' as const,
-      order: 3,
+      order: 5,
       content: {
         terms: [
           { term: 'Producer', definition: 'An organism that makes its own food from sunlight (photosynthesis).', example: 'Grass, oak trees, algae in a pond.' },
@@ -131,7 +149,7 @@ async function seedLesson2() {
       id: 'l2-learn-4',
       section: 'LEARN' as const,
       blockType: 'VIDEO' as const,
-      order: 4,
+      order: 6,
       content: {
         url: 'https://www.youtube.com/embed/MuKs9o1s8h8',
         title: 'Food Chains & Food Webs — Crash Course Kids',
@@ -142,7 +160,7 @@ async function seedLesson2() {
       id: 'l2-learn-5',
       section: 'LEARN' as const,
       blockType: 'TEXT' as const,
-      order: 5,
+      order: 7,
       content: {
         html: `
           <h3>⛓️ Food Chains: Tracing Energy Flow</h3>
@@ -160,7 +178,7 @@ async function seedLesson2() {
       id: 'l2-learn-mc1',
       section: 'LEARN' as const,
       blockType: 'MICRO_CHECK' as const,
-      order: 6,
+      order: 8,
       content: {
         question: 'In the food chain: Sun → Grass → Rabbit → Fox, which organism is the secondary consumer?',
         options: [
@@ -514,10 +532,21 @@ async function seedLesson3() {
       },
     },
     {
+      id: 'l3-learn-video',
+      section: 'LEARN' as const,
+      blockType: 'VIDEO' as const,
+      order: 6,
+      content: {
+        url: 'https://www.youtube.com/embed/ysa5OBhXz-Q',
+        title: 'How Wolves Changed Rivers — Yellowstone',
+        transcript: 'This short documentary shows how reintroducing wolves to Yellowstone in 1995 caused a trophic cascade: wolves reduced the deer population, which allowed vegetation to recover, which stabilized riverbanks and changed the physical geography of the park. It demonstrates the power of predator-prey relationships.',
+      },
+    },
+    {
       id: 'l3-learn-5',
       section: 'LEARN' as const,
       blockType: 'TEXT' as const,
-      order: 6,
+      order: 7,
       content: {
         html: `
           <h3>⚔️ Competition</h3>
@@ -735,12 +764,13 @@ async function seedLesson4() {
       materials: 'Science notebook, art supplies OR device with camera OR presentation tools',
       reflectionPrompt: 'What was the most surprising thing you learned about ecosystems in this unit? What would you still like to investigate?',
       warmUpConfig: {
-        type: 'recall',
-        prompt: 'Quick review! Match the concept to its meaning — this will help you prepare for your unit project.',
+        type: 'retrieval',
+        prompt: 'Quick review before your unit project! In the Yellowstone wolves video from Lesson 3, the reintroduction of wolves caused a "trophic cascade." What was the FIRST thing that happened when wolves returned?',
         options: [
-          { label: 'I feel confident about biotic vs abiotic, food chains, and relationships', value: 'a', correct: true },
-          { label: 'I need to review some concepts before starting', value: 'b', correct: true },
-          { label: 'I\'m not sure what we covered', value: 'c', correct: false },
+          { label: 'Rivers changed their course immediately', value: 'a', correct: false },
+          { label: 'The deer population decreased because wolves hunted them, allowing vegetation to recover', value: 'b', correct: true },
+          { label: 'All the other predators left', value: 'c', correct: false },
+          { label: 'The temperature of the park changed', value: 'd', correct: false },
         ],
       },
       masteryConfig: {
@@ -873,9 +903,9 @@ async function seedLesson4() {
       blockType: 'CONSTRUCTED_RESPONSE' as const,
       order: 3,
       content: {
-        prompt: 'Before starting your project, plan your ecosystem analysis here. This will help you organize your thinking:\n\n1. What ecosystem will you analyze? (Name and describe it)\n2. List 3 biotic factors you already know are in this ecosystem\n3. List 2 abiotic factors\n4. What food chain do you think exists there? (At least 3 organisms)\n5. Which project format will you choose? (Report, Poster, or Photo Study)\n\nThis is your planning draft — you\'ll build on it for the actual project.',
-        minLength: 50,
-        rubricHint: 'Identifies a specific ecosystem. Lists real organisms and abiotic factors. Sketches a plausible food chain. Chooses a format. This draft shows planning and readiness.',
+        prompt: 'Before starting your project, plan your ecosystem analysis here. Use what you built in earlier lessons to organize your thinking:\n\n1. What ecosystem will you analyze? (Name and describe where it is)\n2. List 3 biotic factors and 2 abiotic factors in this ecosystem (use the biotic/abiotic definitions from Lesson 1)\n3. Draw from the food chain you built in Lesson 2: What food chain exists in YOUR chosen ecosystem? (At least 4 organisms, labeled by role: producer, primary consumer, etc.)\n4. Using the relationship types from Lesson 3, identify at least 1 relationship (predator-prey, mutualism, commensalism, parasitism, or competition) in your ecosystem\n5. Which project format will you choose? (Report, Poster, or Photo Study)\n\nThis is your planning draft — you will build on it for the actual project.',
+        minLength: 60,
+        rubricHint: 'References concepts from earlier lessons. Identifies a specific ecosystem. Lists real organisms and abiotic factors. Builds a plausible food chain using lesson vocabulary. Identifies at least one relationship type. Chooses a format.',
         teacherReviewRequired: false,
       },
     },
@@ -925,33 +955,33 @@ async function seedLesson4() {
   const questions = [
     {
       id: 'l4-q1',
-      questionText: 'A forest ecosystem contains trees, deer, wolves, mushrooms, sunlight, water, and soil. How many BIOTIC factors are in this list?',
+      questionText: 'A wetland ecosystem is drying up due to drought. The cattails (producers) are dying. Based on everything you learned in this unit, which of the following describes the MOST LIKELY chain of effects?',
       questionType: 'MULTIPLE_CHOICE' as const,
       options: [
-        { label: '3', value: 'a' },
-        { label: '4', value: 'b', correct: true },
-        { label: '5', value: 'c' },
-        { label: '7', value: 'd' },
+        { label: 'Only the cattails are affected because they are the only producers', value: 'a' },
+        { label: 'Herbivores lose food → their predators lose food → decomposers have more dead material → nutrients return to soil', value: 'b', correct: true },
+        { label: 'The predators leave first, then the herbivores', value: 'c' },
+        { label: 'The abiotic factors are not affected by the loss of cattails', value: 'd' },
       ],
       correctAnswer: 'b',
-      explanation: 'The 4 biotic (living) factors are: trees, deer, wolves, mushrooms. Sunlight, water, and soil are abiotic (non-living).',
+      explanation: 'Losing producers triggers a ripple effect through the food chain: herbivores lose their food source, which means predators also lose food. As organisms die, decomposers break them down. This connects L1 (biotic-abiotic interactions), L2 (food chains), and L3 (predator-prey).',
       outcomeCode: 'SCI.7.A.1',
-      difficulty: 1,
+      difficulty: 2,
     },
     {
       id: 'l4-q2',
-      questionText: 'In a grassland food chain: Sun → Grass → Grasshopper → Frog → Snake, the grasshopper is a:',
+      questionText: 'A student analyzes a forest ecosystem and finds that lichens grow on tree bark. The lichen gets a surface to grow on, but the tree is unaffected. Meanwhile, squirrels and blue jays both compete for the same acorns. Which TWO relationship types are described here?',
       questionType: 'MULTIPLE_CHOICE' as const,
       options: [
-        { label: 'Producer', value: 'a' },
-        { label: 'Primary consumer (herbivore)', value: 'b', correct: true },
-        { label: 'Secondary consumer', value: 'c' },
-        { label: 'Decomposer', value: 'd' },
+        { label: 'Mutualism and predator-prey', value: 'a' },
+        { label: 'Parasitism and competition', value: 'b' },
+        { label: 'Commensalism and competition', value: 'c', correct: true },
+        { label: 'Mutualism and commensalism', value: 'd' },
       ],
-      correctAnswer: 'b',
-      explanation: 'The grasshopper eats the grass (producer), making it the primary consumer. It is a herbivore because it eats only plants.',
-      outcomeCode: 'SCI.7.A.1',
-      difficulty: 1,
+      correctAnswer: 'c',
+      explanation: 'Lichen benefits from growing on the tree while the tree is unaffected — that is commensalism. Squirrels and blue jays both need acorns (same resource) — that is competition. This question synthesizes relationship types from Lesson 3.',
+      outcomeCode: 'SCI.7.A.2',
+      difficulty: 2,
     },
     {
       id: 'l4-q3',
