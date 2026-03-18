@@ -119,6 +119,30 @@ async function main() {
     },
   });
 
+  const lesson2a = await prisma.lesson.upsert({
+    where: { id: 'g7-sci-ua-l3' },
+    update: {},
+    create: {
+      id: 'g7-sci-ua-l3',
+      unitId: unitA.id,
+      title: 'Relationships in Ecosystems',
+      subtitle: 'Explore predator-prey, symbiotic, and competitive relationships.',
+      order: 3,
+    },
+  });
+
+  const lesson2b = await prisma.lesson.upsert({
+    where: { id: 'g7-sci-ua-l4' },
+    update: {},
+    create: {
+      id: 'g7-sci-ua-l4',
+      unitId: unitA.id,
+      title: 'Ecosystem Connections — Unit Project',
+      subtitle: 'Apply what you learned to analyze a real ecosystem.',
+      order: 4,
+    },
+  });
+
   // --- Unit B: Plants ---
   const unitB = await prisma.unit.upsert({
     where: { id: 'g7-sci-unit-b' },
@@ -172,7 +196,7 @@ async function main() {
   });
 
   console.log(`✅ Units: ${unitA.title}, ${unitB.title}, ${unitC.title}`);
-  console.log(`✅ Lessons: 4 total`);
+  console.log(`✅ Lessons: 6 total`);
 
   // ╔═══════════════════════════════════════════╗
   // ║ 4. ACTIVITIES                               ║
