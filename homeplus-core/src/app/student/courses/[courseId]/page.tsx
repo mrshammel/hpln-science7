@@ -1,8 +1,8 @@
 // ============================================
-// Student Course Detail Page — Home Plus LMS
+// Course Detail Page — Home Plus LMS
 // ============================================
-// Dynamic route: /student/courses/[courseId]
-// Shows course overview, progress, and all units.
+// Redesigned with large visual unit cards,
+// subject-colored header, and hero continue card.
 
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -19,24 +19,27 @@ export default async function CourseDetailPage({ params }: Props) {
   const { courseId } = await params;
   const course = await getCourseDetail(courseId);
 
-  if (!course) {
-    notFound();
-  }
+  if (!course) notFound();
 
   const {
-    subjectName, subjectIcon, gradeLevel, progressPercent,
-    completedLessons, totalLessons, averageScore, gradeLabel,
-    pacing, pacingStyle, currentUnit, currentLesson,
-    missingAssignments, units,
+    subjectName, subjectIcon, gradeLevel,
+    progressPercent, completedLessons, totalLessons,
+    averageScore, missingAssignments,
+    currentUnit, currentLesson,
+    units,
   } = course;
 
   return (
     <div style={subjectColorVars(subjectName)}>
-      {/* ===== A. COURSE HEADER ===== */}
+      {/* ===== BREADCRUMB ===== */}
+      <div className={styles.breadcrumb}>
+        <Link href="/student/courses" className={styles.breadcrumbLink}>My Courses</Link>
+        <span className={styles.breadcrumbSep}>›</span>
+        <span className={styles.breadcrumbCurrent}>{subjectName}</span>
+      </div>
+
+      {/* ===== COURSE HEADER ===== */}
       <section className={styles.welcomeSection} aria-label="Course header">
-        <Link href="/student/courses" style={{ fontSize: '0.82rem', color: '#94a3b8', textDecoration: 'none', marginBottom: 8, display: 'inline-block' }}>
-          ← All Courses
-        </Link>
         <div className={styles.welcomeRow}>
           <div className={styles.continueIcon}>
             <span>{subjectIcon}</span>
@@ -48,8 +51,8 @@ export default async function CourseDetailPage({ params }: Props) {
         </div>
       </section>
 
-      {/* ===== B. COURSE SUMMARY ===== */}
-      <section className={styles.statRow} aria-label="Course summary statistics">
+      {/* ===== STATS ===== */}
+      <section className={styles.statRow} aria-label="Course stats">
         <div className={styles.statCard}>
           <div className={styles.statValue} style={{ color: 'var(--subject-primary)' }}>{progressPercent}%</div>
           <div className={styles.statLabel}>Progress</div>
@@ -72,137 +75,96 @@ export default async function CourseDetailPage({ params }: Props) {
         </div>
       </section>
 
-      {/* ===== C. CONTINUE LEARNING ===== */}
+      {/* ===== HERO CONTINUE ===== */}
       {currentLesson && (
-        <section
-          className={`${styles.dashCard} ${styles.dashCardFull}`}
-          style={{ marginBottom: 24, borderLeft: '5px solid var(--subject-primary)' }}
-          aria-label="Continue learning"
-        >
-          <div className={styles.continueCard}>
-            <div className={styles.continueInfo}>
-              <div className={styles.continueCourse}>Continue Learning</div>
-              <div className={styles.continueUnit}>{currentUnit}</div>
-              <div className={styles.continueLesson}>{currentLesson}</div>
-              <div className={styles.continueProgress}>
-                <div className={styles.progressBar} style={{ width: 140, height: 8 }}>
-                  <div className={styles.progressFill} style={{ width: `${progressPercent}%` }} />
-                </div>
-                <span className={styles.progressPercent}>{progressPercent}%</span>
+        <a className={styles.heroCard} href="#" aria-label="Continue learning">
+          <div className={styles.heroIcon}>{subjectIcon}</div>
+          <div className={styles.heroInfo}>
+            <div className={styles.heroLabel}>▶ Continue Learning</div>
+            <div className={styles.heroTitle}>{currentUnit}</div>
+            <div className={styles.heroSubtitle}>{currentLesson}</div>
+            <div className={styles.heroProgress}>
+              <div className={styles.heroProgressBar}>
+                <div className={styles.heroProgressFill} style={{ width: `${progressPercent}%` }} />
               </div>
+              <span className={styles.heroProgressText}>{progressPercent}%</span>
             </div>
-            <span className={styles.continueBtn}>Continue →</span>
           </div>
-        </section>
+          <span className={styles.heroBtn}>Continue →</span>
+        </a>
       )}
 
-      {/* ===== D. PACING BAR ===== */}
-      <section className={`${styles.dashCard} ${styles.dashCardFull}`} style={{ marginBottom: 24 }} aria-label="Pacing overview">
-        <h3 className={styles.cardTitle}>
-          📈 Pacing Overview
-          <span className={styles.cardSubtext}>
-            <span
-              className={styles.pacingBadge}
-              style={{ background: pacingStyle.bg, color: pacingStyle.color }}
-            >
-              {pacingStyle.icon} {pacing.academicLabel}
-            </span>
-          </span>
-        </h3>
-        <div className={styles.pacingBar}>
-          <div className={styles.pacingBarLabel}>
-            <span>Expected: {Math.round(pacing.expectedProgress)}%</span>
-            <span>Actual: {Math.round(pacing.actualProgress)}%</span>
-          </div>
-          <div className={styles.pacingBarTrack}>
-            <div className={styles.pacingBarExpected} style={{ width: `${pacing.expectedProgress}%` }} />
-            <div className={styles.pacingBarActual} style={{ width: `${pacing.actualProgress}%` }} />
-          </div>
-        </div>
-        {missingAssignments > 0 && (
-          <div className={styles.missingBadge}>
-            ⚠️ {missingAssignments} missing assignment{missingAssignments > 1 ? 's' : ''}
-          </div>
-        )}
-      </section>
-
-      {/* ===== E. ALL UNITS (with gating) ===== */}
+      {/* ===== UNIT CARDS ===== */}
       <section aria-label="Course units">
-        <h3 className={styles.sectionHeading} style={{ marginBottom: 16 }}>📚 Units</h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <h3 className={styles.sectionHeading}>📚 Units</h3>
+        <div className={styles.unitCardGrid}>
           {units.map((unit) => {
             const ui = getUnitStateUI(unit.unitDisplayState);
             const isLocked = unit.unitDisplayState === 'LOCKED';
+            const isComplete = unit.unitDisplayState === 'COMPLETED' || unit.unitDisplayState === 'EXEMPT';
 
-            const statusClass = unit.unitDisplayState === 'COMPLETED' || unit.unitDisplayState === 'EXEMPT'
-              ? styles.statusComplete
+            const statusClass = isComplete ? styles.statusComplete
               : unit.unitDisplayState === 'IN_PROGRESS' ? styles.statusInProgress
               : isLocked ? styles.statusLocked
               : styles.statusAvailable;
 
-            const CardContent = (
+            const ctaLabel = isLocked ? '🔒 Locked'
+              : isComplete ? 'Review →'
+              : unit.unitDisplayState === 'IN_PROGRESS' ? 'Continue →'
+              : 'Start Unit →';
+
+            const CardInner = (
               <div className={`${styles.unitCard} ${isLocked ? styles.unitCardLocked : ''}`}>
-                {/* Next unit indicator */}
                 {unit.isNextUnit && (
                   <div className={styles.nextBadge}>▶ UP NEXT</div>
                 )}
-
-                <div className={styles.continueIcon} style={{ width: 44, height: 44, fontSize: '1.2rem' }}>
-                  <span>
-                    {isLocked ? '🔒' : unit.unitDisplayState === 'COMPLETED' || unit.unitDisplayState === 'EXEMPT' ? '✅' : unit.icon || '📖'}
-                  </span>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
-                    <h4 style={{
-                      fontSize: '0.94rem', fontWeight: 700, margin: 0,
-                      color: isLocked ? '#94a3b8' : '#1e293b',
-                    }}>
-                      {unit.title}
-                    </h4>
+                <div className={styles.unitCardBand} />
+                <div className={styles.unitCardBody}>
+                  <div className={styles.unitCardHeader}>
+                    <div className={styles.unitCardIconWrap}>
+                      {isLocked ? '🔒' : isComplete ? '✅' : (unit.icon || '📖')}
+                    </div>
+                    <div className={styles.unitCardTitleGroup}>
+                      <div className={styles.unitCardLabel}>
+                        Unit {unit.order + 1}
+                      </div>
+                      <h4 className={styles.unitCardTitle}>{unit.title}</h4>
+                    </div>
                     <span className={`${styles.statusChip} ${statusClass}`}>
                       {ui.badge}
                     </span>
                   </div>
+
                   {unit.description && (
-                    <p style={{ fontSize: '0.82rem', color: isLocked ? '#cbd5e1' : '#64748b', margin: '4px 0 0' }}>
-                      {unit.description}
-                    </p>
+                    <div className={styles.unitCardDesc}>{unit.description}</div>
                   )}
 
-                  {/* Lesson progress bar (only for non-locked) */}
+                  <div className={styles.unitCardMeta}>
+                    <span className={styles.unitCardMetaItem}>📖 {unit.totalLessons} lessons</span>
+                  </div>
+
                   {!isLocked && (
-                    <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div className={styles.progressBar} style={{ flex: 1, height: 8 }}>
-                        <div
-                          className={styles.progressFill}
-                          style={{
-                            width: `${unit.progressPercent}%`,
-                            background: unit.unitDisplayState === 'COMPLETED' || unit.unitDisplayState === 'EXEMPT' ? '#059669' : undefined,
-                          }}
-                        />
+                    <div className={styles.unitCardProgressWrap}>
+                      <div className={styles.progressBar} style={{ width: '100%', height: 8 }}>
+                        <div className={styles.progressFill} style={{
+                          width: `${unit.progressPercent}%`,
+                          background: isComplete ? '#059669' : undefined,
+                        }} />
                       </div>
-                      <span style={{
-                        fontSize: '0.78rem', fontWeight: 600,
-                        color: unit.unitDisplayState === 'COMPLETED' || unit.unitDisplayState === 'EXEMPT' ? '#059669' : 'var(--subject-primary)',
-                        minWidth: 64, textAlign: 'right',
-                      }}>
-                        {unit.completedLessons}/{unit.totalLessons} lessons
-                      </span>
+                      <div className={styles.courseCardProgressRow}>
+                        <span>{unit.completedLessons}/{unit.totalLessons} done</span>
+                        <span className={styles.progressPercent}>{unit.progressPercent}%</span>
+                      </div>
                     </div>
                   )}
 
-                  {/* Locked message */}
-                  {isLocked && (
-                    <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '6px 0 0', fontStyle: 'italic' }}>
-                      🔒 Complete the previous unit to unlock
-                    </p>
-                  )}
-
-                  {/* CTA */}
-                  {ui.cta && !isLocked && (
-                    <div className={styles.courseCardCta} style={{ textAlign: 'left', marginTop: 10 }}>
-                      {ui.cta}
+                  {isLocked ? (
+                    <div className={styles.unitCardCta} style={{ opacity: 0.6, cursor: 'not-allowed' }}>
+                      🔒 Locked
+                    </div>
+                  ) : (
+                    <div className={styles.unitCardCta}>
+                      {ctaLabel}
                     </div>
                   )}
                 </div>
@@ -210,7 +172,7 @@ export default async function CourseDetailPage({ params }: Props) {
             );
 
             if (isLocked) {
-              return <div key={unit.id}>{CardContent}</div>;
+              return <div key={unit.id}>{CardInner}</div>;
             }
 
             return (
@@ -218,9 +180,8 @@ export default async function CourseDetailPage({ params }: Props) {
                 key={unit.id}
                 href={`/student/courses/${course.subjectId}/units/${unit.id}`}
                 style={{ textDecoration: 'none', color: 'inherit' }}
-                aria-label={`Open ${unit.title}`}
               >
-                {CardContent}
+                {CardInner}
               </Link>
             );
           })}

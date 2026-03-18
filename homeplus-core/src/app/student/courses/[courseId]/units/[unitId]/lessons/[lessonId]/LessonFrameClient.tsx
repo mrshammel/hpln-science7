@@ -3,11 +3,14 @@
 // ============================================
 // Lesson Frame Client Wrapper — Home Plus LMS
 // ============================================
-// Thin client wrapper that casts serialized data
-// from server component into the typed props LessonFrame expects.
+// Adds subject-colored header chrome around the
+// lesson content. Passes props to LessonFrame.
 
+import Link from 'next/link';
 import LessonFrame from '@/components/lesson/LessonFrame';
+import { subjectColorVars, getSubjectColors } from '@/lib/subject-colors';
 import type { SubjectMode, MasteryConfig, SectionsData, LessonSectionType } from '@/lib/lesson-types';
+import styles from '../../../../student.module.css';
 
 interface LessonFrameClientProps {
   lessonId: string;
@@ -57,9 +60,39 @@ export default function LessonFrameClient(props: LessonFrameClientProps) {
   }));
 
   return (
-    <LessonFrame
-      {...props}
-      blocks={typedBlocks}
-    />
+    <div style={subjectColorVars(props.courseName)}>
+      {/* Subject-colored lesson header */}
+      <div className={styles.lessonHeader}>
+        <nav className={styles.breadcrumb} aria-label="Lesson breadcrumb">
+          <Link href="/student/courses" className={styles.breadcrumbLink}>Courses</Link>
+          <span className={styles.breadcrumbSep}>›</span>
+          <Link href={`/student/courses/${props.courseId}`} className={styles.breadcrumbLink}>
+            {props.courseIcon} {props.courseName}
+          </Link>
+          <span className={styles.breadcrumbSep}>›</span>
+          <Link href={`/student/courses/${props.courseId}/units/${props.unitId}`} className={styles.breadcrumbLink}>
+            {props.unitTitle}
+          </Link>
+          <span className={styles.breadcrumbSep}>›</span>
+          <span className={styles.breadcrumbCurrent}>{props.lessonPosition}</span>
+        </nav>
+        <div className={styles.lessonHeaderTop}>
+          <h2 className={styles.lessonHeaderTitle}>{props.lessonTitle}</h2>
+          <span className={`${styles.statusChip} ${styles.statusInProgress}`}>
+            {props.lessonPosition}
+          </span>
+        </div>
+        <div className={styles.lessonHeaderMeta}>
+          {props.courseIcon} {props.courseName} · {props.unitTitle}
+          {props.estimatedMinutes && ` · ~${props.estimatedMinutes} min`}
+        </div>
+      </div>
+
+      {/* Lesson frame content (untouched) */}
+      <LessonFrame
+        {...props}
+        blocks={typedBlocks}
+      />
+    </div>
   );
 }
