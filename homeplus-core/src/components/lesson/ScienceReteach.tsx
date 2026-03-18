@@ -44,12 +44,16 @@ export default function ScienceReteach({
   const [streak, setStreak] = useState(0);
   const [selected, setSelected] = useState('');
   const [feedback, setFeedback] = useState<{ correct: boolean; explanation?: string } | null>(null);
+  // Shuffle questions for randomized reteach
   const REQUIRED_STREAK = 3;
+  const [shuffledQs] = useState(() =>
+    [...questions].sort(() => Math.random() - 0.5)
+  );
 
   const handleAnswer = async () => {
     if (!selected) return;
 
-    const q = questions[currentQ % questions.length];
+    const q = shuffledQs[currentQ % shuffledQs.length];
     const correct = q.options.find((o) => o.correct)?.value === selected;
 
     // Record attempt

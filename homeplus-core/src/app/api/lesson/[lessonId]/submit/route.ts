@@ -70,6 +70,37 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ ok: true });
   }
 
+  // --- Single-question submission (one-at-a-time mastery) ---
+  if (body.singleQuestion) {
+    const { questionId, response, correct, outcomeCode } = body;
+
+    if (!questionId) {
+      return NextResponse.json({ error: 'questionId required' }, { status: 400 });
+    }
+
+    // Get current attempt number
+    const prevAttempts = await prisma.masteryAttempt.findMany({
+      where: { studentId: userId, lessonId, attemptNumber: { gt: 0 } },
+      orderBy: { createdAt: 'desc' },
+      take: 1,
+    });
+    const attemptNumber = prevAttempts.length > 0 ? prevAttempts[0].attemptNumber : 1;
+
+    // Record the attempt
+    await prisma.masteryAttempt.create({
+      data: {
+        studentId: userId,
+        lessonId,
+        questionId,
+        response: String(response ?? ''),
+        correct: !!correct,
+        attemptNumber,
+      },
+    });
+
+    return NextResponse.json({ ok: true, correct: !!correct });
+  }
+
   // --- Regular mastery check submission ---
   const { answers } = body as {
     answers: Array<{ questionId: string; response: string }>;

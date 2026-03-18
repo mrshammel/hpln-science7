@@ -55,7 +55,7 @@ export default function LessonBlockRenderer({ blockType, content, onAnswer, read
     case 'CONSTRUCTED_RESPONSE':
       return <ConstructedResponseBlock content={content as ConstructedResponseBlockContent} onAnswer={onAnswer} readOnly={readOnly} />;
     case 'DRAWING':
-      return <DrawingBlock content={content as DrawingBlockContent} />;
+      return <DrawingBlock content={content as DrawingBlockContent} onAnswer={onAnswer} />;
     case 'PHOTO_UPLOAD':
     case 'TAKE_PHOTO':
       return <UploadBlock content={content as UploadBlockContent} type="photo" onAnswer={onAnswer} />;
@@ -327,7 +327,22 @@ function ConstructedResponseBlock({ content, onAnswer, readOnly }: {
 }
 
 // ---- Drawing Block ----
-function DrawingBlock({ content }: { content: DrawingBlockContent }) {
+function DrawingBlock({ content, onAnswer }: { content: DrawingBlockContent; onAnswer?: (value: any) => void }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+
+  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFileName(file.name);
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (ev) => setPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+    onAnswer?.({ fileName: file.name, fileSize: file.size, fileType: file.type, uploaded: true });
+  };
+
   return (
     <div className={styles.interactiveBlock}>
       <p className={styles.interactivePrompt}>🎨 {content.instruction}</p>
@@ -336,11 +351,56 @@ function DrawingBlock({ content }: { content: DrawingBlockContent }) {
           <img src={content.backgroundImage} alt="Template" style={{ maxWidth: '100%', borderRadius: 8, border: '1px solid #e2e8f0' }} />
         </div>
       )}
-      <div style={{ border: '2px dashed #cbd5e1', borderRadius: 12, padding: 40, textAlign: 'center', background: '#fafbfc' }}>
-        <p style={{ color: '#64748b', fontSize: '0.85rem', margin: 0 }}>
-          📷 Draw on paper or a tablet, then upload a photo of your work below
-        </p>
+
+      {/* Photo preview */}
+      {preview ? (
+        <div style={{ textAlign: 'center', marginBottom: 12 }}>
+          <img
+            src={preview}
+            alt="Your uploaded work"
+            style={{ maxWidth: '100%', maxHeight: 400, borderRadius: 12, border: '2px solid #22c55e', objectFit: 'contain' }}
+          />
+          <p style={{ fontSize: '0.82rem', color: '#059669', fontWeight: 600, margin: '8px 0 0' }}>✓ {fileName}</p>
+        </div>
+      ) : null}
+
+      {/* Upload zone */}
+      <div
+        onClick={() => inputRef.current?.click()}
+        style={{
+          border: preview ? '2px solid #22c55e' : '2px dashed #cbd5e1',
+          borderRadius: 12,
+          padding: preview ? '14px 20px' : '40px 20px',
+          textAlign: 'center',
+          background: preview ? '#f0fdf4' : '#fafbfc',
+          cursor: 'pointer',
+          transition: 'all 0.2s',
+        }}
+      >
+        {preview ? (
+          <p style={{ color: '#059669', fontSize: '0.85rem', margin: 0, fontWeight: 600 }}>
+            📷 Click to replace photo
+          </p>
+        ) : (
+          <>
+            <p style={{ fontSize: '1.5rem', margin: '0 0 8px' }}>📷</p>
+            <p style={{ color: '#334155', fontSize: '0.88rem', fontWeight: 600, margin: '0 0 4px' }}>
+              Take a photo or upload your work
+            </p>
+            <p style={{ color: '#64748b', fontSize: '0.8rem', margin: 0 }}>
+              Draw on paper or a tablet, then tap here to upload a photo
+            </p>
+          </>
+        )}
       </div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={handleUpload}
+        style={{ display: 'none' }}
+      />
     </div>
   );
 }

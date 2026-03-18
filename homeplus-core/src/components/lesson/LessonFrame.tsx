@@ -138,6 +138,7 @@ export default function LessonFrame({
   const [reteachOutcome, setReteachOutcome] = useState<string | null>(null);
   const [reflectionText, setReflectionText] = useState('');
   const [reflectionSaved, setReflectionSaved] = useState(false);
+  const [completedBlocks, setCompletedBlocks] = useState<Set<string>>(new Set());
 
   // Refs for section intersection observer
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -162,6 +163,25 @@ export default function LessonFrame({
     }
     return grouped;
   }, [blocks]);
+
+  // Identify interactive blocks that must be completed before mastery check
+  const INTERACTIVE_TYPES = new Set(['MATCHING', 'FILL_IN_BLANK', 'MULTIPLE_CHOICE', 'CONSTRUCTED_RESPONSE', 'DRAWING', 'PHOTO_UPLOAD', 'TAKE_PHOTO', 'FILE_UPLOAD', 'MICRO_CHECK']);
+  const interactiveBlockIds = useMemo(() => {
+    return blocks
+      .filter((b) => INTERACTIVE_TYPES.has(b.blockType) && (b.section === 'PRACTICE' || b.section === 'LEARN'))
+      .map((b) => b.id);
+  }, [blocks]);
+
+  const allBlocksComplete = interactiveBlockIds.length === 0 || interactiveBlockIds.every((id) => completedBlocks.has(id));
+
+  // Callback for when a block is interacted with / submitted
+  const handleBlockComplete = useCallback((blockId: string) => {
+    setCompletedBlocks((prev) => {
+      const next = new Set(prev);
+      next.add(blockId);
+      return next;
+    });
+  }, []);
 
   // Mark section as viewed/completed
   const markSection = useCallback(
@@ -345,7 +365,7 @@ export default function LessonFrame({
             </div>
           </div>
           {blocksBySection.LEARN.map((b) => (
-            <LessonBlockRenderer key={b.id} blockType={b.blockType as any} content={b.content} />
+            <LessonBlockRenderer key={b.id} blockType={b.blockType as any} content={b.content} onAnswer={(val) => { if (val) handleBlockComplete(b.id); }} />
           ))}
         </div>
       )}
@@ -363,7 +383,7 @@ export default function LessonFrame({
             </div>
           </div>
           {blocksBySection.PRACTICE.map((b) => (
-            <LessonBlockRenderer key={b.id} blockType={b.blockType as any} content={b.content} />
+            <LessonBlockRenderer key={b.id} blockType={b.blockType as any} content={b.content} onAnswer={(val) => { if (val) handleBlockComplete(b.id); }} />
           ))}
         </div>
       )}
@@ -419,6 +439,7 @@ export default function LessonFrame({
             lessonId={lessonId}
             onComplete={handleMasteryComplete}
             config={config}
+            locked={!allBlocksComplete}
           />
         )}
       </div>
