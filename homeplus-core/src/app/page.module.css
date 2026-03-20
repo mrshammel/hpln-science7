@@ -196,7 +196,7 @@
 .hero {
   position: relative;
   background: linear-gradient(165deg, #eef3ff 0%, #e6f4ea 35%, #fdf8ef 65%, #f0f4ff 100%);
-  padding: 28px 0 0;
+  padding: 48px 0 12px;
   overflow: hidden;
 }
 
@@ -221,7 +221,7 @@
   padding: 0 40px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 28px;
 }
 
 /* Top branded row: logo + pillars side by side */
@@ -256,9 +256,10 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 14px;
+  gap: 18px;
   max-width: 720px;
   margin: 0 auto;
+  padding-bottom: 20px;
 }
 
 .heroBadge {
@@ -300,9 +301,9 @@
 
 .heroCta {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   flex-wrap: wrap;
-  margin-top: 4px;
+  margin-top: 10px;
 }
 
 .ctaBtn {
@@ -403,7 +404,7 @@
    HOW IT WORKS
    =========================== */
 .howItWorks {
-  padding: 72px 0 64px;
+  padding: 88px 0 80px;
   background: var(--hp-bg);
   position: relative;
   scroll-margin-top: 80px;
@@ -430,8 +431,8 @@
 .feature {
   background: var(--hp-surface);
   border: 1px solid #e8ecf1;
-  border-radius: 16px;
-  padding: 26px 20px 22px;
+  border-radius: 18px;
+  padding: 30px 24px 26px;
   text-align: center;
   transition: all 0.3s ease;
   position: relative;
@@ -505,7 +506,7 @@
    AUDIENCE SECTION
    =========================== */
 .audience {
-  padding: 64px 0 72px;
+  padding: 80px 0 88px;
   background: #f3f6fb;
 }
 
@@ -518,8 +519,8 @@
 .audienceCard {
   background: var(--hp-surface);
   border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  padding: 28px 24px 24px;
+  border-radius: 18px;
+  padding: 32px 28px 28px;
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
@@ -593,7 +594,7 @@
    CTA BANNER
    =========================== */
 .ctaBanner {
-  padding: 52px 0;
+  padding: 64px 0;
   background: linear-gradient(145deg, #1a3355 0%, #162544 50%, #0f172a 100%);
   text-align: center;
   position: relative;
@@ -670,7 +671,7 @@
    CONTACT SECTION
    =========================== */
 .contact {
-  padding: 60px 0;
+  padding: 72px 0;
   background: linear-gradient(170deg, #f8fafb 0%, #f0f4ff 50%, #eef8f0 100%);
   scroll-margin-top: 80px;
 }
@@ -1023,12 +1024,12 @@
   }
 
   .hero {
-    padding: 16px 0 0;
+    padding: 28px 0 8px;
   }
 
   .howItWorks,
   .audience {
-    padding: 52px 0;
+    padding: 56px 0;
   }
 
   .sectionContainer {
