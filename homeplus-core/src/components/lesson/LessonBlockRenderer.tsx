@@ -108,9 +108,36 @@ function VideoBlock({ content }: { content: VideoBlockContent }) {
         <iframe src={getEmbedUrl(content.url)} title={content.title || 'Video'} allowFullScreen />
       </div>
       {content.aiSummary && (
-        <details style={{ marginTop: 10, fontSize: '0.85rem', color: '#475569' }}>
-          <summary style={{ cursor: 'pointer', fontWeight: 600, color: '#2563eb' }}>🤖 AI Summary</summary>
-          <p style={{ marginTop: 6, lineHeight: 1.6 }}>{content.aiSummary}</p>
+        <details style={{
+          marginTop: 14,
+          background: '#f8fafc',
+          borderRadius: 12,
+          border: '1px solid #e2e8f0',
+          overflow: 'hidden',
+        }}>
+          <summary style={{
+            cursor: 'pointer',
+            fontWeight: 700,
+            fontSize: '0.88rem',
+            color: '#334155',
+            padding: '12px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            userSelect: 'none',
+          }}>
+            <span style={{ fontSize: '1.1rem' }}>📝</span>
+            Video Summary — Read Instead of Watch
+          </summary>
+          <div style={{
+            padding: '4px 16px 14px',
+            fontSize: '0.88rem',
+            color: '#475569',
+            lineHeight: 1.7,
+            borderTop: '1px solid #e2e8f0',
+          }}>
+            {content.aiSummary}
+          </div>
         </details>
       )}
     </div>

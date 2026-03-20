@@ -666,7 +666,7 @@
   background: var(--card-bg);
   border: 1px solid var(--card-border);
   border-radius: 20px;
-  overflow: hidden;
+  overflow: visible;
   text-decoration: none;
   color: inherit;
   transition: all 0.22s ease;
@@ -690,6 +690,8 @@
 .unitCardBand {
   height: 8px;
   background: var(--subject-gradient, linear-gradient(90deg, #2563eb, #3b82f6));
+  border-radius: 20px 20px 0 0;
+  overflow: hidden;
 }
 
 .unitCardBody {

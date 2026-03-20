@@ -296,13 +296,15 @@ export default function LessonFrame({
     }
   };
 
-  // Determine if student can continue (should not be unconditional for any mode)
+  // Determine if student can continue — reflection is always required
   const canContinue =
-    overallStatus === 'MASTERED' ||
-    overallStatus === 'COMPLETE' ||
-    // ELA/SS can continue after completing sections, not immediately
-    ((subjectMode === 'ELA' || subjectMode === 'SOCIAL_STUDIES') &&
-      (masteryResult?.passed || reflectionSaved || sectionsCompleted.check));
+    reflectionSaved && (
+      overallStatus === 'MASTERED' ||
+      overallStatus === 'COMPLETE' ||
+      // ELA/SS can continue after completing sections
+      ((subjectMode === 'ELA' || subjectMode === 'SOCIAL_STUDIES') &&
+        (masteryResult?.passed || sectionsCompleted.check))
+    );
 
   // Section key helper
   const sKey = (s: LessonSectionType): keyof SectionsData =>
