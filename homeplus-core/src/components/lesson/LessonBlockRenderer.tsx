@@ -513,11 +513,19 @@ function ConstructedResponseBlock({ content, onAnswer, readOnly, lessonId, block
   const [submitted, setSubmitted] = useState(false);
 
   const minLen = content.minLength || 20;
-  const isLongEnough = text.trim().split(/\s+/).filter(Boolean).length >= Math.max(minLen * 0.3, 8);
+  const isLongEnough = text.trim().split(/\s+/).filter(Boolean).length >= Math.max(Math.floor(minLen * 0.15), 3);
 
   const handleSubmit = useCallback(async () => {
-    if (!text.trim() || submitting || !lessonId) return;
+    if (!text.trim() || submitting) return;
     setSubmitting(true);
+
+    // If no lessonId, still mark as submitted (fallback)
+    if (!lessonId) {
+      setSubmitted(true);
+      onAnswer?.(text);
+      setSubmitting(false);
+      return;
+    }
 
     try {
       const res = await fetch(`/api/lesson/${lessonId}/ai-feedback`, {
@@ -552,7 +560,7 @@ function ConstructedResponseBlock({ content, onAnswer, readOnly, lessonId, block
     } finally {
       setSubmitting(false);
     }
-  }, [text, submitting, lessonId, content, onAnswer]);
+  }, [text, submitting, lessonId, content, onAnswer, subjectMode]);
 
   // Score badge color
   const getScoreColor = (score: number) => {
@@ -594,7 +602,7 @@ function ConstructedResponseBlock({ content, onAnswer, readOnly, lessonId, block
       {!submitted && (
         <button
           onClick={handleSubmit}
-          disabled={!text.trim() || submitting || !isLongEnough}
+          disabled={!text.trim() || submitting}
           style={{
             marginTop: 12,
             padding: '10px 24px',
