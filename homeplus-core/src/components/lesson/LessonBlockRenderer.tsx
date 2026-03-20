@@ -6,7 +6,7 @@
 // Renders individual lesson blocks by type.
 // Used inside the universal lesson frame.
 
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useCallback } from 'react';
 import styles from './lesson.module.css';
 import type {
   BlockType,
@@ -30,9 +30,11 @@ interface BlockProps {
   onAnswer?: (value: any) => void;
   readOnly?: boolean;
   showFeedback?: boolean;
+  lessonId?: string; // needed for AI feedback on constructed responses
+  blockId?: string;  // block identifier for tracking
 }
 
-export default function LessonBlockRenderer({ blockType, content, onAnswer, readOnly, showFeedback }: BlockProps) {
+export default function LessonBlockRenderer({ blockType, content, onAnswer, readOnly, showFeedback, lessonId, blockId }: BlockProps) {
   switch (blockType) {
     case 'TEXT':
       return <TextBlock content={content as TextBlockContent} />;
@@ -53,7 +55,7 @@ export default function LessonBlockRenderer({ blockType, content, onAnswer, read
     case 'MULTIPLE_CHOICE':
       return <MultipleChoiceBlock content={content as MultipleChoiceBlockContent} onAnswer={onAnswer} readOnly={readOnly} showFeedback={showFeedback} />;
     case 'CONSTRUCTED_RESPONSE':
-      return <ConstructedResponseBlock content={content as ConstructedResponseBlockContent} onAnswer={onAnswer} readOnly={readOnly} />;
+      return <ConstructedResponseBlock content={content as ConstructedResponseBlockContent} onAnswer={onAnswer} readOnly={readOnly} lessonId={lessonId} blockId={blockId} />;
     case 'DRAWING':
       return <DrawingBlock content={content as DrawingBlockContent} onAnswer={onAnswer} />;
     case 'PHOTO_UPLOAD':
@@ -290,37 +292,224 @@ function MultipleChoiceBlock({ content, onAnswer, readOnly, showFeedback }: {
   );
 }
 
-// ---- Constructed Response Block ----
-function ConstructedResponseBlock({ content, onAnswer, readOnly }: {
+// ---- Constructed Response Block (with AI Feedback) ----
+interface AIFeedback {
+  score: number;
+  feedback: string;
+  strengths: string[];
+  improvements: string[];
+  disclaimer: string;
+}
+
+function ConstructedResponseBlock({ content, onAnswer, readOnly, lessonId, blockId }: {
   content: ConstructedResponseBlockContent;
   onAnswer?: (value: any) => void;
   readOnly?: boolean;
+  lessonId?: string;
+  blockId?: string;
 }) {
   const [text, setText] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [feedback, setFeedback] = useState<AIFeedback | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+
+  const minLen = content.minLength || 20;
+  const isLongEnough = text.trim().split(/\s+/).filter(Boolean).length >= Math.max(minLen * 0.3, 8);
+
+  const handleSubmit = useCallback(async () => {
+    if (!text.trim() || submitting || !lessonId) return;
+    setSubmitting(true);
+
+    try {
+      const res = await fetch(`/api/lesson/${lessonId}/ai-feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: content.prompt,
+          rubricHint: content.rubricHint || '',
+          studentResponse: text,
+          minLength: content.minLength,
+          teacherReviewRequired: content.teacherReviewRequired,
+        }),
+      });
+
+      if (res.ok) {
+        const data: AIFeedback = await res.json();
+        setFeedback(data);
+        setSubmitted(true);
+        onAnswer?.(text); // mark block as complete
+      } else {
+        console.error('AI feedback failed:', await res.text());
+        // Still mark as complete on failure
+        setSubmitted(true);
+        onAnswer?.(text);
+      }
+    } catch (e) {
+      console.error('AI feedback error:', e);
+      setSubmitted(true);
+      onAnswer?.(text);
+    } finally {
+      setSubmitting(false);
+    }
+  }, [text, submitting, lessonId, content, onAnswer]);
+
+  // Score badge color
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return { bg: '#f0fdf4', border: '#86efac', text: '#059669' };
+    if (score >= 60) return { bg: '#eff6ff', border: '#93c5fd', text: '#2563eb' };
+    if (score >= 40) return { bg: '#fefce8', border: '#fde047', text: '#ca8a04' };
+    return { bg: '#fef2f2', border: '#fca5a5', text: '#dc2626' };
+  };
 
   return (
     <div className={styles.interactiveBlock}>
       <p className={styles.interactivePrompt}>{content.prompt}</p>
       {content.rubricHint && (
         <p style={{ fontSize: '0.78rem', color: '#64748b', margin: '0 0 8px' }}>
-          📋 {content.rubricHint}
+          📋 <strong>What your response should include:</strong> {content.rubricHint}
         </p>
       )}
       <textarea
         className={styles.textArea}
         value={text}
-        onChange={(e) => {
-          setText(e.target.value);
-          onAnswer?.(e.target.value);
-        }}
-        disabled={readOnly}
+        onChange={(e) => setText(e.target.value)}
+        disabled={readOnly || submitted}
         placeholder="Write your response..."
-        style={{ minHeight: content.minLength && content.minLength > 100 ? 180 : 100 }}
+        style={{
+          minHeight: content.minLength && content.minLength > 100 ? 180 : 120,
+          opacity: submitted ? 0.85 : 1,
+        }}
       />
-      {content.teacherReviewRequired && (
-        <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '6px 0 0' }}>
-          👩‍🏫 This response will be reviewed by your teacher
+
+      {/* Word count indicator */}
+      {!submitted && text.trim().length > 0 && (
+        <p style={{ fontSize: '0.75rem', color: isLongEnough ? '#059669' : '#94a3b8', margin: '4px 0 0', textAlign: 'right' }}>
+          {text.trim().split(/\s+/).filter(Boolean).length} words
+          {!isLongEnough && ` — aim for more detail`}
         </p>
+      )}
+
+      {/* Submit button */}
+      {!submitted && (
+        <button
+          onClick={handleSubmit}
+          disabled={!text.trim() || submitting || !isLongEnough}
+          style={{
+            marginTop: 12,
+            padding: '10px 24px',
+            borderRadius: 10,
+            border: 'none',
+            background: submitting ? '#94a3b8' : isLongEnough ? '#2563eb' : '#cbd5e1',
+            color: '#fff',
+            fontWeight: 700,
+            fontSize: '0.88rem',
+            cursor: submitting || !isLongEnough ? 'not-allowed' : 'pointer',
+            transition: 'all 0.2s',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}
+        >
+          {submitting ? (
+            <><span style={{ display: 'inline-block', animation: 'spin 1s linear infinite', fontSize: '1rem' }}>⏳</span> Getting feedback...</>
+          ) : (
+            <>✓ Submit for Feedback</>
+          )}
+        </button>
+      )}
+
+      {/* AI Feedback Display */}
+      {feedback && (
+        <div style={{
+          marginTop: 16,
+          border: `1.5px solid ${getScoreColor(feedback.score).border}`,
+          borderRadius: 12,
+          overflow: 'hidden',
+        }}>
+          {/* Score header */}
+          <div style={{
+            background: getScoreColor(feedback.score).bg,
+            padding: '14px 18px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 44,
+                height: 44,
+                borderRadius: '50%',
+                background: '#fff',
+                border: `2px solid ${getScoreColor(feedback.score).border}`,
+                fontWeight: 800,
+                fontSize: '0.88rem',
+                color: getScoreColor(feedback.score).text,
+              }}>
+                {feedback.score}%
+              </span>
+              <div>
+                <p style={{ fontWeight: 700, fontSize: '0.9rem', color: '#1e293b', margin: 0 }}>
+                  🤖 AI Feedback
+                </p>
+                <p style={{ fontSize: '0.82rem', color: '#475569', margin: '2px 0 0' }}>
+                  {feedback.feedback}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Strengths + Improvements */}
+          <div style={{ padding: '14px 18px' }}>
+            {feedback.strengths.length > 0 && (
+              <div style={{ marginBottom: 10 }}>
+                <p style={{ fontWeight: 700, fontSize: '0.82rem', color: '#059669', margin: '0 0 4px' }}>💪 Strengths:</p>
+                <ul style={{ margin: 0, paddingLeft: 18, fontSize: '0.82rem', color: '#334155', lineHeight: 1.6 }}>
+                  {feedback.strengths.map((s, i) => <li key={i}>{s}</li>)}
+                </ul>
+              </div>
+            )}
+            {feedback.improvements.length > 0 && (
+              <div style={{ marginBottom: 10 }}>
+                <p style={{ fontWeight: 700, fontSize: '0.82rem', color: '#d97706', margin: '0 0 4px' }}>📝 To Improve:</p>
+                <ul style={{ margin: 0, paddingLeft: 18, fontSize: '0.82rem', color: '#334155', lineHeight: 1.6 }}>
+                  {feedback.improvements.map((s, i) => <li key={i}>{s}</li>)}
+                </ul>
+              </div>
+            )}
+
+            {/* Teacher review disclaimer — always shown */}
+            <div style={{
+              marginTop: 10,
+              padding: '10px 14px',
+              background: '#f8fafc',
+              borderRadius: 8,
+              border: '1px solid #e2e8f0',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}>
+              <span style={{ fontSize: '1.1rem' }}>👩‍🏫</span>
+              <p style={{ fontSize: '0.75rem', color: '#64748b', margin: 0, lineHeight: 1.5 }}>
+                <strong>Note:</strong> {feedback.disclaimer || 'This is AI-generated feedback to help you improve. Your final grade will be reviewed and assigned by your teacher.'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Submitted without feedback (error case) */}
+      {submitted && !feedback && (
+        <div style={{ marginTop: 12, padding: '10px 14px', background: '#f0fdf4', borderRadius: 10, border: '1px solid #86efac' }}>
+          <p style={{ fontSize: '0.85rem', color: '#059669', margin: 0, fontWeight: 600 }}>
+            ✅ Response submitted!
+          </p>
+          <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '4px 0 0' }}>
+            👩‍🏫 Your final grade will be reviewed and assigned by your teacher.
+          </p>
+        </div>
       )}
     </div>
   );

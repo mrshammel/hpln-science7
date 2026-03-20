@@ -397,7 +397,7 @@ export default function LessonFrame({
             </div>
           </div>
           {blocksBySection.LEARN.map((b) => (
-            <LessonBlockRenderer key={b.id} blockType={b.blockType as any} content={b.content} onAnswer={(val) => { if (val) handleBlockComplete(b.id); }} />
+            <LessonBlockRenderer key={b.id} blockType={b.blockType as any} content={b.content} lessonId={lessonId} blockId={b.id} onAnswer={(val) => { if (val) handleBlockComplete(b.id); }} />
           ))}
         </div>
       )}
@@ -415,7 +415,7 @@ export default function LessonFrame({
             </div>
           </div>
           {blocksBySection.PRACTICE.map((b) => (
-            <LessonBlockRenderer key={b.id} blockType={b.blockType as any} content={b.content} onAnswer={(val) => { if (val) handleBlockComplete(b.id); }} />
+            <LessonBlockRenderer key={b.id} blockType={b.blockType as any} content={b.content} lessonId={lessonId} blockId={b.id} onAnswer={(val) => { if (val) handleBlockComplete(b.id); }} />
           ))}
         </div>
       )}
