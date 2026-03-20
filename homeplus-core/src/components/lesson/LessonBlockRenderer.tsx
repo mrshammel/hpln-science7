@@ -88,7 +88,8 @@ function TextBlock({ content }: { content: TextBlockContent }) {
 function VideoBlock({ content }: { content: VideoBlockContent }) {
   const getEmbedUrl = (url: string) => {
     if (!url) return '';
-    const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
+    // Match watch?v=, youtu.be/, and /embed/ formats
+    const yt = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]+)/);
     if (yt) return `https://www.youtube.com/embed/${yt[1]}`;
     return url;
   };

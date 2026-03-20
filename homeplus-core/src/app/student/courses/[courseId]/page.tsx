@@ -26,6 +26,7 @@ export default async function CourseDetailPage({ params }: Props) {
     progressPercent, completedLessons, totalLessons,
     averageScore, missingAssignments,
     currentUnit, currentLesson,
+    nextLessonId, nextUnitId,
     units,
   } = course;
 
@@ -76,8 +77,12 @@ export default async function CourseDetailPage({ params }: Props) {
       </section>
 
       {/* ===== HERO CONTINUE ===== */}
-      {currentLesson && (
-        <a className={styles.heroCard} href="#" aria-label="Continue learning">
+      {currentLesson && nextLessonId && nextUnitId && (
+        <Link
+          href={`/student/courses/${course.subjectId}/units/${nextUnitId}/lessons/${nextLessonId}`}
+          className={styles.heroCard}
+          aria-label="Continue learning"
+        >
           <div className={styles.heroIcon}>{subjectIcon}</div>
           <div className={styles.heroInfo}>
             <div className={styles.heroLabel}>▶ Continue Learning</div>
@@ -91,7 +96,7 @@ export default async function CourseDetailPage({ params }: Props) {
             </div>
           </div>
           <span className={styles.heroBtn}>Continue →</span>
-        </a>
+        </Link>
       )}
 
       {/* ===== UNIT CARDS ===== */}
