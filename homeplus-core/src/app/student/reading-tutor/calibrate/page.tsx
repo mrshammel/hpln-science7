@@ -25,7 +25,14 @@ export default function CalibratePage() {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   // ---------- Speech Helpers ----------
-  const startListening = useCallback((onResult: (text: string) => void, continuous = true) => {
+  const gotResultRef = useRef(false);
+  const retryCountRef = useRef(0);
+  const MAX_RETRIES = 2;
+
+  const startListening = useCallback((
+    onResult: (text: string) => void,
+    { onEndWithoutResult, continuous = true }: { onEndWithoutResult?: () => void; continuous?: boolean } = {},
+  ) => {
     const SpeechRecognition =
       (window as unknown as { SpeechRecognition?: typeof window.SpeechRecognition }).SpeechRecognition ||
       (window as unknown as { webkitSpeechRecognition?: typeof window.SpeechRecognition }).webkitSpeechRecognition;
@@ -35,12 +42,22 @@ export default function CalibratePage() {
       return;
     }
 
+    // clean up any previous session
+    if (recognitionRef.current) {
+      try { recognitionRef.current.abort(); } catch { /* ignore */ }
+      recognitionRef.current = null;
+    }
+
     const recognition = new SpeechRecognition();
     recognition.continuous = continuous;
     recognition.interimResults = false;
     recognition.lang = 'en-US';
+    recognition.maxAlternatives = 3;
+
+    gotResultRef.current = false;
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
+      gotResultRef.current = true;
       const text = event.results[event.results.length - 1][0].transcript;
       onResult(text.trim());
     };
@@ -51,6 +68,17 @@ export default function CalibratePage() {
       }
     };
 
+    recognition.onend = () => {
+      // If the session ended without a result, handle it
+      if (!gotResultRef.current && onEndWithoutResult) {
+        onEndWithoutResult();
+      }
+      // Always reset listening state when recognition truly ends
+      if (recognitionRef.current === recognition) {
+        setIsListening(false);
+      }
+    };
+
     recognition.start();
     recognitionRef.current = recognition;
     setIsListening(true);
@@ -58,7 +86,7 @@ export default function CalibratePage() {
 
   const stopListening = useCallback(() => {
     if (recognitionRef.current) {
-      recognitionRef.current.stop();
+      try { recognitionRef.current.stop(); } catch { /* ignore */ }
       recognitionRef.current = null;
     }
     setIsListening(false);
@@ -71,7 +99,7 @@ export default function CalibratePage() {
     startListening((text) => {
       fullTranscript += text + ' ';
       setFreeTalkTranscript(fullTranscript.trim());
-    }, true);
+    });
   };
 
   const finishFreeTalk = () => {
@@ -79,18 +107,46 @@ export default function CalibratePage() {
     setStep('REPEAT');
   };
 
+  const [repeatHint, setRepeatHint] = useState('');
+
   const startRepeatWord = () => {
     const word = REPEAT_WORDS[currentWordIdx];
-    startListening((text) => {
-      stopListening();
-      setRepeatResults((prev) => [...prev, { target: word, heard: text.toLowerCase() }]);
+    setRepeatHint('');
+    retryCountRef.current = 0;
 
-      if (currentWordIdx + 1 < REPEAT_WORDS.length) {
-        setCurrentWordIdx((i) => i + 1);
-      } else {
-        finishCalibration();
-      }
-    }, false);
+    const attemptListen = () => {
+      startListening(
+        (text) => {
+          // Got a result — record it and advance
+          stopListening();
+          setRepeatHint('');
+          retryCountRef.current = 0;
+          setRepeatResults((prev) => [...prev, { target: word, heard: text.toLowerCase() }]);
+
+          if (currentWordIdx + 1 < REPEAT_WORDS.length) {
+            setCurrentWordIdx((i) => i + 1);
+          } else {
+            finishCalibration();
+          }
+        },
+        {
+          continuous: true,
+          onEndWithoutResult: () => {
+            // Auto-retry a couple times, then show a hint
+            if (retryCountRef.current < MAX_RETRIES) {
+              retryCountRef.current++;
+              setRepeatHint('I didn\'t catch that — try again!');
+              setTimeout(attemptListen, 400);
+            } else {
+              setRepeatHint('Tap the microphone and say the word clearly.');
+              setIsListening(false);
+            }
+          },
+        },
+      );
+    };
+
+    attemptListen();
   };
 
   const finishCalibration = async () => {
@@ -250,6 +306,11 @@ export default function CalibratePage() {
               <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
                 Word {currentWordIdx + 1} of {REPEAT_WORDS.length}
               </div>
+              {repeatHint && (
+                <div style={{ fontSize: '0.85rem', color: '#f59e0b', marginTop: '8px', fontWeight: 500 }}>
+                  {repeatHint}
+                </div>
+              )}
             </div>
           </div>
         )}

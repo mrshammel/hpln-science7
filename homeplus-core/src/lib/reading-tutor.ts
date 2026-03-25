@@ -288,6 +288,64 @@ export function selectNextPassageLevel(
 
 // ---------- Helpers ----------
 
+/** Common speech-to-text equivalences (homophones, contractions, short forms) */
+const EQUIVALENCE_GROUPS: string[][] = [
+  ['to', 'too', 'two', '2'],
+  ['for', 'four', '4'],
+  ['a', 'uh', 'ah'],
+  ['the', 'da', 'duh', 'thuh'],
+  ['and', 'an', 'n', "'n"],
+  ['red', 'read'],
+  ['new', 'knew'],
+  ['there', 'their', "they're"],
+  ['your', "you're", 'ur'],
+  ['its', "it's"],
+  ['one', 'won', '1'],
+  ['right', 'write'],
+  ['no', 'know'],
+  ['hear', 'here'],
+  ['see', 'sea'],
+  ['would', 'wood'],
+  ['sun', 'son'],
+  ['I', 'eye'],
+  ['be', 'bee'],
+  ['ate', 'eight', '8'],
+  ['him', "'im"],
+  ['them', "'em"],
+  ['going', "goin'", 'goin'],
+  ['because', "'cause", 'cuz', 'cause'],
+  ['want', 'wanna'],
+  ['going to', 'gonna'],
+  ['got to', 'gotta'],
+  ['is not', "isn't"],
+  ['do not', "don't"],
+  ['can not', "can't"],
+  ['he is', "he's"],
+  ['she is', "she's"],
+  ['it is', "it's"],
+  ['like', 'likes'],  // common inflection difference
+];
+
+/** Build a quick-lookup map from each word -> its equivalence group */
+const equivalenceMap: Map<string, Set<string>> = new Map();
+for (const group of EQUIVALENCE_GROUPS) {
+  const groupSet = new Set(group.map((w) => w.toLowerCase()));
+  for (const word of group) {
+    const existing = equivalenceMap.get(word.toLowerCase());
+    if (existing) {
+      for (const w of groupSet) existing.add(w);
+    } else {
+      equivalenceMap.set(word.toLowerCase(), new Set(groupSet));
+    }
+  }
+}
+
+/** Filler / hesitation words that speech recognition picks up but aren't real words */
+const FILLER_WORDS = new Set([
+  'um', 'uh', 'umm', 'uhh', 'hmm', 'hm', 'er', 'ah', 'oh',
+  'okay', 'ok', 'like', 'so', 'well', 'yeah', 'yep',
+]);
+
 /** Normalize text to lowercase words array, stripping punctuation */
 function normalizeText(text: string): string[] {
   return text
@@ -297,6 +355,69 @@ function normalizeText(text: string): string[] {
     .filter((w) => w.length > 0);
 }
 
+/** Remove filler words from spoken transcript */
+function removeFillers(words: string[]): string[] {
+  return words.filter((w) => !FILLER_WORDS.has(w));
+}
+
+/** Levenshtein edit distance between two strings */
+function editDistance(a: string, b: string): number {
+  if (a === b) return 0;
+  if (a.length === 0) return b.length;
+  if (b.length === 0) return a.length;
+
+  const matrix: number[][] = [];
+  for (let i = 0; i <= a.length; i++) {
+    matrix[i] = [i];
+  }
+  for (let j = 0; j <= b.length; j++) {
+    matrix[0][j] = j;
+  }
+
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,     // deletion
+        matrix[i][j - 1] + 1,     // insertion
+        matrix[i - 1][j - 1] + cost, // substitution
+      );
+    }
+  }
+
+  return matrix[a.length][b.length];
+}
+
+/**
+ * Check if two words should be considered a "match" for reading accuracy.
+ * Uses homophones, edit distance, and prefix/suffix tolerance.
+ */
+function wordsMatch(expected: string, actual: string): boolean {
+  if (expected === actual) return true;
+
+  // Check homophones / equivalence
+  const eqGroup = equivalenceMap.get(expected);
+  if (eqGroup && eqGroup.has(actual)) return true;
+
+  // Check if one is a simple inflection of the other (e.g., "ride"/"rides", "go"/"goes")
+  if (expected.startsWith(actual) || actual.startsWith(expected)) {
+    const diff = Math.abs(expected.length - actual.length);
+    if (diff <= 2) return true; // covers -s, -es, -ed, -ly (short suffix)
+  }
+
+  // Edit distance tolerance — allows for speech recognition mishearings
+  const maxLen = Math.max(expected.length, actual.length);
+  const dist = editDistance(expected, actual);
+
+  if (maxLen <= 3) {
+    return dist <= 1; // short words: allow 1 edit (e.g., "a"/"ah", "it"/"is" etc.)
+  } else if (maxLen <= 6) {
+    return dist <= 1; // medium words: allow 1 edit
+  } else {
+    return dist <= 2; // long words: allow 2 edits
+  }
+}
+
 interface AlignedWord {
   expected: string;
   actual: string | null;
@@ -304,99 +425,91 @@ interface AlignedWord {
 }
 
 /**
- * Simple word-level alignment using greedy left-to-right matching.
- * For Phase 1 this provides adequate accuracy; Phase 2 can upgrade
- * to full edit-distance alignment.
+ * DP-based (Needleman-Wunsch style) word-sequence alignment.
+ * Aligns expected passage words to spoken transcript words using
+ * fuzzy word matching and optimal global alignment to avoid
+ * cascading misalignment from early mismatches.
  */
-function alignWords(expected: string[], spoken: string[]): AlignedWord[] {
-  const result: AlignedWord[] = [];
-  let si = 0; // spoken index
+function alignWords(expected: string[], rawSpoken: string[]): AlignedWord[] {
+  const spoken = removeFillers(rawSpoken);
 
-  for (let ei = 0; ei < expected.length; ei++) {
-    if (si >= spoken.length) {
-      // Remaining expected words are omissions
-      result.push({ expected: expected[ei], actual: null, type: 'OMISSION' });
-      continue;
-    }
+  const n = expected.length;
+  const m = spoken.length;
 
-    if (expected[ei] === spoken[si]) {
-      result.push({ expected: expected[ei], actual: spoken[si], type: 'MATCH' });
-      si++;
-    } else {
-      // Look ahead in spoken words for a match (handles insertions)
-      const lookAhead = Math.min(si + 3, spoken.length);
-      let foundAhead = -1;
-      for (let k = si + 1; k < lookAhead; k++) {
-        if (expected[ei] === spoken[k]) {
-          foundAhead = k;
-          break;
-        }
-      }
+  // Scoring
+  const MATCH_SCORE = 0;
+  const MISMATCH_SCORE = 2; // cost of substitution
+  const GAP_SCORE = 1;      // cost of omission or insertion
 
-      if (foundAhead > -1) {
-        // Words between si and foundAhead are insertions
-        for (let k = si; k < foundAhead; k++) {
-          result.push({
-            expected: '',
-            actual: spoken[k],
-            type: 'INSERTION',
-          });
-        }
-        result.push({
-          expected: expected[ei],
-          actual: spoken[foundAhead],
-          type: 'MATCH',
-        });
-        si = foundAhead + 1;
+  // DP table
+  const dp: number[][] = Array.from({ length: n + 1 }, () => Array(m + 1).fill(0));
+  // Direction tracking: 0 = diag, 1 = up (omission), 2 = left (insertion)
+  const trace: number[][] = Array.from({ length: n + 1 }, () => Array(m + 1).fill(0));
+
+  // Initialize
+  for (let i = 1; i <= n; i++) {
+    dp[i][0] = i * GAP_SCORE;
+    trace[i][0] = 1;
+  }
+  for (let j = 1; j <= m; j++) {
+    dp[0][j] = j * GAP_SCORE;
+    trace[0][j] = 2;
+  }
+
+  // Fill DP table
+  for (let i = 1; i <= n; i++) {
+    for (let j = 1; j <= m; j++) {
+      const isMatch = wordsMatch(expected[i - 1], spoken[j - 1]);
+      const diagCost = dp[i - 1][j - 1] + (isMatch ? MATCH_SCORE : MISMATCH_SCORE);
+      const upCost = dp[i - 1][j] + GAP_SCORE;
+      const leftCost = dp[i][j - 1] + GAP_SCORE;
+
+      if (diagCost <= upCost && diagCost <= leftCost) {
+        dp[i][j] = diagCost;
+        trace[i][j] = 0;
+      } else if (upCost <= leftCost) {
+        dp[i][j] = upCost;
+        trace[i][j] = 1;
       } else {
-        // Look ahead in expected for a match (handles omissions)
-        const eLookAhead = Math.min(ei + 3, expected.length);
-        let foundEAhead = -1;
-        for (let k = ei + 1; k < eLookAhead; k++) {
-          if (expected[k] === spoken[si]) {
-            foundEAhead = k;
-            break;
-          }
-        }
-
-        if (foundEAhead > -1) {
-          // Words between ei and foundEAhead are omissions
-          for (let k = ei; k < foundEAhead; k++) {
-            result.push({
-              expected: expected[k],
-              actual: null,
-              type: 'OMISSION',
-            });
-          }
-          result.push({
-            expected: expected[foundEAhead],
-            actual: spoken[si],
-            type: 'MATCH',
-          });
-          ei = foundEAhead; // advance expected index
-          si++;
-        } else {
-          // Simple substitution
-          result.push({
-            expected: expected[ei],
-            actual: spoken[si],
-            type: 'SUBSTITUTION',
-          });
-          si++;
-        }
+        dp[i][j] = leftCost;
+        trace[i][j] = 2;
       }
     }
   }
 
-  // Remaining spoken words are insertions
-  while (si < spoken.length) {
-    result.push({
-      expected: '',
-      actual: spoken[si],
-      type: 'INSERTION',
-    });
-    si++;
+  // Traceback
+  const result: AlignedWord[] = [];
+  let i = n;
+  let j = m;
+
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && trace[i][j] === 0) {
+      const isMatch = wordsMatch(expected[i - 1], spoken[j - 1]);
+      result.push({
+        expected: expected[i - 1],
+        actual: spoken[j - 1],
+        type: isMatch ? 'MATCH' : 'SUBSTITUTION',
+      });
+      i--;
+      j--;
+    } else if (i > 0 && trace[i][j] === 1) {
+      result.push({
+        expected: expected[i - 1],
+        actual: null,
+        type: 'OMISSION',
+      });
+      i--;
+    } else {
+      result.push({
+        expected: '',
+        actual: spoken[j - 1],
+        type: 'INSERTION',
+      });
+      j--;
+    }
   }
 
+  result.reverse();
   return result;
 }
+

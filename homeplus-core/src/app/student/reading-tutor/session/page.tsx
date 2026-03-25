@@ -192,6 +192,45 @@ export default function ReadingSessionPage() {
   }, [passage, transcript]);
 
   // ---------- Comprehension Chat ----------
+  const buildFallbackQuestions = useCallback(() => {
+    const title = passage?.title || 'the passage';
+    return [
+      {
+        question: `What was "${title}" mostly about? Can you tell me in your own words?`,
+        type: 'literal',
+        expectedAnswer: 'A summary of the main idea',
+        encouragement: "That's okay! Think about the most important thing that happened.",
+      },
+      {
+        question: 'What was your favourite part? Why did you like it?',
+        type: 'connection',
+        expectedAnswer: 'A personal connection to the text',
+        encouragement: "There's no wrong answer here — just tell me what you thought!",
+      },
+      {
+        question: 'Was there anything in the passage that surprised you or that you didn\'t expect?',
+        type: 'inference',
+        expectedAnswer: 'An observation about something unexpected',
+        encouragement: 'Think about what happened — was anything different from what you guessed?',
+      },
+    ];
+  }, [passage]);
+
+  const loadQuestionsIntoChat = useCallback((greeting: string, questions: { question: string; type: string; expectedAnswer: string; encouragement?: string }[]) => {
+    setChatMessages([{ role: 'tutor', text: greeting }]);
+    if (questions.length > 0) {
+      setTotalQuestions(questions.length);
+      sessionStorage.setItem('rt-questions', JSON.stringify(questions));
+      // Ask first question after greeting
+      setTimeout(() => {
+        setChatMessages((prev) => [
+          ...prev,
+          { role: 'tutor', text: questions[0].question },
+        ]);
+      }, 1500);
+    }
+  }, []);
+
   const startComprehension = useCallback(async () => {
     setPhase('COMPREHENSION');
     setChatLoading(true);
@@ -212,30 +251,29 @@ export default function ReadingSessionPage() {
 
       if (res.ok) {
         const data = await res.json();
-        setChatMessages([{ role: 'tutor', text: data.greeting }]);
-        if (data.questions?.length > 0) {
-          setTotalQuestions(data.questions.length);
-          // Store questions in session for follow-up
-          sessionStorage.setItem('rt-questions', JSON.stringify(data.questions));
-          // Ask first question after greeting
-          setTimeout(() => {
-            setChatMessages((prev) => [
-              ...prev,
-              { role: 'tutor', text: data.questions[0].question },
-            ]);
-          }, 1500);
-        }
+        const greeting = data.greeting || "Nice reading! Let's talk about what you just read. 😊";
+        const questions = data.questions?.length > 0 ? data.questions : buildFallbackQuestions();
+        loadQuestionsIntoChat(greeting, questions);
+      } else {
+        // API returned an error — use fallback questions
+        console.error('[Comprehension] API returned status', res.status);
+        const fallback = buildFallbackQuestions();
+        loadQuestionsIntoChat(
+          "Great job reading! Let's chat about what you read. 😊",
+          fallback,
+        );
       }
-    } catch {
-      setChatMessages([
-        {
-          role: 'tutor',
-          text: "Hmm, I had a little trouble connecting. That's okay! Let's skip the questions for now and look at your reading results. You did great! 🌟",
-        },
-      ]);
+    } catch (err) {
+      console.error('[Comprehension] Network error:', err);
+      // Network error — still give them fallback questions
+      const fallback = buildFallbackQuestions();
+      loadQuestionsIntoChat(
+        "Great job reading! Let's chat about what you read. 😊",
+        fallback,
+      );
     }
     setChatLoading(false);
-  }, [passage, analysis]);
+  }, [passage, analysis, buildFallbackQuestions, loadQuestionsIntoChat]);
 
   const sendAnswer = useCallback(async () => {
     if (!chatInput.trim()) return;

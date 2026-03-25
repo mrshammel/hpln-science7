@@ -47,14 +47,18 @@ export async function POST(req: NextRequest) {
       try {
         parsed = JSON.parse(responseText);
       } catch {
-        const jsonMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)```/);
-        parsed = jsonMatch ? JSON.parse(jsonMatch[1].trim()) : { greeting: "Great job reading! Let's talk about what you read.", questions: [] };
+        try {
+          const jsonMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)```/);
+          parsed = jsonMatch ? JSON.parse(jsonMatch[1].trim()) : {};
+        } catch {
+          parsed = {};
+        }
       }
 
-      return NextResponse.json({
-        greeting: String(parsed.greeting || "Nice reading! Let's talk about what you just read. 😊"),
-        questions: parsed.questions || [],
-      });
+      const greeting = String(parsed.greeting || "Nice reading! Let's talk about what you just read. 😊");
+      const questions = Array.isArray(parsed.questions) ? parsed.questions : [];
+
+      return NextResponse.json({ greeting, questions });
     }
 
     if (action === 'evaluate') {
