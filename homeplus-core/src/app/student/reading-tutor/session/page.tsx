@@ -539,12 +539,15 @@ export default function ReadingSessionPage() {
         }),
       });
 
-      if (res.ok) {
-        const data = await res.json();
+      // Always try to read the response body — server now returns feedback even on errors
+      const data = await res.json().catch(() => null);
+
+      if (data?.feedback) {
+        console.log(`[Comprehension] Response from: ${data.source || 'unknown'}`);
         setComprehensionScore((prev) => prev + (data.score || 0));
-        advanceToNext(data.feedback || "Great answer! Let's keep going. 😊");
+        advanceToNext(data.feedback);
       } else {
-        console.error('[Comprehension] API error', res.status);
+        console.error('[Comprehension] No feedback in response', res.status, data);
         const fallback = buildOfflineFeedback(answer);
         setComprehensionScore((prev) => prev + fallback.score);
         advanceToNext(fallback.feedback);
