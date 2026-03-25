@@ -52,6 +52,9 @@ export default function ReadingSessionPage() {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const startTimeRef = useRef<number>(0);
+  // MediaRecorder for hybrid audio fallback
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   // Analysis state
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
@@ -152,8 +155,8 @@ export default function ReadingSessionPage() {
     loadPassage();
   }, []);
 
-  // ---------- Speech Recognition ----------
-  const startRecording = useCallback(() => {
+  // ---------- Speech Recognition (Hybrid: Browser + Gemini Fallback) ----------
+  const startRecording = useCallback(async () => {
     const SpeechRecognition =
       (window as unknown as { SpeechRecognition?: typeof window.SpeechRecognition }).SpeechRecognition ||
       (window as unknown as { webkitSpeechRecognition?: typeof window.SpeechRecognition }).webkitSpeechRecognition;
@@ -163,6 +166,7 @@ export default function ReadingSessionPage() {
       return;
     }
 
+    // Start browser speech recognition (free, real-time)
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
@@ -203,6 +207,30 @@ export default function ReadingSessionPage() {
 
     recognition.start();
     recognitionRef.current = recognition;
+
+    // Also start MediaRecorder for backup audio capture
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+          ? 'audio/webm;codecs=opus'
+          : 'audio/webm',
+      });
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.start(1000); // Capture in 1-second chunks
+      mediaRecorderRef.current = mediaRecorder;
+    } catch (err) {
+      // MediaRecorder failed — that's okay, browser speech will still work
+      console.warn('[Hybrid] Could not start audio recording:', err);
+    }
+
     startTimeRef.current = Date.now();
     setIsListening(true);
     setPhase('RECORDING');
@@ -214,10 +242,24 @@ export default function ReadingSessionPage() {
   }, []);
 
   const stopRecording = useCallback(async () => {
+    // Stop browser speech recognition
     if (recognitionRef.current) {
       recognitionRef.current.onend = null;
       recognitionRef.current.stop();
       recognitionRef.current = null;
+    }
+
+    // Stop MediaRecorder and collect audio
+    let audioBlob: Blob | null = null;
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      await new Promise<void>((resolve) => {
+        mediaRecorderRef.current!.onstop = () => resolve();
+        mediaRecorderRef.current!.stop();
+      });
+      // Stop the microphone stream
+      mediaRecorderRef.current.stream.getTracks().forEach((t) => t.stop());
+      audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+      mediaRecorderRef.current = null;
     }
 
     if (timerRef.current) {
@@ -230,7 +272,55 @@ export default function ReadingSessionPage() {
 
     const durationSeconds = Math.round((Date.now() - startTimeRef.current) / 1000);
 
-    // Send for analysis
+    // --- Hybrid fallback logic ---
+    // Check if browser transcript looks incomplete
+    const expectedWordCount = passage?.text?.split(/\s+/).length || 0;
+    const browserWordCount = transcript.trim().split(/\s+/).filter(Boolean).length;
+    const captureRatio = expectedWordCount > 0 ? browserWordCount / expectedWordCount : 1;
+
+    let finalTranscript = transcript;
+
+    if (captureRatio < 0.5 && audioBlob && audioBlob.size > 1000) {
+      // Browser captured less than 50% of expected words — use Gemini fallback
+      console.log(`[Hybrid] Browser captured ${browserWordCount}/${expectedWordCount} words (${Math.round(captureRatio * 100)}%). Sending to Gemini...`);
+
+      try {
+        // Convert audio blob to base64
+        const arrayBuffer = await audioBlob.arrayBuffer();
+        const base64 = btoa(
+          new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+        );
+
+        const res = await fetch('/api/reading-tutor/transcribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            audioBase64: base64,
+            mimeType: 'audio/webm',
+            passageText: passage?.text,
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.transcript) {
+            const geminiWordCount = data.transcript.trim().split(/\s+/).length;
+            console.log(`[Hybrid] Gemini captured ${geminiWordCount} words vs browser ${browserWordCount}`);
+            // Use whichever transcript has more words
+            if (geminiWordCount > browserWordCount) {
+              finalTranscript = data.transcript;
+              setTranscript(data.transcript);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[Hybrid] Gemini fallback failed, using browser transcript:', err);
+      }
+    } else {
+      console.log(`[Hybrid] Browser captured ${browserWordCount}/${expectedWordCount} words (${Math.round(captureRatio * 100)}%). No fallback needed.`);
+    }
+
+    // Send for analysis with the best available transcript
     try {
       const res = await fetch('/api/reading-tutor/analyze', {
         method: 'POST',
@@ -238,7 +328,7 @@ export default function ReadingSessionPage() {
         body: JSON.stringify({
           passageId: passage?.id,
           originalText: passage?.text,
-          transcript,
+          transcript: finalTranscript,
           durationSeconds,
         }),
       });
