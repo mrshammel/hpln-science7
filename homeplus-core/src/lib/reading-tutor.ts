@@ -237,14 +237,20 @@ export function estimateLexile(
 
 /**
  * Select the next passage based on performance history.
- * Starts easy (Grade 1-2) and adapts upward as student demonstrates mastery.
+ * Uses Science of Reading instructional level thresholds:
+ * - Independent level: 95%+ accuracy (student can read alone)
+ * - Instructional level: 90-94% accuracy (sweet spot for learning)
+ * - Frustration level: below 90% accuracy (too hard — step down)
+ *
+ * UFLI principle: always keep students in the instructional zone.
+ * If they're in frustration, step DOWN significantly to rebuild confidence.
  */
 export function selectNextPassageLevel(
   recentSessions: { accuracyRate: number; comprehensionScore: number; passageLexile: number }[]
 ): { targetLexile: number; targetGrade: number } {
   if (recentSessions.length === 0) {
-    // First session: start at Grade 1 (Lexile 200) to build confidence
-    return { targetLexile: 200, targetGrade: 1 };
+    // First session: start very easy (Pre-primer, ~Lexile 100) to build confidence
+    return { targetLexile: 100, targetGrade: 1 };
   }
 
   const last = recentSessions[0];
@@ -257,31 +263,46 @@ export function selectNextPassageLevel(
 
   let targetLexile = last.passageLexile;
 
-  // Move up if consistently doing well
-  if (avgAccuracy >= 95 && avgComprehension >= 80 && recentSessions.length >= 2) {
+  // ——— SoR-aligned leveling decisions ———
+
+  if (avgAccuracy >= 97 && avgComprehension >= 80 && recentSessions.length >= 2) {
+    // Well above independent level — move up confidently
     targetLexile = last.passageLexile + 75;
-  } else if (avgAccuracy >= 90 && avgComprehension >= 70) {
-    targetLexile = last.passageLexile + 25;
-  } else if (avgAccuracy < 85 || avgComprehension < 50) {
-    // Step back to rebuild confidence
+  } else if (avgAccuracy >= 95 && avgComprehension >= 70) {
+    // At independent level — nudge up slightly
+    targetLexile = last.passageLexile + 40;
+  } else if (avgAccuracy >= 90 && avgComprehension >= 60) {
+    // Instructional level — this is the sweet spot, stay or move up slightly
+    targetLexile = last.passageLexile + 15;
+  } else if (avgAccuracy >= 85) {
+    // Approaching frustration — step back to rebuild
     targetLexile = last.passageLexile - 50;
+  } else if (avgAccuracy >= 70) {
+    // Frustration level — significant step down needed
+    targetLexile = last.passageLexile - 100;
+  } else {
+    // Deep frustration (below 70%) — major step down, this passage was way too hard
+    targetLexile = last.passageLexile - 150;
   }
 
-  targetLexile = Math.max(100, Math.min(900, targetLexile));
+  // Floor at Lexile 50 (pre-primer decodable text), ceiling at 900
+  targetLexile = Math.max(50, Math.min(900, targetLexile));
 
-  // Map Lexile to approximate grade
+  // Map Lexile to approximate grade level (SoR-aligned ranges)
   const targetGrade =
-    targetLexile <= 200
+    targetLexile <= 100
       ? 1
-      : targetLexile <= 400
-        ? 2
-        : targetLexile <= 550
-          ? 3
-          : targetLexile <= 700
-            ? 4
-            : targetLexile <= 850
-              ? 5
-              : 6;
+      : targetLexile <= 250
+        ? 1
+        : targetLexile <= 400
+          ? 2
+          : targetLexile <= 550
+            ? 3
+            : targetLexile <= 700
+              ? 4
+              : targetLexile <= 850
+                ? 5
+                : 6;
 
   return { targetLexile, targetGrade };
 }
