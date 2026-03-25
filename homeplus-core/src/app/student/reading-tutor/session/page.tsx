@@ -76,44 +76,55 @@ export default function ReadingSessionPage() {
   useEffect(() => { chatModeRef.current = chatMode; }, [chatMode]);
 
   // ---------- Text-to-Speech ----------
-  const speakText = useCallback((text: string) => {
-    if (!window.speechSynthesis) return;
-    // Cancel any ongoing speech
-    window.speechSynthesis.cancel();
+  const speakText = useCallback((text: string): Promise<void> => {
+    return new Promise((resolve) => {
+      if (!window.speechSynthesis) { resolve(); return; }
+      // Cancel any ongoing speech
+      window.speechSynthesis.cancel();
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.95;
-    utterance.pitch = 1.1;
-    utterance.volume = 1;
-    utterance.lang = 'en-US';
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.92;
+      utterance.pitch = 1.1;
+      utterance.volume = 1;
+      utterance.lang = 'en-US';
 
-    // Try to pick a warm female voice
-    const voices = window.speechSynthesis.getVoices();
-    const preferred = voices.find((v) =>
-      /female|samantha|zira|karen|victoria|fiona/i.test(v.name) && v.lang.startsWith('en')
-    ) || voices.find((v) => v.lang.startsWith('en') && v.name.includes('Google'));
-    if (preferred) utterance.voice = preferred;
+      // Try to pick a warm female voice
+      const voices = window.speechSynthesis.getVoices();
+      const preferred = voices.find((v) =>
+        /female|samantha|zira|karen|victoria|fiona/i.test(v.name) && v.lang.startsWith('en')
+      ) || voices.find((v) => v.lang.startsWith('en') && v.name.includes('Google'));
+      if (preferred) utterance.voice = preferred;
 
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => { setIsSpeaking(false); resolve(); };
+      utterance.onerror = () => { setIsSpeaking(false); resolve(); };
 
-    window.speechSynthesis.speak(utterance);
+      window.speechSynthesis.speak(utterance);
+
+      // Safety timeout: resolve after 15s max so we never get stuck
+      setTimeout(resolve, 15000);
+    });
   }, []);
 
   // Speak new tutor messages when in voice mode
+  // (only for messages NOT from advanceToNext, which handles its own TTS)
+  const advancingSpeechRef = useRef(false);
   useEffect(() => {
     if (chatModeRef.current !== 'voice') {
       prevMsgCountRef.current = chatMessages.length;
       return;
     }
-    // Only speak newly added messages
+    if (advancingSpeechRef.current) {
+      // advanceToNext is handling TTS directly — skip auto-speak
+      prevMsgCountRef.current = chatMessages.length;
+      return;
+    }
+    // Only speak newly added messages (greeting, first question)
     const newMessages = chatMessages.slice(prevMsgCountRef.current);
     prevMsgCountRef.current = chatMessages.length;
 
     const tutorMessages = newMessages.filter((m) => m.role === 'tutor');
     if (tutorMessages.length > 0) {
-      // Speak the latest tutor message
       speakText(tutorMessages[tutorMessages.length - 1].text);
     }
   }, [chatMessages, speakText]);
@@ -156,6 +167,7 @@ export default function ReadingSessionPage() {
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = 'en-US';
+    recognition.maxAlternatives = 3;
 
     let finalTranscript = '';
 
@@ -340,6 +352,8 @@ export default function ReadingSessionPage() {
     const currentQuestion = questions[questionIndex];
 
     // Generate context-aware fallback when AI is unavailable
+    const pick = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
+
     const buildOfflineFeedback = (ans: string): { feedback: string; score: number } => {
       const words = ans.trim().split(/\s+/).length;
       const isDontKnow = /i don'?t know|idk|not sure|no idea|i forgot/i.test(ans);
@@ -348,50 +362,76 @@ export default function ReadingSessionPage() {
 
       if (isDontKnow) {
         const hint = currentQuestion?.encouragement || "Try thinking back to what you read — what do you remember?";
-        return { feedback: `That's okay! No pressure. ${hint} 💛`, score: 10 };
+        return { feedback: pick([
+          `That's okay! No pressure. ${hint} 💛`,
+          `No worries at all! Let me help — ${hint} 😊`,
+          `It's totally fine to not remember everything. Here's a little hint: ${hint} ✨`,
+        ]), score: 10 };
       }
 
       if (isOneWord) {
-        return {
-          feedback: `Okay! Can you tell me a bit more? Try adding one or two more details to your answer. I bet you know more than you think! 😊`,
-          score: 40,
-        };
+        return { score: 40, feedback: pick([
+          "You're on the right track! Can you tell me just a little more about why you think that? 😊",
+          "Okay! I'd love to hear more — can you add a detail or two? I bet you know more than you think! 💪",
+          "Good start! Try telling me a bit more — even one extra sentence would be awesome. 🌟",
+          "Nice! Now stretch that answer — what else do you remember about it? 📖",
+        ]) };
       }
 
       if (isShort) {
-        return {
-          feedback: `I like where you're going with that! You're thinking about the right things. Let's move on to the next question. 👍`,
-          score: 60,
-        };
+        return { score: 60, feedback: pick([
+          "You're thinking about the right things — nice work! Let's keep going. 👍",
+          "I can see you understood part of it! That's a solid answer. Onto the next one! ✨",
+          "Good thinking! You picked up on something important there. 😊",
+          "You're getting the idea — I like how you connected that! Let's try another. 📚",
+        ]) };
       }
 
-      // Longer, more detailed answer — give genuine acknowledgment
-      return {
-        feedback: `Wow, I can tell you were really paying attention! You gave me a lot of detail there, and I love that. Great job! 🌟`,
-        score: 75,
-      };
+      // Longer, more detailed answer
+      return { score: 75, feedback: pick([
+        "Wow, I can tell you were really paying attention! I love all that detail. Great job! 🌟",
+        "What a wonderful answer! You really thought about that carefully. I'm impressed! 🎉",
+        "You explained that so well! I can tell the story really stuck with you. Awesome work! ✨",
+        "That's exactly the kind of answer I love to see — detailed and thoughtful. You're a star reader! ⭐",
+      ]) };
     };
 
-    const advanceToNext = (feedback: string) => {
+    // Wait for TTS to finish before showing next question (voice mode)
+    const advanceToNext = async (feedback: string) => {
+      advancingSpeechRef.current = true;
       setChatMessages((prev) => [...prev, { role: 'tutor', text: feedback }]);
+
+      // In voice mode, wait for TTS to actually finish speaking before advancing
+      if (chatModeRef.current === 'voice') {
+        await speakText(feedback);
+        // Small pause after speech ends so it doesn't feel rushed
+        await new Promise((r) => setTimeout(r, 800));
+      } else {
+        // In text mode, just wait a short time
+        await new Promise((r) => setTimeout(r, 1500));
+      }
 
       const nextIdx = questionIndex + 1;
       if (nextIdx < questions.length) {
         setQuestionIndex(nextIdx);
-        setTimeout(() => {
-          setChatMessages((prev) => [
-            ...prev,
-            { role: 'tutor', text: questions[nextIdx].question },
-          ]);
-          setChatLoading(false);
-        }, 2000);
-      } else {
-        // All questions done — go to summary
+        setChatMessages((prev) => [
+          ...prev,
+          { role: 'tutor', text: questions[nextIdx].question },
+        ]);
+        // Speak the next question in voice mode
+        if (chatModeRef.current === 'voice') {
+          await speakText(questions[nextIdx].question);
+        }
         setChatLoading(false);
-        setTimeout(() => {
-          finishSession();
-        }, 2000);
+      } else {
+        setChatLoading(false);
+        // Wait for final TTS to finish before going to summary
+        if (chatModeRef.current === 'voice') {
+          await new Promise((r) => setTimeout(r, 1500));
+        }
+        finishSession();
       }
+      advancingSpeechRef.current = false;
     };
 
     try {
