@@ -111,7 +111,8 @@ export function buildAnswerEvaluationPrompt(
   questionType: string,
   expectedAnswer: string,
   studentAnswer: string,
-  gradeLevel: number
+  gradeLevel: number,
+  passageText?: string
 ): string {
   const wordCount = studentAnswer.trim().split(/\s+/).length;
   const isVeryShort = wordCount <= 3;
@@ -119,7 +120,8 @@ export function buildAnswerEvaluationPrompt(
 
   return `${MRS_HAMMEL_PERSONA}
 
-You asked a Grade ${gradeLevel} student this ${questionType} comprehension question:
+${passageText ? `The student just read this passage:\n"${passageText}"\n` : ''}
+You asked this Grade ${gradeLevel} student a ${questionType} comprehension question:
 "${question}"
 
 A good answer would include: ${expectedAnswer}
@@ -127,42 +129,35 @@ A good answer would include: ${expectedAnswer}
 The student answered: "${studentAnswer}"
 (Word count: ${wordCount} words)
 
-EVALUATE THEIR ANSWER REALISTICALLY. You must consider ALL of these factors:
+EVALUATE THEIR ANSWER by comparing it to the passage AND the expected answer. You must:
 
-1. **Accuracy**: Does the answer match the expected content? Is it correct, partially correct, or wrong?
-2. **Detail level**: Did they explain their thinking, or give a bare minimum answer?
-3. **Effort indicators**: A one-word or very short answer suggests low effort. A longer, detailed answer shows engagement.
-4. **Tone**: Are they guessing? Do they sound unsure? Are they clearly engaged?
+1. **Check accuracy against the passage**: Does the student's answer match what actually happened in the text?
+2. **Assess completeness**: Did they capture the key idea, or just give a surface-level response?
+3. **Note effort**: A brief but correct answer is different from a detailed one. Be honest about both.
+4. **Respond to their SPECIFIC words**: Reference what they actually said in your feedback.
 
-CRITICAL RULES for realistic feedback:
-- If the answer is WRONG, don't pretend it's right. Gently redirect: "Hmm, not quite! Let me help you think about this..."
-- If the answer is VERY SHORT (1-3 words) but correct, acknowledge it but encourage more: "You're on the right track! Can you tell me a little more about why?"
-- If the answer is DETAILED and correct, be genuinely enthusiastic and specific about what they did well.
-- If they say "I don't know" or similar, be warm but try to scaffold: "That's okay! Let me give you a hint..."
-- If the answer is partially correct, name what they got right AND what's missing.
-- NEVER say "that's a thoughtful answer" for a one-word or clearly low-effort response.
-- VARY your language — don't start every response the same way.
-- Keep it to 2-3 sentences maximum.
-- Reference SPECIFIC details from their answer in your feedback.
+CRITICAL RULES:
+- If the answer is CORRECT but BRIEF (like "it's about a dog"), say something like: "Yes! It IS about a dog. Can you remember what the dog's name was or what it liked to do?"
+- If the answer is WRONG, gently correct: "Hmm, not quite. The story was actually about ___. Let's keep going!"
+- If they say "I don't know", scaffold with a specific detail from the passage as a hint
+- Reference THEIR words: "You said '${studentAnswer.substring(0, 30)}...' — "
+- Do NOT say things like "I love all that detail" unless they actually gave a detailed, multi-sentence answer
+- Do NOT use generic praise that doesn't match their effort level
+- Keep it to 2-3 sentences
+- VARY your opening — don't start with the same word twice
 
-${isDontKnow ? 'NOTE: The student expressed uncertainty. Provide a helpful hint from the passage to guide them, and still be warm.' : ''}
-${isVeryShort ? 'NOTE: This is a very short answer. If correct, push for elaboration. If wrong, gently redirect.' : ''}
+${isDontKnow ? 'NOTE: Student is unsure. Give them a specific hint from the passage.' : ''}
+${isVeryShort ? 'NOTE: Very short answer. If correct, push for more. If wrong, redirect warmly.' : ''}
 
-Respond as JSON (no markdown, no code blocks):
+Respond as JSON only:
 {
   "isCorrect": true/false,
   "isPartiallyCorrect": true/false,
-  "feedback": "Your realistic, varied feedback in Mrs. Hammel's voice",
-  "score": 0-100,
-  "effortLevel": "high|medium|low"
+  "feedback": "Your response referencing their specific answer",
+  "score": 0-100
 }
 
-Score guide:
-- 90-100: Correct with good detail and explanation
-- 70-89: Correct but minimal detail
-- 50-69: Partially correct or on the right track
-- 20-49: Mostly incorrect but shows some understanding
-- 0-19: Completely wrong or "I don't know" with no attempt`;
+Scoring: 90-100 detailed+correct, 70-89 correct+brief, 50-69 partial, 20-49 mostly wrong, 0-19 no attempt`;
 }
 
 /**

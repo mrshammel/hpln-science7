@@ -447,8 +447,8 @@ export default function ReadingSessionPage() {
     const buildOfflineFeedback = (ans: string): { feedback: string; score: number } => {
       const words = ans.trim().split(/\s+/).length;
       const isDontKnow = /i don'?t know|idk|not sure|no idea|i forgot/i.test(ans);
-      const isOneWord = words <= 2;
-      const isShort = words <= 5;
+      const isOneWord = words <= 4;
+      const isShort = words <= 10;
 
       if (isDontKnow) {
         const hint = currentQuestion?.encouragement || "Try thinking back to what you read — what do you remember?";
@@ -535,6 +535,7 @@ export default function ReadingSessionPage() {
           expectedAnswer: currentQuestion?.expectedAnswer,
           studentAnswer: answer.trim(),
           gradeLevel: passage?.gradeLevel,
+          passageText: passage?.text,
         }),
       });
 

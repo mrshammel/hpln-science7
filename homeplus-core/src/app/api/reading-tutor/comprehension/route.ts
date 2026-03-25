@@ -63,14 +63,15 @@ export async function POST(req: NextRequest) {
 
     if (action === 'evaluate') {
       // Evaluate a student's answer
-      const { question, questionType, expectedAnswer, studentAnswer, gradeLevel } = body;
+      const { question, questionType, expectedAnswer, studentAnswer, gradeLevel, passageText } = body;
 
       const prompt = buildAnswerEvaluationPrompt(
         question || '',
         questionType || 'literal',
         expectedAnswer || '',
         studentAnswer || '',
-        gradeLevel || 3
+        gradeLevel || 3,
+        passageText || ''
       );
 
       const result = await model.generateContent({
