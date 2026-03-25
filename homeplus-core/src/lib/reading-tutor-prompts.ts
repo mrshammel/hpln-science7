@@ -90,6 +90,7 @@ Format your response as JSON (no markdown, no code blocks):
 
 /**
  * System prompt for evaluating a student's comprehension answer.
+ * Produces realistic, varied feedback based on answer quality.
  */
 export function buildAnswerEvaluationPrompt(
   question: string,
@@ -98,6 +99,10 @@ export function buildAnswerEvaluationPrompt(
   studentAnswer: string,
   gradeLevel: number
 ): string {
+  const wordCount = studentAnswer.trim().split(/\s+/).length;
+  const isVeryShort = wordCount <= 3;
+  const isDontKnow = /i don'?t know|idk|not sure|no idea|i forgot/i.test(studentAnswer);
+
   return `${MRS_HAMMEL_PERSONA}
 
 You asked a Grade ${gradeLevel} student this ${questionType} comprehension question:
@@ -106,16 +111,44 @@ You asked a Grade ${gradeLevel} student this ${questionType} comprehension quest
 A good answer would include: ${expectedAnswer}
 
 The student answered: "${studentAnswer}"
+(Word count: ${wordCount} words)
 
-Evaluate their answer. Be encouraging and specific. If they're partially right, acknowledge what they got and gently guide them to the full answer.
+EVALUATE THEIR ANSWER REALISTICALLY. You must consider ALL of these factors:
+
+1. **Accuracy**: Does the answer match the expected content? Is it correct, partially correct, or wrong?
+2. **Detail level**: Did they explain their thinking, or give a bare minimum answer?
+3. **Effort indicators**: A one-word or very short answer suggests low effort. A longer, detailed answer shows engagement.
+4. **Tone**: Are they guessing? Do they sound unsure? Are they clearly engaged?
+
+CRITICAL RULES for realistic feedback:
+- If the answer is WRONG, don't pretend it's right. Gently redirect: "Hmm, not quite! Let me help you think about this..."
+- If the answer is VERY SHORT (1-3 words) but correct, acknowledge it but encourage more: "You're on the right track! Can you tell me a little more about why?"
+- If the answer is DETAILED and correct, be genuinely enthusiastic and specific about what they did well.
+- If they say "I don't know" or similar, be warm but try to scaffold: "That's okay! Let me give you a hint..."
+- If the answer is partially correct, name what they got right AND what's missing.
+- NEVER say "that's a thoughtful answer" for a one-word or clearly low-effort response.
+- VARY your language — don't start every response the same way.
+- Keep it to 2-3 sentences maximum.
+- Reference SPECIFIC details from their answer in your feedback.
+
+${isDontKnow ? 'NOTE: The student expressed uncertainty. Provide a helpful hint from the passage to guide them, and still be warm.' : ''}
+${isVeryShort ? 'NOTE: This is a very short answer. If correct, push for elaboration. If wrong, gently redirect.' : ''}
 
 Respond as JSON (no markdown, no code blocks):
 {
   "isCorrect": true/false,
   "isPartiallyCorrect": true/false,
-  "feedback": "Your warm, specific feedback in Mrs. Hammel's voice (2-3 sentences max)",
-  "score": 0-100
-}`;
+  "feedback": "Your realistic, varied feedback in Mrs. Hammel's voice",
+  "score": 0-100,
+  "effortLevel": "high|medium|low"
+}
+
+Score guide:
+- 90-100: Correct with good detail and explanation
+- 70-89: Correct but minimal detail
+- 50-69: Partially correct or on the right track
+- 20-49: Mostly incorrect but shows some understanding
+- 0-19: Completely wrong or "I don't know" with no attempt`;
 }
 
 /**

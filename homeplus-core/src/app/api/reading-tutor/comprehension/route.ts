@@ -87,7 +87,12 @@ export async function POST(req: NextRequest) {
       try {
         parsed = JSON.parse(responseText);
       } catch {
-        parsed = { isCorrect: true, feedback: "That's a great answer! You really understood the passage. 🌟", score: 75 };
+        try {
+          const jsonMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)```/);
+          parsed = jsonMatch ? JSON.parse(jsonMatch[1].trim()) : {};
+        } catch {
+          parsed = {};
+        }
       }
 
       return NextResponse.json({

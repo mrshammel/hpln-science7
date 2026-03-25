@@ -339,6 +339,39 @@ export default function ReadingSessionPage() {
     const questions = JSON.parse(sessionStorage.getItem('rt-questions') || '[]');
     const currentQuestion = questions[questionIndex];
 
+    // Generate context-aware fallback when AI is unavailable
+    const buildOfflineFeedback = (ans: string): { feedback: string; score: number } => {
+      const words = ans.trim().split(/\s+/).length;
+      const isDontKnow = /i don'?t know|idk|not sure|no idea|i forgot/i.test(ans);
+      const isOneWord = words <= 2;
+      const isShort = words <= 5;
+
+      if (isDontKnow) {
+        const hint = currentQuestion?.encouragement || "Try thinking back to what you read — what do you remember?";
+        return { feedback: `That's okay! No pressure. ${hint} 💛`, score: 10 };
+      }
+
+      if (isOneWord) {
+        return {
+          feedback: `Okay! Can you tell me a bit more? Try adding one or two more details to your answer. I bet you know more than you think! 😊`,
+          score: 40,
+        };
+      }
+
+      if (isShort) {
+        return {
+          feedback: `I like where you're going with that! You're thinking about the right things. Let's move on to the next question. 👍`,
+          score: 60,
+        };
+      }
+
+      // Longer, more detailed answer — give genuine acknowledgment
+      return {
+        feedback: `Wow, I can tell you were really paying attention! You gave me a lot of detail there, and I love that. Great job! 🌟`,
+        score: 75,
+      };
+    };
+
     const advanceToNext = (feedback: string) => {
       setChatMessages((prev) => [...prev, { role: 'tutor', text: feedback }]);
 
@@ -381,13 +414,15 @@ export default function ReadingSessionPage() {
         advanceToNext(data.feedback || "Great answer! Let's keep going. 😊");
       } else {
         console.error('[Comprehension] API error', res.status);
-        setComprehensionScore((prev) => prev + 50);
-        advanceToNext("That's a thoughtful answer! I can tell you were really thinking about it. 😊");
+        const fallback = buildOfflineFeedback(answer);
+        setComprehensionScore((prev) => prev + fallback.score);
+        advanceToNext(fallback.feedback);
       }
     } catch (err) {
       console.error('[Comprehension] Network error:', err);
-      setComprehensionScore((prev) => prev + 50);
-      advanceToNext("That's a thoughtful answer! Let's keep going. 😊");
+      const fallback = buildOfflineFeedback(answer);
+      setComprehensionScore((prev) => prev + fallback.score);
+      advanceToNext(fallback.feedback);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [questionIndex, passage]);
