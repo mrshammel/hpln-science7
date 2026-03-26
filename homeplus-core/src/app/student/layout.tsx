@@ -11,6 +11,7 @@ import styles from './student.module.css';
 const NAV_ITEMS = [
   { href: '/student/dashboard', icon: '🏠', label: 'Dashboard' },
   { href: '/student/courses', icon: '📚', label: 'My Courses' },
+  { href: '/student/review', icon: '🔄', label: 'Review' },
   { href: '/student/reading-tutor', icon: '🎧', label: 'Reading Tutor' },
   { href: '/student/progress', icon: '📊', label: 'Progress' },
   { href: '/student/assignments', icon: '📝', label: 'Assignments' },

@@ -9,6 +9,9 @@ import { notFound } from 'next/navigation';
 import { getCourseDetail } from '@/lib/course-detail-data';
 import { getUnitStateUI } from '@/lib/unit-progress';
 import { subjectColorVars } from '@/lib/subject-colors';
+import { prisma } from '@/lib/db';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import styles from '../../student.module.css';
 
 interface Props {
@@ -29,6 +32,30 @@ export default async function CourseDetailPage({ params }: Props) {
     nextLessonId, nextUnitId,
     units,
   } = course;
+
+  // Fetch mastery data for this course
+  const session = await getServerSession(authOptions);
+  const userId = (session?.user as any)?.id as string | undefined;
+  let courseMastery = { masteredSkills: 0, developingSkills: 0, reviewDue: 0, needsSupport: 0, totalSkills: 0 };
+  if (userId) {
+    const cms = await prisma.courseMasterySummary.findUnique({
+      where: { studentId_subjectId: { studentId: userId, subjectId: courseId } },
+    });
+    if (cms) {
+      courseMastery = {
+        masteredSkills: cms.masteredSkills,
+        developingSkills: cms.developingSkills,
+        reviewDue: cms.reviewDue,
+        needsSupport: cms.needsSupport,
+        totalSkills: cms.totalSkills,
+      };
+    }
+  } else {
+    // Demo mastery data
+    if (courseId === 'sci-7') courseMastery = { masteredSkills: 4, developingSkills: 2, reviewDue: 1, needsSupport: 0, totalSkills: 7 };
+    else if (courseId === 'math-7') courseMastery = { masteredSkills: 5, developingSkills: 1, reviewDue: 0, needsSupport: 0, totalSkills: 6 };
+    else if (courseId === 'ela-7') courseMastery = { masteredSkills: 2, developingSkills: 2, reviewDue: 0, needsSupport: 1, totalSkills: 5 };
+  }
 
   return (
     <div style={subjectColorVars(subjectName)}>
@@ -65,16 +92,54 @@ export default async function CourseDetailPage({ params }: Props) {
           <div className={styles.statLabel}>My Grade</div>
         </div>
         <div className={styles.statCard}>
+          <div className={styles.statValue} style={{ color: '#059669' }}>
+            {courseMastery.totalSkills > 0
+              ? `${Math.round((courseMastery.masteredSkills / courseMastery.totalSkills) * 100)}%`
+              : '—'}
+          </div>
+          <div className={styles.statLabel}>Mastery</div>
+        </div>
+        <div className={styles.statCard}>
           <div className={styles.statValue} style={{ color: '#475569' }}>{completedLessons}/{totalLessons}</div>
           <div className={styles.statLabel}>Lessons Done</div>
         </div>
-        <div className={styles.statCard}>
-          <div className={styles.statValue} style={{ color: missingAssignments > 0 ? '#dc2626' : '#059669' }}>
-            {missingAssignments > 0 ? missingAssignments : '✅'}
-          </div>
-          <div className={styles.statLabel}>{missingAssignments > 0 ? 'Missing' : 'All Done'}</div>
-        </div>
       </section>
+
+      {/* ===== MASTERY STRIP ===== */}
+      {courseMastery.totalSkills > 0 && (
+        <section className={styles.masteryWidget} aria-label="Course mastery" style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <h3 className={styles.masteryWidgetTitle} style={{ margin: 0 }}>🧠 Skill Mastery</h3>
+            {courseMastery.reviewDue > 0 && (
+              <Link href="/student/review" className={styles.reviewDueBadge} style={{ textDecoration: 'none' }}>
+                🔄 {courseMastery.reviewDue} review due
+              </Link>
+            )}
+          </div>
+          <div className={styles.courseMasteryStrip} style={{ borderTop: 'none', paddingTop: 0, marginTop: 0 }}>
+            <span className={styles.masteryDot}>
+              <span className={styles.masteryDotCircle} style={{ background: '#059669' }} />
+              {courseMastery.masteredSkills} Mastered
+            </span>
+            <span className={styles.masteryDot}>
+              <span className={styles.masteryDotCircle} style={{ background: '#3b82f6' }} />
+              {courseMastery.developingSkills} Developing
+            </span>
+            {courseMastery.reviewDue > 0 && (
+              <span className={styles.masteryDot}>
+                <span className={styles.masteryDotCircle} style={{ background: '#f59e0b' }} />
+                {courseMastery.reviewDue} Review
+              </span>
+            )}
+            {courseMastery.needsSupport > 0 && (
+              <span className={styles.masteryDot}>
+                <span className={styles.masteryDotCircle} style={{ background: '#ef4444' }} />
+                {courseMastery.needsSupport} Support
+              </span>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* ===== HERO CONTINUE ===== */}
       {currentLesson && nextLessonId && nextUnitId && (

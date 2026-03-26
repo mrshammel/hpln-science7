@@ -1663,6 +1663,308 @@
   margin-top: 4px;
 }
 
+/* ========== Mastery Widgets ========== */
+
+/* --- Today's Review Card --- */
+.reviewCard {
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #d1fae5 100%);
+  border: 1px solid #a7f3d0;
+  border-radius: var(--card-radius);
+  padding: 22px 24px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  transition: all 0.22s ease;
+  box-shadow: 0 1px 4px rgba(5, 150, 105, 0.06);
+}
+
+.reviewCard:hover {
+  box-shadow: 0 4px 16px rgba(5, 150, 105, 0.12);
+  transform: translateY(-1px);
+}
+
+.reviewCardIcon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #059669, #34d399);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  color: #fff;
+  box-shadow: 0 3px 10px -2px rgba(5, 150, 105, 0.3);
+}
+
+.reviewCardInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.reviewCardTitle {
+  font-size: 0.94rem;
+  font-weight: 700;
+  color: #065f46;
+  margin-bottom: 3px;
+}
+
+.reviewCardMeta {
+  font-size: 0.8rem;
+  color: #047857;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.reviewCardMetaItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.reviewCardBtn {
+  padding: 10px 24px;
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 12px;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.18s;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);
+}
+
+.reviewCardBtn:hover {
+  filter: brightness(0.92);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3);
+}
+
+/* --- My Mastery Widget --- */
+.masteryWidget {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--card-radius);
+  padding: 22px 24px;
+  margin-bottom: 20px;
+  box-shadow: var(--card-shadow);
+}
+
+.masteryWidgetTitle {
+  font-size: 0.94rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.masteryStateGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.masteryStateItem {
+  text-align: center;
+  padding: 12px 8px;
+  border-radius: 12px;
+  transition: transform 0.15s ease;
+}
+
+.masteryStateItem:hover {
+  transform: translateY(-1px);
+}
+
+.masteryStateCount {
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.masteryStateLabel {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Mastery health bar — stacked colored segments */
+.masteryHealthBar {
+  display: flex;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: #f1f5f9;
+  margin-bottom: 10px;
+}
+
+.masteryHealthSegment {
+  height: 100%;
+  transition: width 0.5s ease;
+  min-width: 0;
+}
+
+.masteryHealthLabel {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* --- Course Mastery Strip (on course cards) --- */
+.courseMasteryStrip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #f0f2f5;
+}
+
+.masteryDot {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.masteryDotCircle {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* --- Mastery Context Section (for Grades page) --- */
+.masteryContext {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--card-radius);
+  padding: 22px 24px;
+  box-shadow: var(--card-shadow);
+  margin-top: 20px;
+}
+
+.masteryContextTitle {
+  font-size: 0.94rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.masteryContextGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.masteryContextColumn {
+  min-width: 0;
+}
+
+.masteryContextColumnTitle {
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid;
+}
+
+.skillItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  margin-bottom: 6px;
+  font-size: 0.82rem;
+  transition: background 0.15s;
+}
+
+.skillItem:hover {
+  background: #f8f9fb;
+}
+
+.skillItemDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.skillItemName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.skillItemScore {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+/* --- Mastery Health Row (for Progress page) --- */
+.masteryHealthRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.masteryHealthChip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.masteryHealthChipDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* --- Review Due Badge (on course cards) --- */
+.reviewDueBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 4px 10px;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 8px;
+}
+
 /* ========== Responsive ========== */
 @media (max-width: 1024px) {
   .sidebar {
@@ -1743,6 +2045,25 @@
   .unitCardGrid {
     grid-template-columns: 1fr;
   }
+
+  .reviewCard {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .reviewCardBtn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .masteryStateGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .masteryContextGrid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 640px) {
@@ -1776,5 +2097,9 @@
 
   .vocabGrid {
     grid-template-columns: 1fr;
+  }
+
+  .masteryHealthRow {
+    grid-template-columns: repeat(2, 1fr);
   }
 }

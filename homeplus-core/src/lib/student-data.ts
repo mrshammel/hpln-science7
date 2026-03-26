@@ -37,6 +37,14 @@ export interface StudentProfile {
   enrolledAt: Date | null;
 }
 
+export interface CourseMastery {
+  masteredSkills: number;
+  developingSkills: number;
+  reviewDue: number;
+  needsSupport: number;
+  totalSkills: number;
+}
+
 export interface CourseEnrollment {
   subjectId: string;
   subjectName: string;
@@ -60,6 +68,7 @@ export interface CourseEnrollment {
   pacingStyle: { color: string; bg: string; icon: string };
   missingAssignments: number;
   latestReviewedItem: string | null;
+  mastery: CourseMastery;
 }
 
 export interface UpcomingItem {
@@ -98,12 +107,33 @@ export interface FeedbackItem {
   reviewedAt: Date | null;
 }
 
+export interface SkillSummaryItem {
+  id: string;
+  code: string;
+  title: string;
+  masteryState: string;
+  masteryScore: number;
+}
+
+export interface MasterySummary {
+  masteredCount: number;
+  developingCount: number;
+  reviewDueCount: number;
+  needsSupportCount: number;
+  reviewCompletedToday: number;
+  totalSkills: number;
+  strongestSkills: SkillSummaryItem[];
+  weakestSkills: SkillSummaryItem[];
+  reviewDueSkills: SkillSummaryItem[];
+}
+
 export interface StudentDashboardData {
   profile: StudentProfile;
   enrollments: CourseEnrollment[];
   upcoming: UpcomingItem[];
   recentActivity: ActivityItem[];
   feedback: FeedbackItem[];
+  masterySummary: MasterySummary;
   stats: {
     activeCourses: number;
     overallProgress: number;
@@ -297,8 +327,84 @@ export async function getStudentDashboardData(): Promise<StudentDashboardData> {
       latestReviewedItem: latestReviewed
         ? latestReviewed.activity.title
         : null,
+      mastery: { masteredSkills: 0, developingSkills: 0, reviewDue: 0, needsSupport: 0, totalSkills: 0 },
     };
   });
+
+  // --- Mastery data ---
+  // Fetch per-course mastery summaries
+  const courseMasterySummaries = await prisma.courseMasterySummary.findMany({
+    where: { studentId: userId },
+  });
+  const courseMasteryMap = new Map(
+    courseMasterySummaries.map((s) => [s.subjectId, s])
+  );
+
+  // Apply mastery data to enrollments
+  for (const enrollment of enrollments) {
+    const cms = courseMasteryMap.get(enrollment.subjectId);
+    if (cms) {
+      enrollment.mastery = {
+        masteredSkills: cms.masteredSkills,
+        developingSkills: cms.developingSkills,
+        reviewDue: cms.reviewDue,
+        needsSupport: cms.needsSupport,
+        totalSkills: cms.totalSkills,
+      };
+    }
+  }
+
+  // Fetch dashboard summary
+  const dashSummary = await prisma.studentDashboardSummary.findUnique({
+    where: { studentId: userId },
+  });
+
+  // Fetch skill mastery details for strongest/weakest/review
+  const skillMasteryRecords = await prisma.studentSkillMastery.findMany({
+    where: { studentId: userId },
+    include: { skill: { select: { id: true, code: true, title: true } } },
+    orderBy: { masteryScore: 'desc' },
+  });
+
+  const strongestSkills = skillMasteryRecords
+    .filter((s) => s.masteryScore >= 0.60)
+    .slice(0, 3)
+    .map((s) => ({
+      id: s.skill.id, code: s.skill.code, title: s.skill.title,
+      masteryState: s.masteryState, masteryScore: s.masteryScore,
+    }));
+
+  const weakestSkills = [...skillMasteryRecords]
+    .sort((a, b) => a.masteryScore - b.masteryScore)
+    .filter((s) => s.masteryScore < 0.60)
+    .slice(0, 3)
+    .map((s) => ({
+      id: s.skill.id, code: s.skill.code, title: s.skill.title,
+      masteryState: s.masteryState, masteryScore: s.masteryScore,
+    }));
+
+  const reviewDueSkills = skillMasteryRecords
+    .filter((s) => s.masteryState === 'REVIEW_DUE' || s.masteryState === 'NEEDS_SUPPORT')
+    .slice(0, 5)
+    .map((s) => ({
+      id: s.skill.id, code: s.skill.code, title: s.skill.title,
+      masteryState: s.masteryState, masteryScore: s.masteryScore,
+    }));
+
+  // Count total unique skills
+  const totalSkills = await prisma.skill.count();
+
+  const masterySummary: MasterySummary = {
+    masteredCount: dashSummary?.masteredCount ?? 0,
+    developingCount: dashSummary?.developingCount ?? 0,
+    reviewDueCount: dashSummary?.reviewDueCount ?? 0,
+    needsSupportCount: dashSummary?.needsSupportCount ?? 0,
+    reviewCompletedToday: dashSummary?.reviewCompletedToday ?? 0,
+    totalSkills,
+    strongestSkills,
+    weakestSkills,
+    reviewDueSkills,
+  };
 
   // Build upcoming work
   const upcoming = buildUpcomingWork(enrollments);
@@ -324,6 +430,7 @@ export async function getStudentDashboardData(): Promise<StudentDashboardData> {
     upcoming,
     recentActivity,
     feedback,
+    masterySummary,
     stats: {
       activeCourses: enrollments.length,
       overallProgress,
@@ -522,6 +629,7 @@ function getDemoDashboardData(): StudentDashboardData {
         pacingStyle: getAcademicPacingStyle(sciencePacing.academicStatus),
         missingAssignments: 1,
         latestReviewedItem: 'Ecosystem Food Web Drawing',
+        mastery: { masteredSkills: 4, developingSkills: 2, reviewDue: 1, needsSupport: 0, totalSkills: 7 },
       },
       {
         subjectId: 'ela-7',
@@ -545,6 +653,7 @@ function getDemoDashboardData(): StudentDashboardData {
         pacingStyle: getAcademicPacingStyle(elaPacing.academicStatus),
         missingAssignments: 2,
         latestReviewedItem: 'Personal Narrative Draft',
+        mastery: { masteredSkills: 2, developingSkills: 2, reviewDue: 0, needsSupport: 1, totalSkills: 5 },
       },
       {
         subjectId: 'math-7',
@@ -568,6 +677,7 @@ function getDemoDashboardData(): StudentDashboardData {
         pacingStyle: getAcademicPacingStyle(mathPacing.academicStatus),
         missingAssignments: 0,
         latestReviewedItem: 'Fraction Operations Quiz',
+        mastery: { masteredSkills: 5, developingSkills: 1, reviewDue: 0, needsSupport: 0, totalSkills: 6 },
       },
       {
         subjectId: 'g6-ela',
@@ -588,6 +698,7 @@ function getDemoDashboardData(): StudentDashboardData {
         pacingStyle: getAcademicPacingStyle('ON_PACE'),
         missingAssignments: 0,
         latestReviewedItem: null,
+        mastery: { masteredSkills: 0, developingSkills: 0, reviewDue: 0, needsSupport: 0, totalSkills: 0 },
       },
     ],
     upcoming: [
@@ -609,6 +720,27 @@ function getDemoDashboardData(): StudentDashboardData {
       { id: 'f2', activityTitle: 'Fraction Operations Quiz', courseName: 'Mathematics', score: 9, maxScore: 10, teacherFeedback: null, aiFeedback: 'Strong understanding of fraction addition and subtraction.', aiPerformanceLevel: 'MEETING', reviewed: false, finalizedByTeacher: false, submittedAt: daysAgo(1), reviewedAt: null },
       { id: 'f3', activityTitle: 'Personal Narrative Draft', courseName: 'English Language Arts', score: null, maxScore: null, teacherFeedback: null, aiFeedback: 'Good voice and personal connection. Consider adding more sensory details in paragraph 2.', aiPerformanceLevel: 'APPROACHING', reviewed: false, finalizedByTeacher: false, submittedAt: daysAgo(3), reviewedAt: null },
     ],
+    masterySummary: {
+      masteredCount: 11,
+      developingCount: 5,
+      reviewDueCount: 1,
+      needsSupportCount: 1,
+      reviewCompletedToday: 2,
+      totalSkills: 18,
+      strongestSkills: [
+        { id: 'sk1', code: 'SCI-7-IE-1', title: 'Identify biotic and abiotic factors', masteryState: 'MASTERED', masteryScore: 0.95 },
+        { id: 'sk2', code: 'MATH-7-NS-1', title: 'Compare and order integers', masteryState: 'MASTERED', masteryScore: 0.92 },
+        { id: 'sk3', code: 'SCI-7-IE-2', title: 'Describe energy flow in food webs', masteryState: 'MASTERED', masteryScore: 0.88 },
+      ],
+      weakestSkills: [
+        { id: 'sk4', code: 'ELA-7-RW-3', title: 'Evaluate source credibility', masteryState: 'NEEDS_SUPPORT', masteryScore: 0.35 },
+        { id: 'sk5', code: 'SCI-7-HE-1', title: 'Explain heat transfer methods', masteryState: 'REVIEW_DUE', masteryScore: 0.48 },
+      ],
+      reviewDueSkills: [
+        { id: 'sk5', code: 'SCI-7-HE-1', title: 'Explain heat transfer methods', masteryState: 'REVIEW_DUE', masteryScore: 0.48 },
+        { id: 'sk4', code: 'ELA-7-RW-3', title: 'Evaluate source credibility', masteryState: 'NEEDS_SUPPORT', masteryScore: 0.35 },
+      ],
+    },
     stats: {
       activeCourses: 3,
       overallProgress: 61,

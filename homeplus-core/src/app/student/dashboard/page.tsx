@@ -2,16 +2,20 @@
 // Student Dashboard — Home Plus LMS
 // ============================================
 // Server component: hero continue-learning,
-// softer stats, polished course cards.
+// mastery widgets, softer stats, polished course cards.
 
+import Link from 'next/link';
 import { getStudentDashboardData } from '@/lib/student-data';
 import { subjectColorVars } from '@/lib/subject-colors';
 import styles from '../student.module.css';
 
 export default async function StudentDashboard() {
   const data = await getStudentDashboardData();
-  const { profile, enrollments, upcoming, recentActivity, feedback, stats } = data;
+  const { profile, enrollments, upcoming, recentActivity, feedback, masterySummary, stats } = data;
   const firstName = profile.name.split(' ')[0] || 'Student';
+
+  const totalMastery = masterySummary.masteredCount + masterySummary.developingCount + masterySummary.reviewDueCount + masterySummary.needsSupportCount;
+  const masteryPercent = (n: number) => totalMastery > 0 ? `${Math.round((n / totalMastery) * 100)}%` : '0%';
 
   return (
     <>
@@ -61,6 +65,68 @@ export default async function StudentDashboard() {
           </div>
           <span className={styles.heroBtn}>Continue →</span>
         </a>
+      )}
+
+      {/* ===== NEW: TODAY'S REVIEW CARD ===== */}
+      {(masterySummary.reviewDueCount > 0 || masterySummary.reviewCompletedToday > 0) && (
+        <Link href="/student/review" className={styles.reviewCard} id="todays-review-card">
+          <div className={styles.reviewCardIcon}>🔄</div>
+          <div className={styles.reviewCardInfo}>
+            <div className={styles.reviewCardTitle}>Today&apos;s Review</div>
+            <div className={styles.reviewCardMeta}>
+              <span className={styles.reviewCardMetaItem}>
+                📋 {masterySummary.reviewDueCount} skill{masterySummary.reviewDueCount !== 1 ? 's' : ''} to review
+              </span>
+              {masterySummary.needsSupportCount > 0 && (
+                <span className={styles.reviewCardMetaItem}>
+                  ⚠️ {masterySummary.needsSupportCount} need{masterySummary.needsSupportCount !== 1 ? '' : 's'} support
+                </span>
+              )}
+              {masterySummary.reviewCompletedToday > 0 && (
+                <span className={styles.reviewCardMetaItem}>
+                  ✅ {masterySummary.reviewCompletedToday} done today
+                </span>
+              )}
+            </div>
+          </div>
+          <span className={styles.reviewCardBtn}>Start Review →</span>
+        </Link>
+      )}
+
+      {/* ===== NEW: MY MASTERY WIDGET ===== */}
+      {totalMastery > 0 && (
+        <section className={styles.masteryWidget} aria-label="My mastery" id="my-mastery-widget">
+          <h3 className={styles.masteryWidgetTitle}>🧠 My Mastery</h3>
+          <div className={styles.masteryStateGrid}>
+            <div className={styles.masteryStateItem} style={{ background: '#f0fdf4' }}>
+              <div className={styles.masteryStateCount} style={{ color: '#059669' }}>{masterySummary.masteredCount}</div>
+              <div className={styles.masteryStateLabel} style={{ color: '#047857' }}>Mastered</div>
+            </div>
+            <div className={styles.masteryStateItem} style={{ background: '#eff6ff' }}>
+              <div className={styles.masteryStateCount} style={{ color: '#2563eb' }}>{masterySummary.developingCount}</div>
+              <div className={styles.masteryStateLabel} style={{ color: '#1d4ed8' }}>Developing</div>
+            </div>
+            <div className={styles.masteryStateItem} style={{ background: '#fffbeb' }}>
+              <div className={styles.masteryStateCount} style={{ color: '#d97706' }}>{masterySummary.reviewDueCount}</div>
+              <div className={styles.masteryStateLabel} style={{ color: '#b45309' }}>Review Due</div>
+            </div>
+            <div className={styles.masteryStateItem} style={{ background: '#fef2f2' }}>
+              <div className={styles.masteryStateCount} style={{ color: '#dc2626' }}>{masterySummary.needsSupportCount}</div>
+              <div className={styles.masteryStateLabel} style={{ color: '#b91c1c' }}>Needs Support</div>
+            </div>
+          </div>
+          {/* Stacked health bar */}
+          <div className={styles.masteryHealthBar}>
+            <div className={styles.masteryHealthSegment} style={{ width: masteryPercent(masterySummary.masteredCount), background: '#059669' }} />
+            <div className={styles.masteryHealthSegment} style={{ width: masteryPercent(masterySummary.developingCount), background: '#3b82f6' }} />
+            <div className={styles.masteryHealthSegment} style={{ width: masteryPercent(masterySummary.reviewDueCount), background: '#f59e0b' }} />
+            <div className={styles.masteryHealthSegment} style={{ width: masteryPercent(masterySummary.needsSupportCount), background: '#ef4444' }} />
+          </div>
+          <div className={styles.masteryHealthLabel}>
+            <span>{masterySummary.masteredCount} of {masterySummary.totalSkills} skills mastered</span>
+            <span>{Math.round((masterySummary.masteredCount / Math.max(masterySummary.totalSkills, 1)) * 100)}% mastery</span>
+          </div>
+        </section>
       )}
 
       {/* ===== C. QUICK STATS ===== */}
@@ -136,6 +202,38 @@ export default async function StudentDashboard() {
                   </div>
                 )}
 
+                {/* Mastery strip per course */}
+                {course.mastery.totalSkills > 0 && (
+                  <div className={styles.courseMasteryStrip}>
+                    <span className={styles.masteryDot}>
+                      <span className={styles.masteryDotCircle} style={{ background: '#059669' }} />
+                      {course.mastery.masteredSkills}
+                    </span>
+                    <span className={styles.masteryDot}>
+                      <span className={styles.masteryDotCircle} style={{ background: '#3b82f6' }} />
+                      {course.mastery.developingSkills}
+                    </span>
+                    {course.mastery.reviewDue > 0 && (
+                      <span className={styles.masteryDot}>
+                        <span className={styles.masteryDotCircle} style={{ background: '#f59e0b' }} />
+                        {course.mastery.reviewDue}
+                      </span>
+                    )}
+                    {course.mastery.needsSupport > 0 && (
+                      <span className={styles.masteryDot}>
+                        <span className={styles.masteryDotCircle} style={{ background: '#ef4444' }} />
+                        {course.mastery.needsSupport}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {course.mastery.reviewDue > 0 && (
+                  <div className={styles.reviewDueBadge}>
+                    🔄 {course.mastery.reviewDue} review due
+                  </div>
+                )}
+
                 <div className={styles.courseCardCta}>
                   {course.progressPercent > 0 ? 'Continue →' : 'Start Course →'}
                 </div>
@@ -183,11 +281,17 @@ export default async function StudentDashboard() {
                   <div className={styles.courseDetailStatNote}>{course.pacing.pacingSummary}</div>
                 </div>
                 <div className={styles.courseDetailStat}>
-                  <div className={styles.courseDetailStatLabel}>To Do</div>
-                  <div className={styles.courseDetailStatValue} style={{ color: course.missingAssignments > 0 ? '#dc2626' : '#059669' }}>
-                    {course.missingAssignments > 0 ? course.missingAssignments : '✅'}
+                  <div className={styles.courseDetailStatLabel}>Mastery</div>
+                  <div className={styles.courseDetailStatValue} style={{ color: '#059669' }}>
+                    {course.mastery.totalSkills > 0
+                      ? `${Math.round((course.mastery.masteredSkills / course.mastery.totalSkills) * 100)}%`
+                      : '—'}
                   </div>
-                  <div className={styles.courseDetailStatNote}>{course.missingAssignments > 0 ? 'Need attention' : 'All done!'}</div>
+                  <div className={styles.courseDetailStatNote}>
+                    {course.mastery.totalSkills > 0
+                      ? `${course.mastery.masteredSkills}/${course.mastery.totalSkills} skills`
+                      : 'No skills yet'}
+                  </div>
                 </div>
               </div>
               <div className={styles.pacingBar}>
