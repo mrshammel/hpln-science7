@@ -3,6 +3,7 @@
 // ============================================
 // POST: submit mastery check answers, score them,
 //       record attempts, handle reteach triggers.
+//       Phase 2 Retrofit: writes MasteryEvidence per skill.
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
@@ -10,6 +11,8 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { getMasteryEngine } from '@/lib/mastery-engine';
 import { DEFAULT_MASTERY_CONFIG, resolveSubjectMode } from '@/lib/lesson-types';
+import { recordEvidence, getSkillsForLesson } from '@/lib/unified-mastery-engine';
+import { refreshStudentDashboardSummary } from '@/lib/summary-service';
 
 interface RouteParams {
   params: Promise<{ lessonId: string }>;
@@ -32,7 +35,6 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'outcomeCode and questionId required for reteach' }, { status: 400 });
     }
 
-    // Record reteach attempt
     await prisma.masteryAttempt.create({
       data: {
         studentId: userId,
@@ -40,11 +42,10 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
         questionId,
         response: String(response ?? ''),
         correct: !!correct,
-        attemptNumber: 0, // 0 = reteach attempt
+        attemptNumber: 0,
       },
     });
 
-    // Update reteach session
     if (correct) {
       const reteachSess = await prisma.reteachSession.findFirst({
         where: { studentId: userId, lessonId, outcomeCode, status: 'ACTIVE' },
@@ -60,7 +61,6 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
         });
       }
     } else {
-      // Reset streak
       await prisma.reteachSession.updateMany({
         where: { studentId: userId, lessonId, outcomeCode, status: 'ACTIVE' },
         data: { correctStreak: 0 },
@@ -78,7 +78,6 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'questionId required' }, { status: 400 });
     }
 
-    // Get current attempt number
     const prevAttempts = await prisma.masteryAttempt.findMany({
       where: { studentId: userId, lessonId, attemptNumber: { gt: 0 } },
       orderBy: { createdAt: 'desc' },
@@ -86,7 +85,6 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     });
     const attemptNumber = prevAttempts.length > 0 ? prevAttempts[0].attemptNumber : 1;
 
-    // Record the attempt
     await prisma.masteryAttempt.create({
       data: {
         studentId: userId,
@@ -97,6 +95,26 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
         attemptNumber,
       },
     });
+
+    // ── Mastery Retrofit: record per-question evidence ──
+    if (outcomeCode) {
+      try {
+        const skill = await prisma.skill.findUnique({ where: { code: outcomeCode } });
+        if (skill) {
+          await recordEvidence({
+            studentId: userId,
+            skillId: skill.id,
+            sourceType: 'MASTERY_CHECK',
+            sourceId: questionId,
+            lessonId,
+            score: correct ? 1 : 0,
+            maxScore: 1,
+          });
+        }
+      } catch (e) {
+        console.error('[mastery-retrofit] Single-question evidence write failed:', e);
+      }
+    }
 
     return NextResponse.json({ ok: true, correct: !!correct });
   }
@@ -110,7 +128,6 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: 'No answers provided' }, { status: 400 });
   }
 
-  // Load lesson with subject info
   const lesson = await prisma.lesson.findUnique({
     where: { id: lessonId },
     include: {
@@ -129,7 +146,6 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
   const config =
     (lesson.masteryConfig as any) || DEFAULT_MASTERY_CONFIG[subjectMode];
 
-  // Load previous attempts
   const previousAttempts = await prisma.masteryAttempt.findMany({
     where: { studentId: userId, lessonId, attemptNumber: { gt: 0 } },
     orderBy: { createdAt: 'asc' },
@@ -138,7 +154,6 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
   const attemptNumber =
     Math.max(...previousAttempts.map((a) => a.attemptNumber), 0) + 1;
 
-  // Get the mastery engine and evaluate
   const engine = getMasteryEngine(subjectMode);
   const result = engine.evaluate(
     answers,
@@ -157,19 +172,17 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     config,
   );
 
-  // Record each answer as a mastery attempt using the engine's scoring results
+  // Record each answer as a mastery attempt
   for (const answer of answers) {
     const q = lesson.quizQuestions.find((qq) => qq.id === answer.questionId);
     if (!q) continue;
 
-    // Use the engine's already-computed correctness from the result
     const engineResult = (result as any).results;
     let correct = false;
     if (engineResult) {
       const er = engineResult.find((r: any) => r.questionId === q.id);
       correct = er?.correct ?? false;
     } else {
-      // Fallback: compute correctness if engine didn't return per-question results  
       if (q.questionType === 'MULTIPLE_CHOICE' && q.options) {
         const opts = q.options as Array<{ value: string; correct?: boolean }>;
         correct = !!opts.find((o) => o.value === answer.response)?.correct;
@@ -191,6 +204,28 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
         attemptNumber,
       },
     });
+  }
+
+  // ── Mastery Retrofit: record aggregated evidence per skill ──
+  try {
+    const lessonSkills = await getSkillsForLesson(lessonId, 'TARGET');
+    if (lessonSkills.length > 0) {
+      for (const ls of lessonSkills) {
+        await recordEvidence({
+          studentId: userId,
+          skillId: ls.skillId,
+          sourceType: 'MASTERY_CHECK',
+          sourceId: lessonId,
+          lessonId,
+          score: result.correctCount,
+          maxScore: result.totalQuestions,
+        });
+      }
+      // Refresh dashboard summary after evidence recording
+      await refreshStudentDashboardSummary(userId);
+    }
+  } catch (e) {
+    console.error('[mastery-retrofit] Evidence recording failed:', e);
   }
 
   // If science reteach triggered, create a reteach session

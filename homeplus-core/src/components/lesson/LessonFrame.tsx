@@ -138,6 +138,8 @@ export default function LessonFrame({
   const [reteachOutcome, setReteachOutcome] = useState<string | null>(null);
   const [reflectionText, setReflectionText] = useState('');
   const [reflectionSaved, setReflectionSaved] = useState(false);
+  const [confidenceRating, setConfidenceRating] = useState<number | null>(null);
+  const [helpRequested, setHelpRequested] = useState(false);
   const [completedBlocks, setCompletedBlocks] = useState<Set<string>>(new Set());
 
   // Collapsible section state
@@ -286,6 +288,7 @@ export default function LessonFrame({
         : 'COMPLETE';
 
     try {
+      // Save to existing progress API (backward compat)
       await fetch(`/api/lesson/${lessonId}/progress`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -295,6 +298,19 @@ export default function LessonFrame({
           reflectionResponse: reflectionText,
         }),
       });
+
+      // Save structured reflection (Mastery Retrofit)
+      await fetch(`/api/lesson/${lessonId}/reflection`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reflectionText,
+          confidenceRating,
+          helpRequested,
+          metacogPrompt: reflectionPrompt || 'What is one important thing you learned today?',
+        }),
+      });
+
       setOverallStatus(finalStatus);
     } catch (e) {
       console.error(e);
@@ -566,7 +582,59 @@ export default function LessonFrame({
                 disabled={reflectionSaved}
                 style={{ minHeight: 90 }}
               />
-              <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+
+              {/* ── Confidence Slider (Mastery Retrofit) ── */}
+              <div style={{ marginTop: 14, padding: '12px 0' }}>
+                <p style={{ fontSize: '0.85rem', fontWeight: 600, color: '#475569', margin: '0 0 8px' }}>
+                  How confident are you with this topic?
+                </p>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {[
+                    { value: 1, emoji: '😟', label: 'Lost' },
+                    { value: 2, emoji: '😕', label: 'Unsure' },
+                    { value: 3, emoji: '🤔', label: 'Getting there' },
+                    { value: 4, emoji: '😊', label: 'Confident' },
+                    { value: 5, emoji: '🤩', label: 'Mastered it!' },
+                  ].map((level) => (
+                    <button
+                      key={level.value}
+                      onClick={() => !reflectionSaved && setConfidenceRating(level.value)}
+                      disabled={reflectionSaved}
+                      style={{
+                        flex: '1 1 0',
+                        minWidth: 60,
+                        padding: '8px 4px',
+                        border: confidenceRating === level.value ? '2px solid #7c3aed' : '1.5px solid #e2e8f0',
+                        borderRadius: 10,
+                        background: confidenceRating === level.value ? '#f5f3ff' : '#fff',
+                        cursor: reflectionSaved ? 'default' : 'pointer',
+                        textAlign: 'center' as const,
+                        transition: 'all 0.15s',
+                        opacity: reflectionSaved ? 0.7 : 1,
+                      }}
+                    >
+                      <span style={{ fontSize: '1.3rem', display: 'block' }}>{level.emoji}</span>
+                      <span style={{ fontSize: '0.7rem', color: '#64748b', display: 'block', marginTop: 2 }}>{level.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* ── Help Request (Mastery Retrofit) ── */}
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, cursor: reflectionSaved ? 'default' : 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={helpRequested}
+                  onChange={(e) => !reflectionSaved && setHelpRequested(e.target.checked)}
+                  disabled={reflectionSaved}
+                  style={{ width: 16, height: 16, accentColor: '#7c3aed' }}
+                />
+                <span style={{ fontSize: '0.84rem', color: '#475569' }}>
+                  🙋 I need extra help with this topic
+                </span>
+              </label>
+
+              <div style={{ marginTop: 12, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
                 <button
                   className={styles.btnPrimary}
                   style={{ background: '#7c3aed' }}
@@ -582,6 +650,7 @@ export default function LessonFrame({
                 )}
               </div>
             </div>
+
           </>
         )}
       </div>
