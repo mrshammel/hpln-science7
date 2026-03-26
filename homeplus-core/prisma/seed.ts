@@ -279,13 +279,13 @@ async function main() {
   });
 
   const elaLessonData = [
-    { id: 'g6-ela-u1-l1', title: 'Who Am I?', subtitle: 'Explore identity-themed texts using reading strategies.', order: 1, url: '/courses/grade-6-ela/unit-1-identity/index.html#lesson1' },
-    { id: 'g6-ela-u1-l2', title: 'Words That Shape Us', subtitle: 'Explore how vocabulary carries cultural and personal meaning.', order: 2, url: '/courses/grade-6-ela/unit-1-identity/index.html#lesson2' },
-    { id: 'g6-ela-u1-l3', title: 'Theme & Message', subtitle: 'Learn the difference between theme and topic. Identify deeper messages in identity texts.', order: 3, url: '/courses/grade-6-ela/unit-1-identity/index.html#lesson3' },
-    { id: 'g6-ela-u1-l4', title: 'Narrative Structure', subtitle: 'Learn the parts of a narrative and how authors structure stories.', order: 4, url: '/courses/grade-6-ela/unit-1-identity/index.html#lesson4' },
-    { id: 'g6-ela-u1-l5', title: 'Drafting My Narrative', subtitle: 'Plan and write the first draft of your personal identity narrative.', order: 5, url: '/courses/grade-6-ela/unit-1-identity/index.html#lesson5' },
-    { id: 'g6-ela-u1-l6', title: 'Revision & Voice', subtitle: 'Strengthen your writing with show-don\'t-tell, power words, and sentence variety.', order: 6, url: '/courses/grade-6-ela/unit-1-identity/index.html#lesson6' },
-    { id: 'g6-ela-u1-l7', title: 'Discussion Circle', subtitle: 'Share your narrative, practice active listening, and reflect on the unit.', order: 7, url: '/courses/grade-6-ela/unit-1-identity/index.html#lesson7' },
+    { id: 'g6-ela-u1-l1', title: 'Who Am I?', subtitle: 'Explore identity-themed texts using reading strategies.', order: 1 },
+    { id: 'g6-ela-u1-l2', title: 'Words That Shape Us', subtitle: 'Explore how vocabulary carries cultural and personal meaning.', order: 2 },
+    { id: 'g6-ela-u1-l3', title: 'Theme & Message', subtitle: 'Learn the difference between theme and topic. Identify deeper messages in identity texts.', order: 3 },
+    { id: 'g6-ela-u1-l4', title: 'Narrative Structure', subtitle: 'Learn the parts of a narrative and how authors structure stories.', order: 4 },
+    { id: 'g6-ela-u1-l5', title: 'Drafting My Narrative', subtitle: 'Plan and write the first draft of your personal identity narrative.', order: 5 },
+    { id: 'g6-ela-u1-l6', title: 'Revision & Voice', subtitle: 'Strengthen your writing with show-don\'t-tell, power words, and sentence variety.', order: 6 },
+    { id: 'g6-ela-u1-l7', title: 'Discussion Circle', subtitle: 'Share your narrative, practice active listening, and reflect on the unit.', order: 7 },
   ];
 
   for (const l of elaLessonData) {
@@ -296,7 +296,7 @@ async function main() {
         subtitle: l.subtitle,
         order: l.order,
         subjectMode: 'ELA',
-        externalUrl: l.url,
+        externalUrl: null,
       },
       create: {
         id: l.id,
@@ -305,7 +305,7 @@ async function main() {
         subtitle: l.subtitle,
         order: l.order,
         subjectMode: 'ELA',
-        externalUrl: l.url,
+        externalUrl: null,
       },
     });
   }
