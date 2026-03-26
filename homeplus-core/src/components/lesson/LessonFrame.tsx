@@ -140,6 +140,12 @@ export default function LessonFrame({
   const [reflectionSaved, setReflectionSaved] = useState(false);
   const [completedBlocks, setCompletedBlocks] = useState<Set<string>>(new Set());
 
+  // Collapsible section state
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
+  const toggleSection = useCallback((section: string) => {
+    setCollapsedSections((prev) => ({ ...prev, [section]: !prev[section] }));
+  }, []);
+
   // Refs for section intersection observer
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
@@ -362,35 +368,46 @@ export default function LessonFrame({
       {/* ===== 2. WARM-UP ===== */}
       {(blocksBySection.WARM_UP.length > 0 || warmUpConfig) && (
         <div ref={(el) => { sectionRefs.current['WARM_UP'] = el; }} data-section="WARM_UP">
-          <div className={styles.sectionHeader}>
+          <div
+            className={styles.sectionHeader}
+            onClick={() => toggleSection('WARM_UP')}
+            style={{ cursor: 'pointer', userSelect: 'none' }}
+            role="button"
+            aria-expanded={!collapsedSections['WARM_UP']}
+          >
             <div className={styles.sectionIcon} style={{ background: '#fef3c7', color: '#f59e0b' }}>
               {SECTION_ICONS.WARM_UP}
             </div>
-            <div>
+            <div style={{ flex: 1 }}>
               <h2 className={styles.sectionTitle}>{SECTION_LABELS.WARM_UP}</h2>
               <p className={styles.sectionSubtitle}>Activate what you already know</p>
             </div>
+            <span style={{ fontSize: '1.2rem', color: '#94a3b8', transition: 'transform 0.2s', transform: collapsedSections['WARM_UP'] ? 'rotate(-90deg)' : 'rotate(0deg)' }}>▼</span>
           </div>
-          {blocksBySection.WARM_UP.map((b) => (
-            <LessonBlockRenderer key={b.id} blockType={b.blockType as any} content={b.content} />
-          ))}
-          {warmUpConfig && !blocksBySection.WARM_UP.length && (
-            <div className={styles.blockCard}>
-              <p style={{ fontSize: '0.88rem', color: '#334155' }}>
-                {typeof warmUpConfig === 'object' && warmUpConfig?.prompt
-                  ? warmUpConfig.prompt
-                  : 'Think about what you already know about this topic.'}
-              </p>
-              {warmUpConfig?.imageUrl && (
-                <div style={{ marginTop: 12, borderRadius: 12, overflow: 'hidden' }}>
-                  <img
-                    src={warmUpConfig.imageUrl}
-                    alt="Warm-up visual"
-                    style={{ width: '100%', maxHeight: 340, objectFit: 'cover', borderRadius: 12 }}
-                  />
+          {!collapsedSections['WARM_UP'] && (
+            <>
+              {blocksBySection.WARM_UP.map((b) => (
+                <LessonBlockRenderer key={b.id} blockType={b.blockType as any} content={b.content} />
+              ))}
+              {warmUpConfig && !blocksBySection.WARM_UP.length && (
+                <div className={styles.blockCard}>
+                  <p style={{ fontSize: '0.88rem', color: '#334155' }}>
+                    {typeof warmUpConfig === 'object' && warmUpConfig?.prompt
+                      ? warmUpConfig.prompt
+                      : 'Think about what you already know about this topic.'}
+                  </p>
+                  {warmUpConfig?.imageUrl && (
+                    <div style={{ marginTop: 12, borderRadius: 12, overflow: 'hidden' }}>
+                      <img
+                        src={warmUpConfig.imageUrl}
+                        alt="Warm-up visual"
+                        style={{ width: '100%', maxHeight: 340, objectFit: 'cover', borderRadius: 12 }}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
+            </>
           )}
         </div>
       )}
@@ -398,16 +415,23 @@ export default function LessonFrame({
       {/* ===== 3. LEARN ===== */}
       {blocksBySection.LEARN.length > 0 && (
         <div ref={(el) => { sectionRefs.current['LEARN'] = el; }} data-section="LEARN">
-          <div className={styles.sectionHeader}>
+          <div
+            className={styles.sectionHeader}
+            onClick={() => toggleSection('LEARN')}
+            style={{ cursor: 'pointer', userSelect: 'none' }}
+            role="button"
+            aria-expanded={!collapsedSections['LEARN']}
+          >
             <div className={styles.sectionIcon} style={{ background: '#dbeafe', color: '#2563eb' }}>
               {SECTION_ICONS.LEARN}
             </div>
-            <div>
+            <div style={{ flex: 1 }}>
               <h2 className={styles.sectionTitle}>{SECTION_LABELS.LEARN}</h2>
               <p className={styles.sectionSubtitle}>Explore new ideas and content</p>
             </div>
+            <span style={{ fontSize: '1.2rem', color: '#94a3b8', transition: 'transform 0.2s', transform: collapsedSections['LEARN'] ? 'rotate(-90deg)' : 'rotate(0deg)' }}>▼</span>
           </div>
-          {blocksBySection.LEARN.map((b) => (
+          {!collapsedSections['LEARN'] && blocksBySection.LEARN.map((b) => (
             <LessonBlockRenderer key={b.id} blockType={b.blockType as any} content={b.content} lessonId={lessonId} blockId={b.id} subjectMode={subjectMode} onAnswer={(val) => { if (val) handleBlockComplete(b.id); }} />
           ))}
         </div>
@@ -416,16 +440,23 @@ export default function LessonFrame({
       {/* ===== 4. GUIDED PRACTICE ===== */}
       {blocksBySection.PRACTICE.length > 0 && (
         <div ref={(el) => { sectionRefs.current['PRACTICE'] = el; }} data-section="PRACTICE">
-          <div className={styles.sectionHeader}>
+          <div
+            className={styles.sectionHeader}
+            onClick={() => toggleSection('PRACTICE')}
+            style={{ cursor: 'pointer', userSelect: 'none' }}
+            role="button"
+            aria-expanded={!collapsedSections['PRACTICE']}
+          >
             <div className={styles.sectionIcon} style={{ background: '#dcfce7', color: '#059669' }}>
               {SECTION_ICONS.PRACTICE}
             </div>
-            <div>
+            <div style={{ flex: 1 }}>
               <h2 className={styles.sectionTitle}>{SECTION_LABELS.PRACTICE}</h2>
               <p className={styles.sectionSubtitle}>Practice what you&apos;ve learned</p>
             </div>
+            <span style={{ fontSize: '1.2rem', color: '#94a3b8', transition: 'transform 0.2s', transform: collapsedSections['PRACTICE'] ? 'rotate(-90deg)' : 'rotate(0deg)' }}>▼</span>
           </div>
-          {blocksBySection.PRACTICE.map((b) => (
+          {!collapsedSections['PRACTICE'] && blocksBySection.PRACTICE.map((b) => (
             <LessonBlockRenderer key={b.id} blockType={b.blockType as any} content={b.content} lessonId={lessonId} blockId={b.id} subjectMode={subjectMode} onAnswer={(val) => { if (val) handleBlockComplete(b.id); }} />
           ))}
         </div>
@@ -433,11 +464,17 @@ export default function LessonFrame({
 
       {/* ===== 5. MASTERY CHECK ===== */}
       <div ref={(el) => { sectionRefs.current['CHECK'] = el; }} data-section="CHECK">
-        <div className={styles.sectionHeader}>
+        <div
+          className={styles.sectionHeader}
+          onClick={() => toggleSection('CHECK')}
+          style={{ cursor: 'pointer', userSelect: 'none' }}
+          role="button"
+          aria-expanded={!collapsedSections['CHECK']}
+        >
           <div className={styles.sectionIcon} style={{ background: '#fef3c7', color: '#d97706' }}>
             {SECTION_ICONS.CHECK}
           </div>
-          <div>
+          <div style={{ flex: 1 }}>
             <h2 className={styles.sectionTitle}>{SECTION_LABELS.CHECK}</h2>
             <p className={styles.sectionSubtitle}>
               {subjectMode === 'SCIENCE'
@@ -447,90 +484,106 @@ export default function LessonFrame({
                 : 'Show what you know'}
             </p>
           </div>
+          <span style={{ fontSize: '1.2rem', color: '#94a3b8', transition: 'transform 0.2s', transform: collapsedSections['CHECK'] ? 'rotate(-90deg)' : 'rotate(0deg)' }}>▼</span>
         </div>
 
-        {/* CHECK section content blocks BEFORE mastery quiz */}
-        {blocksBySection.CHECK.map((b) => (
-          <LessonBlockRenderer key={b.id} blockType={b.blockType as any} content={b.content} />
-        ))}
+        {!collapsedSections['CHECK'] && (
+          <>
+            {/* CHECK section content blocks BEFORE mastery quiz */}
+            {blocksBySection.CHECK.map((b) => (
+              <LessonBlockRenderer key={b.id} blockType={b.blockType as any} content={b.content} />
+            ))}
 
-        {/* Reteach flow (science only) */}
-        {reteachOutcome && subjectMode === 'SCIENCE' && (
-          <ScienceReteach
-            outcomeCode={reteachOutcome}
-            contentBlocks={blocksBySection.LEARN.filter(
-              (b) => b.blockType === 'TEXT' || b.blockType === 'VIDEO' || b.blockType === 'AI_SUMMARY'
-            ).map((b) => ({ blockType: b.blockType, content: b.content }))}
-            questions={questions
-              .filter((q) => q.outcomeCode === reteachOutcome)
-              .map((q) => ({
-                id: q.id,
-                questionText: q.questionText,
-                options: (q.options as any[]) || [],
-                explanation: q.explanation || undefined,
-              }))}
-            lessonId={lessonId}
-            onComplete={handleReteachComplete}
-          />
-        )}
+            {/* Reteach flow (science only) */}
+            {reteachOutcome && subjectMode === 'SCIENCE' && (
+              <ScienceReteach
+                outcomeCode={reteachOutcome}
+                contentBlocks={blocksBySection.LEARN.filter(
+                  (b) => b.blockType === 'TEXT' || b.blockType === 'VIDEO' || b.blockType === 'AI_SUMMARY'
+                ).map((b) => ({ blockType: b.blockType, content: b.content }))}
+                questions={questions
+                  .filter((q) => q.outcomeCode === reteachOutcome)
+                  .map((q) => ({
+                    id: q.id,
+                    questionText: q.questionText,
+                    options: (q.options as any[]) || [],
+                    explanation: q.explanation || undefined,
+                  }))}
+                lessonId={lessonId}
+                onComplete={handleReteachComplete}
+              />
+            )}
 
-        {/* Regular mastery check */}
-        {!reteachOutcome && (
-          <MasteryCheck
-            questions={questions}
-            subjectMode={subjectMode}
-            lessonId={lessonId}
-            onComplete={handleMasteryComplete}
-            config={config}
-            locked={!allBlocksComplete}
-          />
+            {/* Regular mastery check */}
+            {!reteachOutcome && (
+              <MasteryCheck
+                questions={questions}
+                subjectMode={subjectMode}
+                lessonId={lessonId}
+                onComplete={handleMasteryComplete}
+                config={config}
+                locked={!allBlocksComplete}
+              />
+            )}
+          </>
         )}
       </div>
 
       {/* ===== 6. REFLECTION ===== */}
       <div ref={(el) => { sectionRefs.current['REFLECT'] = el; }} data-section="REFLECT">
-        <div className={styles.sectionHeader}>
+        <div
+          className={styles.sectionHeader}
+          onClick={() => toggleSection('REFLECT')}
+          style={{ cursor: 'pointer', userSelect: 'none' }}
+          role="button"
+          aria-expanded={!collapsedSections['REFLECT']}
+        >
           <div className={styles.sectionIcon} style={{ background: '#f3e8ff', color: '#7c3aed' }}>
             {SECTION_ICONS.REFLECT}
           </div>
-          <div>
+          <div style={{ flex: 1 }}>
             <h2 className={styles.sectionTitle}>{SECTION_LABELS.REFLECT}</h2>
             <p className={styles.sectionSubtitle}>Look back and look ahead</p>
           </div>
+          <span style={{ fontSize: '1.2rem', color: '#94a3b8', transition: 'transform 0.2s', transform: collapsedSections['REFLECT'] ? 'rotate(-90deg)' : 'rotate(0deg)' }}>▼</span>
         </div>
 
-        {blocksBySection.REFLECT.map((b) => (
-          <LessonBlockRenderer key={b.id} blockType={b.blockType as any} content={b.content} />
-        ))}
+        {!collapsedSections['REFLECT'] && (
+          <>
+            {blocksBySection.REFLECT.map((b) => (
+              <LessonBlockRenderer key={b.id} blockType={b.blockType as any} content={b.content} />
+            ))}
 
-        <div className={styles.reflectionCard}>
-          <p className={styles.reflectionPrompt}>
-            {reflectionPrompt || '💭 What is one important thing you learned today?'}
-          </p>
-          <textarea
-            className={styles.textArea}
-            value={reflectionText}
-            onChange={(e) => setReflectionText(e.target.value)}
-            placeholder="Write your reflection..."
-            disabled={reflectionSaved}
-            style={{ minHeight: 90 }}
-          />
-          <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-            <button
-              className={styles.btnPrimary}
-              style={{ background: '#7c3aed' }}
-              onClick={handleReflectionSubmit}
-              disabled={!reflectionText.trim() || reflectionSaved}
-            >
-              {reflectionSaved ? '✓ Saved' : '💭 Save Reflection'}
-            </button>
-            {reflectionSaved && (
-              <span style={{ fontSize: '0.82rem', color: '#059669', fontWeight: 600 }}>
-                Reflection saved!
-              </span>
-            )}
-          </div>
-        </div>
+            <div className={styles.reflectionCard}>
+              <p className={styles.reflectionPrompt}>
+                {reflectionPrompt || '💭 What is one important thing you learned today?'}
+              </p>
+              <textarea
+                className={styles.textArea}
+                value={reflectionText}
+                onChange={(e) => setReflectionText(e.target.value)}
+                placeholder="Write your reflection..."
+                disabled={reflectionSaved}
+                style={{ minHeight: 90 }}
+              />
+              <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                <button
+                  className={styles.btnPrimary}
+                  style={{ background: '#7c3aed' }}
+                  onClick={handleReflectionSubmit}
+                  disabled={!reflectionText.trim() || reflectionSaved}
+                >
+                  {reflectionSaved ? '✓ Saved' : '💭 Save Reflection'}
+                </button>
+                {reflectionSaved && (
+                  <span style={{ fontSize: '0.82rem', color: '#059669', fontWeight: 600 }}>
+                    Reflection saved!
+                  </span>
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* ===== Navigation ===== */}
