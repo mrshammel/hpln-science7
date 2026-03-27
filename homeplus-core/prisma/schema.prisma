@@ -182,6 +182,8 @@ model QuizQuestion {
   lesson          Lesson           @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   masteryAttempts MasteryAttempt[]
 
+  @@index([lessonId, outcomeCode])
+  @@index([outcomeCode])
   @@map("quiz_questions")
 }
 
@@ -292,6 +294,8 @@ model Submission {
   activity         Activity          @relation(fields: [activityId], references: [id], onDelete: Cascade)
   masteryJudgments MasteryJudgment[]
 
+  @@index([studentId, submittedAt])
+  @@index([studentId, reviewed])
   @@map("submissions")
 }
 
@@ -327,6 +331,7 @@ model StudentProgress {
   lesson  Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, lessonId])
+  @@index([studentId, status])
   @@map("student_progress")
 }
 
@@ -550,6 +555,8 @@ model LessonSkill {
   skill  Skill  @relation(fields: [skillId], references: [id], onDelete: Cascade)
 
   @@unique([lessonId, skillId, relationshipType])
+  @@index([skillId])
+  @@index([lessonId, relationshipType])
   @@map("lesson_skills")
 }
 
@@ -597,6 +604,7 @@ model StudentSkillMastery {
   @@unique([studentId, skillId])
   @@index([nextReviewAt])
   @@index([masteryState])
+  @@index([studentId, masteryState])
   @@map("student_skill_mastery")
 }
 
@@ -675,6 +683,8 @@ model ReflectionEntry {
 
   lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 
+  @@index([studentId, lessonId])
+  @@index([studentId, helpRequested])
   @@map("reflection_entries")
 }
 

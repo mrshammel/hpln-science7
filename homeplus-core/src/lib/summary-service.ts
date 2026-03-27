@@ -14,6 +14,7 @@
 //   - TeacherAlertSummary
 
 import { prisma } from '@/lib/db';
+import { invalidateCachePrefix } from '@/lib/data-cache';
 
 // ─── Student Dashboard Summary ───
 
@@ -75,6 +76,9 @@ export async function refreshStudentDashboardSummary(studentId: string): Promise
       reviewStreak: 0,
     },
   });
+
+  // Invalidate cached dashboard data for this student
+  invalidateCachePrefix(`student:${studentId}`);
 }
 
 // ─── Course Mastery Summary ───
