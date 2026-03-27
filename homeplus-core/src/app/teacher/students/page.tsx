@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import styles from '../teacher.module.css';
-import { getStudentsWithPacing } from '@/lib/teacher-data';
+import { getStudentsWithPacing, getClassMasteryOverview } from '@/lib/teacher-data';
 import { getAcademicPacingStyle, getEngagementStyle } from '@/lib/pacing';
 import { getTeacherId } from '@/lib/teacher-auth';
 import { resolveContext, buildContextQuery } from '@/lib/teacher-context';
@@ -16,6 +16,8 @@ export default async function StudentsPage({ searchParams }: PageProps) {
   const q = buildContextQuery(ctx);
 
   const students = await getStudentsWithPacing(teacherId, ctx);
+  const classMastery = await getClassMasteryOverview(students, teacherId, ctx);
+  const masteryMap = new Map(classMastery.studentSummaries.map((s) => [s.studentId, s]));
 
   return (
     <>
@@ -54,6 +56,7 @@ export default async function StudentsPage({ searchParams }: PageProps) {
                   <th>Current Unit</th>
                   <th>Progress</th>
                   <th>{ctx.subjectName} Avg</th>
+                  <th>Mastery</th>
                   <th>Days Since Active</th>
                   <th>Pacing</th>
                   <th>Engagement</th>
@@ -103,6 +106,26 @@ export default async function StudentsPage({ searchParams }: PageProps) {
                           <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>
                             {s.avgScore !== null ? `${Math.round(s.avgScore)}%` : '—'}
                           </span>
+                        </Link>
+                      </td>
+                      <td>
+                        <Link href={`/teacher/students/${s.id}${q}`} className={styles.rowLink}>
+                          {(() => {
+                            const m = masteryMap.get(s.id);
+                            if (!m || m.totalSkills === 0) return <span style={{ fontSize: '0.82rem', color: '#94a3b8' }}>—</span>;
+                            return (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: m.masteryPercent >= 70 ? '#059669' : m.masteryPercent >= 40 ? '#d97706' : '#dc2626' }}>
+                                  {m.masteryPercent}%
+                                </span>
+                                {m.needsSupportCount > 0 && (
+                                  <span style={{ fontSize: '0.68rem', fontWeight: 600, padding: '2px 6px', borderRadius: 6, background: '#fee2e2', color: '#dc2626' }}>
+                                    🚨{m.needsSupportCount}
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </Link>
                       </td>
                       <td>

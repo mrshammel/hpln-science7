@@ -72,6 +72,36 @@ export default async function StudentDetailPage({ params, searchParams }: PagePr
     getStudentNotes(id, teacherId),
   ]);
 
+  // Fetch skill mastery summary for the mastery state grid
+  let skillMastery = { masteredCount: 0, developingCount: 0, reviewDueCount: 0, needsSupportCount: 0, totalSkills: 0 };
+  if (!id.startsWith('demo-')) {
+    try {
+      const ds = await prisma.studentDashboardSummary.findUnique({
+        where: { studentId: id },
+      });
+      if (ds) {
+        skillMastery = {
+          masteredCount: ds.masteredCount,
+          developingCount: ds.developingCount,
+          reviewDueCount: ds.reviewDueCount,
+          needsSupportCount: ds.needsSupportCount,
+          totalSkills: ds.masteredCount + ds.developingCount + ds.reviewDueCount + ds.needsSupportCount,
+        };
+      }
+    } catch { /* model may not exist */ }
+  } else {
+    // Demo data
+    const demoProfiles = [
+      { m: 5, d: 1, r: 0, ns: 0 }, { m: 3, d: 2, r: 1, ns: 0 },
+      { m: 2, d: 2, r: 1, ns: 1 }, { m: 1, d: 1, r: 1, ns: 2 },
+      { m: 6, d: 0, r: 0, ns: 0 }, { m: 3, d: 1, r: 1, ns: 1 },
+      { m: 4, d: 2, r: 0, ns: 0 }, { m: 1, d: 2, r: 0, ns: 0 },
+    ];
+    const idx = parseInt(id.replace('demo-', ''), 10) || 0;
+    const p = demoProfiles[idx % demoProfiles.length];
+    skillMastery = { masteredCount: p.m, developingCount: p.d, reviewDueCount: p.r, needsSupportCount: p.ns, totalSkills: p.m + p.d + p.r + p.ns };
+  }
+
   // Fetch unit overrides for this student
   let unitOverrideRecords: { unitId: string; overrideState: string; note: string | null }[] = [];
   if (!id.startsWith('demo-') || !isDemoMode()) {
@@ -238,6 +268,49 @@ export default async function StudentDetailPage({ params, searchParams }: PagePr
           <MasteryGlanceItem label="Pending Teacher Review" value={String(pendingReview)} color="#7c3aed" />
         </div>
       </div>
+
+      {/* ===== SKILL MASTERY STATE GRID ===== */}
+      {skillMastery.totalSkills > 0 && (
+        <div className={styles.dashCard} style={{ marginBottom: 24 }}>
+          <h3 className={styles.cardTitle}>🧠 Skill Mastery</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
+            <div style={{ background: '#f0fdf4', borderRadius: 10, padding: '12px 14px', textAlign: 'center' }}>
+              <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#059669' }}>{skillMastery.masteredCount}</div>
+              <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#047857', marginTop: 2 }}>Mastered</div>
+            </div>
+            <div style={{ background: '#eff6ff', borderRadius: 10, padding: '12px 14px', textAlign: 'center' }}>
+              <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#2563eb' }}>{skillMastery.developingCount}</div>
+              <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#1d4ed8', marginTop: 2 }}>Developing</div>
+            </div>
+            <div style={{ background: '#fffbeb', borderRadius: 10, padding: '12px 14px', textAlign: 'center' }}>
+              <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#d97706' }}>{skillMastery.reviewDueCount}</div>
+              <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#b45309', marginTop: 2 }}>Review Due</div>
+            </div>
+            <div style={{ background: '#fef2f2', borderRadius: 10, padding: '12px 14px', textAlign: 'center' }}>
+              <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#dc2626' }}>{skillMastery.needsSupportCount}</div>
+              <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#b91c1c', marginTop: 2 }}>Needs Support</div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', height: 10, borderRadius: 5, overflow: 'hidden', background: '#f1f5f9' }}>
+            {(() => {
+              const total = skillMastery.totalSkills;
+              const pct = (n: number) => total > 0 ? `${Math.round((n / total) * 100)}%` : '0%';
+              return (
+                <>
+                  <div style={{ width: pct(skillMastery.masteredCount), background: '#059669', height: '100%' }} />
+                  <div style={{ width: pct(skillMastery.developingCount), background: '#3b82f6', height: '100%' }} />
+                  <div style={{ width: pct(skillMastery.reviewDueCount), background: '#f59e0b', height: '100%' }} />
+                  <div style={{ width: pct(skillMastery.needsSupportCount), background: '#ef4444', height: '100%' }} />
+                </>
+              );
+            })()}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: '0.74rem', color: '#64748b' }}>
+            <span>{skillMastery.masteredCount} of {skillMastery.totalSkills} skills mastered</span>
+            <span>{Math.round((skillMastery.masteredCount / Math.max(skillMastery.totalSkills, 1)) * 100)}% mastery</span>
+          </div>
+        </div>
+      )}
 
       <div className={styles.splitLayout}>
         {/* ===== LEFT COLUMN ===== */}

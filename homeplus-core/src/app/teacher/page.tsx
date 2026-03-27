@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import styles from './teacher.module.css';
-import { getStudentsWithPacing, getOverviewMetrics, getUnitProgress } from '@/lib/teacher-data';
+import { getStudentsWithPacing, getOverviewMetrics, getUnitProgress, getClassMasteryOverview } from '@/lib/teacher-data';
 import { getAcademicPacingStyle, getEngagementStyle, formatDaysSinceActive } from '@/lib/pacing';
 import { getTeacherId } from '@/lib/teacher-auth';
 import { resolveContext, buildContextQuery } from '@/lib/teacher-context';
@@ -18,6 +18,7 @@ export default async function TeacherOverview({ searchParams }: PageProps) {
   const students = await getStudentsWithPacing(teacherId, ctx);
   const metrics = await getOverviewMetrics(students, teacherId, ctx);
   const unitProgress = await getUnitProgress(students, teacherId, ctx);
+  const classMastery = await getClassMasteryOverview(students, teacherId, ctx);
 
   // Needs attention: significantly behind OR stalled
   const needsAttention = students
@@ -42,8 +43,8 @@ export default async function TeacherOverview({ searchParams }: PageProps) {
         <MetricCard icon="🚀" label="Ahead" value={metrics.ahead} bg="#dbeafe" />
         <MetricCard icon="🚨" label="Needs Attention" value={metrics.needsAttention} bg="#fee2e2" />
         <MetricCard icon="📊" label="Avg Progress" value={`${Math.round(metrics.avgProgress)}%`} bg="#ede9fe" />
-        <MetricCard icon="🏆" label={`${ctx.subjectName} Avg`} value={metrics.avgScore ? `${Math.round(metrics.avgScore)}%` : '—'} bg="#fef3c7" />
-        <MetricCard icon="⏸️" label="Stalled" value={metrics.stalledCount} bg="#f3f4f6" />
+        <MetricCard icon="🧠" label="Avg Mastery" value={`${classMastery.avgMasteryPercent}%`} bg="#d1fae5" />
+        <MetricCard icon="🔄" label="Review Due" value={classMastery.studentsWithReviewDue} bg="#fef3c7" />
         <MetricCard icon="📝" label="Pending Reviews" value={metrics.pendingReviews} bg="#fce7f3" />
       </div>
 
@@ -148,6 +149,42 @@ export default async function TeacherOverview({ searchParams }: PageProps) {
           </div>
         </div>
       </div>
+
+      {/* Mastery Alerts */}
+      {classMastery.studentsWithSupport > 0 && (
+        <div className={styles.dashCard} style={{ marginTop: 24 }}>
+          <h3 className={styles.cardTitle}>🧠 Mastery Alerts</h3>
+          {classMastery.studentSummaries
+            .filter((s) => s.needsSupportCount > 0)
+            .sort((a, b) => b.needsSupportCount - a.needsSupportCount)
+            .map((s) => (
+              <Link key={s.studentId} href={`/teacher/students/${s.studentId}${q}`} style={{ textDecoration: 'none' }}>
+                <div className={styles.attentionItem}>
+                  <div className={styles.attentionAvatar}>
+                    {s.studentName.split(' ').map((n) => n[0]).join('')}
+                  </div>
+                  <div className={styles.attentionInfo}>
+                    <div className={styles.attentionName}>{s.studentName}</div>
+                    <div className={styles.attentionReason}>
+                      {s.needsSupportCount} skill{s.needsSupportCount !== 1 ? 's' : ''} need support ·
+                      {s.masteryPercent}% mastery
+                    </div>
+                  </div>
+                  <div className={styles.badgeStack}>
+                    <span className={styles.pacingBadge} style={{ background: '#fee2e2', color: '#dc2626' }}>
+                      🚨 {s.needsSupportCount} Support
+                    </span>
+                    {s.reviewDueCount > 0 && (
+                      <span className={styles.pacingBadge} style={{ background: '#fef3c7', color: '#d97706' }}>
+                        🔄 {s.reviewDueCount} Review
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            ))}
+        </div>
+      )}
     </>
   );
 }

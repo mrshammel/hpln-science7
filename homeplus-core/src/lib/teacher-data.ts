@@ -903,3 +903,176 @@ function getDemoSubmissionDetail(id: string): SubmissionDetail | null {
   return details[id] || null;
 }
 
+// ---------- Class Mastery Data (Phase 5) ----------
+
+export interface StudentMasterySummary {
+  studentId: string;
+  studentName: string;
+  masteredCount: number;
+  developingCount: number;
+  reviewDueCount: number;
+  needsSupportCount: number;
+  totalSkills: number;
+  masteryPercent: number;
+}
+
+export interface ClassSkillBreakdown {
+  skillId: string;
+  skillCode: string;
+  skillTitle: string;
+  masteredCount: number;
+  developingCount: number;
+  reviewDueCount: number;
+  needsSupportCount: number;
+  notStartedCount: number;
+  totalStudents: number;
+}
+
+export interface ClassMasteryOverview {
+  totalStudents: number;
+  avgMasteryPercent: number;
+  studentsWithSupport: number;
+  studentsWithReviewDue: number;
+  studentsFullyMastered: number;
+  studentSummaries: StudentMasterySummary[];
+  skillBreakdown: ClassSkillBreakdown[];
+}
+
+/**
+ * Get class-wide mastery overview — aggregated from StudentDashboardSummary + StudentSkillMastery.
+ */
+export async function getClassMasteryOverview(
+  students: StudentWithPacing[],
+  teacherId: string,
+  ctx: GradeSubjectContext,
+): Promise<ClassMasteryOverview> {
+  const studentIds = students.map((s) => s.id).filter((id) => !id.startsWith('demo-'));
+
+  if (studentIds.length === 0 || isDemoMode()) {
+    return getDemoClassMastery(students);
+  }
+
+  try {
+    // Per-student mastery summaries
+    const dashSummaries = await prisma.studentDashboardSummary.findMany({
+      where: { studentId: { in: studentIds } },
+    });
+    const summaryMap = new Map(dashSummaries.map((s) => [s.studentId, s]));
+
+    const studentSummaries: StudentMasterySummary[] = students.map((s) => {
+      const ds = summaryMap.get(s.id);
+      const mastered = ds?.masteredCount ?? 0;
+      const developing = ds?.developingCount ?? 0;
+      const reviewDue = ds?.reviewDueCount ?? 0;
+      const needsSupport = ds?.needsSupportCount ?? 0;
+      const total = mastered + developing + reviewDue + needsSupport;
+      return {
+        studentId: s.id,
+        studentName: s.name,
+        masteredCount: mastered,
+        developingCount: developing,
+        reviewDueCount: reviewDue,
+        needsSupportCount: needsSupport,
+        totalSkills: total,
+        masteryPercent: total > 0 ? Math.round((mastered / total) * 100) : 0,
+      };
+    });
+
+    // Class-wide skill breakdown
+    const skills = await prisma.skill.findMany({
+      where: ctx.subjectId.startsWith('demo-') ? {} : {
+        lessonSkills: { some: { lesson: { unit: { subjectId: ctx.subjectId } } } },
+      },
+      select: { id: true, code: true, title: true },
+    });
+
+    const allMastery = await prisma.studentSkillMastery.findMany({
+      where: { studentId: { in: studentIds } },
+      select: { studentId: true, skillId: true, masteryState: true },
+    });
+    const masteryBySkill = new Map<string, typeof allMastery>();
+    for (const m of allMastery) {
+      const arr = masteryBySkill.get(m.skillId) || [];
+      arr.push(m);
+      masteryBySkill.set(m.skillId, arr);
+    }
+
+    const skillBreakdown: ClassSkillBreakdown[] = skills.map((skill) => {
+      const records = masteryBySkill.get(skill.id) || [];
+      return {
+        skillId: skill.id,
+        skillCode: skill.code,
+        skillTitle: skill.title,
+        masteredCount: records.filter((r) => r.masteryState === 'MASTERED').length,
+        developingCount: records.filter((r) => r.masteryState === 'DEVELOPING' || r.masteryState === 'PRACTICING').length,
+        reviewDueCount: records.filter((r) => r.masteryState === 'REVIEW_DUE').length,
+        needsSupportCount: records.filter((r) => r.masteryState === 'NEEDS_SUPPORT').length,
+        notStartedCount: studentIds.length - records.length,
+        totalStudents: studentIds.length,
+      };
+    });
+
+    const avgMastery = studentSummaries.length > 0
+      ? Math.round(studentSummaries.reduce((s, st) => s + st.masteryPercent, 0) / studentSummaries.length)
+      : 0;
+
+    return {
+      totalStudents: students.length,
+      avgMasteryPercent: avgMastery,
+      studentsWithSupport: studentSummaries.filter((s) => s.needsSupportCount > 0).length,
+      studentsWithReviewDue: studentSummaries.filter((s) => s.reviewDueCount > 0).length,
+      studentsFullyMastered: studentSummaries.filter((s) => s.totalSkills > 0 && s.masteredCount === s.totalSkills).length,
+      studentSummaries,
+      skillBreakdown,
+    };
+  } catch (err) {
+    console.error('[teacher-data] getClassMasteryOverview failed:', err);
+    return getDemoClassMastery(students);
+  }
+}
+
+function getDemoClassMastery(students: StudentWithPacing[]): ClassMasteryOverview {
+  const names = students.map((s) => s.name);
+  const demoSummaries: StudentMasterySummary[] = students.map((s, i) => {
+    const profiles = [
+      { m: 5, d: 1, r: 0, ns: 0 }, // Strong
+      { m: 3, d: 2, r: 1, ns: 0 }, // Good
+      { m: 2, d: 2, r: 1, ns: 1 }, // Mixed
+      { m: 1, d: 1, r: 1, ns: 2 }, // Needs support
+      { m: 6, d: 0, r: 0, ns: 0 }, // Excellent
+      { m: 3, d: 1, r: 1, ns: 1 }, // Average
+      { m: 4, d: 2, r: 0, ns: 0 }, // Good
+      { m: 1, d: 2, r: 0, ns: 0 }, // Newly started
+    ];
+    const p = profiles[i % profiles.length];
+    const total = p.m + p.d + p.r + p.ns;
+    return {
+      studentId: s.id, studentName: s.name,
+      masteredCount: p.m, developingCount: p.d, reviewDueCount: p.r, needsSupportCount: p.ns,
+      totalSkills: total, masteryPercent: total > 0 ? Math.round((p.m / total) * 100) : 0,
+    };
+  });
+
+  const demoSkills: ClassSkillBreakdown[] = [
+    { skillId: 's1', skillCode: 'SCI-7-IE-1', skillTitle: 'Identify biotic and abiotic factors', masteredCount: 6, developingCount: 1, reviewDueCount: 0, needsSupportCount: 1, notStartedCount: 0, totalStudents: 8 },
+    { skillId: 's2', skillCode: 'SCI-7-IE-2', skillTitle: 'Describe energy flow in food webs', masteredCount: 5, developingCount: 2, reviewDueCount: 1, needsSupportCount: 0, notStartedCount: 0, totalStudents: 8 },
+    { skillId: 's3', skillCode: 'SCI-7-PF-1', skillTitle: 'Explain photosynthesis requirements', masteredCount: 4, developingCount: 2, reviewDueCount: 1, needsSupportCount: 1, notStartedCount: 0, totalStudents: 8 },
+    { skillId: 's4', skillCode: 'SCI-7-HE-1', skillTitle: 'Explain heat transfer methods', masteredCount: 3, developingCount: 3, reviewDueCount: 1, needsSupportCount: 1, notStartedCount: 0, totalStudents: 8 },
+    { skillId: 's5', skillCode: 'SCI-7-HE-2', skillTitle: 'Compare conductors and insulators', masteredCount: 2, developingCount: 2, reviewDueCount: 2, needsSupportCount: 2, notStartedCount: 0, totalStudents: 8 },
+    { skillId: 's6', skillCode: 'SCI-7-SF-1', skillTitle: 'Identify structural components', masteredCount: 1, developingCount: 2, reviewDueCount: 0, needsSupportCount: 0, notStartedCount: 5, totalStudents: 8 },
+  ];
+
+  const avgMastery = demoSummaries.length > 0
+    ? Math.round(demoSummaries.reduce((s, st) => s + st.masteryPercent, 0) / demoSummaries.length)
+    : 0;
+
+  return {
+    totalStudents: students.length,
+    avgMasteryPercent: avgMastery,
+    studentsWithSupport: demoSummaries.filter((s) => s.needsSupportCount > 0).length,
+    studentsWithReviewDue: demoSummaries.filter((s) => s.reviewDueCount > 0).length,
+    studentsFullyMastered: demoSummaries.filter((s) => s.totalSkills > 0 && s.masteredCount === s.totalSkills).length,
+    studentSummaries: demoSummaries,
+    skillBreakdown: demoSkills,
+  };
+}

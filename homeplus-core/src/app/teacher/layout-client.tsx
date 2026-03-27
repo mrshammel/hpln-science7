@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { href: '/teacher', icon: '📊', label: 'Overview' },
   { href: '/teacher/students', icon: '👥', label: 'Students' },
   { href: '/teacher/pacing', icon: '⏱️', label: 'Pacing' },
+  { href: '/teacher/mastery', icon: '🧠', label: 'Mastery' },
   { href: '/teacher/submissions', icon: '📝', label: 'Submissions' },
   { href: '/teacher/notes', icon: '📋', label: 'Notes' },
   { href: '/teacher/courses', icon: '📚', label: 'Course Builder' },
